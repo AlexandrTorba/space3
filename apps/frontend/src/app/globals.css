@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-antigravity-dark: #07090E;
+  --color-antigravity-accent: #3B82F6;
+  --color-antigravity-neon: #60A5FA;
+  --color-antigravity-danger: #EF4444;
+}
+
+body {
+  background-color: var(--color-antigravity-dark);
+  color: white;
+  min-height: 100vh;
+}

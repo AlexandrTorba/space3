@@ -1,0 +1,27 @@
+{
+  "name": "antigravity-edge-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-02-08",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CHESS_MATCH",
+        "class_name": "ChessMatch"
+      },
+      {
+        "name": "LOBBY",
+        "class_name": "Lobby"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["ChessMatch"]
+    },
+    {
+      "tag": "v2",
+      "new_classes": ["Lobby"]
+    }
+  ]
+}

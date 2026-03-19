@@ -1,0 +1,36 @@
+syntax = "proto3";
+package chess.v1;
+
+message Move {
+  string match_id = 1;
+  string uci = 2; // e.g. "e2e4"
+  int64 timestamp = 3;
+}
+
+message MatchStatus {
+  string fen = 1;
+  bool is_active = 2;
+  string white_id = 3;
+  string black_id = 4;
+  string result = 5;
+  string reason = 6;
+  int32 white_time_ms = 7;
+  int32 black_time_ms = 8;
+  string white_name = 9;
+  string black_name = 10;
+  int32 spectators = 11;
+}
+
+message MatchAction {
+  string match_id = 1;
+  string action_type = 2; // "resign", "draw_offer", "draw_accept"
+  string player_color = 3; // "w" or "b"
+}
+
+message MatchUpdate {
+  oneof event {
+    Move move = 1;
+    MatchStatus status = 2;
+    MatchAction action = 3;
+  }
+}
