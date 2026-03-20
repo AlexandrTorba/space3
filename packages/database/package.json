@@ -5,11 +5,14 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
-    "@libsql/client": "^0.6.0",
-    "drizzle-orm": "^0.30.10"
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.45.1"
+  },
+  "scripts": {
+    "db:push": "drizzle-kit push"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.20.17",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.0.0"
   }
 }

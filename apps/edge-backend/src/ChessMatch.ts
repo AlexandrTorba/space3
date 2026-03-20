@@ -40,8 +40,11 @@ export class ChessMatch {
     this.isActive = true;
     this.drawOffer = null;
     
-    if (this.env.TURSO_URL && this.env.TURSO_AUTH_TOKEN) {
-       this.db = createDb(this.env.TURSO_URL, this.env.TURSO_AUTH_TOKEN);
+    const url = this.env.TURSO_URL || this.env.LIBSQL_URL;
+    const token = this.env.TURSO_AUTH_TOKEN || this.env.LIBSQL_AUTH_TOKEN;
+    
+    if (url && token) {
+       this.db = createDb(url, token);
     }
   }
 
