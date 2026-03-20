@@ -5,8 +5,11 @@ import { ChessMatch } from "./ChessMatch";
 import { Lobby } from "./Lobby";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://space3-frontend.vercel.app",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+ // "Access-Control-Allow-Origin": "https://space3-frontend.vercel.app",
+ // "Access-Control-Allow-Headers": "Content-Type",
 }
 export { ChessMatch, Lobby };
 
@@ -18,15 +21,20 @@ export interface Env {
 };
 
 export default {
-  async fetch(request: Request, env: Env) {
-    
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: corsHeaders,
-      });  
-    }
+  async fetch(request: Request, env: any) {
     const url = new URL(request.url);
     const path = url.pathname;
+    
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders, });  
+    }
+
+    try {
+      const client = createClient({
+        url: env.TURSO_URL,
+        authToken: env.TURSO_AUTH_TOKEN,
+      });
+      const db = drizzle(client);
 
     // Single global lobby for HyperBullet Matchmaking
     if (path.startsWith("/lobby")) {
