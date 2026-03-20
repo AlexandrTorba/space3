@@ -1,6 +1,10 @@
 import { ChessMatch } from "./ChessMatch";
 import { Lobby } from "./Lobby";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://space3-frontend.vercel.app",
+  "Access-Control-Allow-Headers": "Content-Type",
+}
 export { ChessMatch, Lobby };
 
 export interface Env {
@@ -8,12 +12,18 @@ export interface Env {
   LOBBY: DurableObjectNamespace;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
-}
+};
 
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: corsHeaders,
+      });  
+    }
 
     // Single global lobby for HyperBullet Matchmaking
     if (path.startsWith("/lobby")) {
