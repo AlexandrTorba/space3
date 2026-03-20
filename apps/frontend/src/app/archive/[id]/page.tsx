@@ -22,7 +22,8 @@ export default function ArchiveView() {
   useEffect(() => {
     const fetchMatch = async () => {
       try {
-        const host = process.env.NEXT_PUBLIC_EDGE_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+        const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+        const host = rawUrl.replace(/^http(s)?:\/\//, '');
         const protocol = window.location.protocol === "https:" ? "https:" : "http:";
         const res = await fetch(`${protocol}//${host}/api/archive/${id}`);
         if (res.ok) {

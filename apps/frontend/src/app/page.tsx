@@ -33,7 +33,13 @@ export default function Home() {
 
      // Fetch Live Matches
      const fetchLive = () => {
-         const host = process.env.NEXT_PUBLIC_EDGE_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+         const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+         let host = rawUrl;
+         try {
+           if (rawUrl.includes("://")) {
+             host = new URL(rawUrl).host;
+           }
+         } catch (e) {}
          const protocol = window.location.protocol === "https:" ? "https:" : "http:";
          fetch(`${protocol}//${host}/api/live`)
            .then(res => res.json())
@@ -47,7 +53,13 @@ export default function Home() {
 
   useEffect(() => {
      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-     const host = process.env.NEXT_PUBLIC_EDGE_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+     const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+     let host = rawUrl;
+     try {
+       if (rawUrl.includes("://")) {
+         host = new URL(rawUrl).host;
+       }
+     } catch (e) {}
      const ws = new WebSocket(`${protocol}//${host}/lobby`);
      wsRef.current = ws;
 

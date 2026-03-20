@@ -23,5 +23,9 @@
       "tag": "v2",
       "new_sqlite_classes": ["Lobby"]
     }
-  ]
+  ],
+  "vars": {
+    "LIBSQL_URL": "",
+    "LIBSQL_AUTH_TOKEN": ""
+  }
 }

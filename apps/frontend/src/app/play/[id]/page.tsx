@@ -105,7 +105,13 @@ export default function Play() {
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = process.env.NEXT_PUBLIC_EDGE_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+    let host = rawUrl;
+    try {
+      if (rawUrl.includes("://")) {
+        host = new URL(rawUrl).host;
+      }
+    } catch (e) {}
     const wParam = encodeURIComponent(wName);
     const bParam = encodeURIComponent(bName);
     const ws = new WebSocket(`${protocol}//${host}/match/${id}?tc=${encodeURIComponent(tcMode)}&w=${wParam}&b=${bParam}`);

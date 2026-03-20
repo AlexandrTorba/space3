@@ -8,11 +8,13 @@ export { ChessMatch, Lobby };
 export interface Env {
   CHESS_MATCH: DurableObjectNamespace;
   LOBBY: DurableObjectNamespace;
-  TURSO_URL: string;
-  TURSO_AUTH_TOKEN: string;
+  TURSO_URL?: string;
+  TURSO_AUTH_TOKEN?: string;
+  LIBSQL_URL?: string;
+  LIBSQL_AUTH_TOKEN?: string;
 }
 
-const CORS_HEADERS: Record<string, string> = {
+const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Upgrade", // Added Upgrade for WS check
@@ -20,12 +22,12 @@ const CORS_HEADERS: Record<string, string> = {
 
 function wrapResponse(response: Response): Response {
   if (response.status === 101) return response; // Don't touch WebSocket handshakes
-  
+
   const newHeaders = new Headers(response.headers);
   for (const [key, value] of Object.entries(CORS_HEADERS)) {
     newHeaders.set(key, value);
   }
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -64,14 +66,21 @@ export default {
     }
     // Archive History Endpoint
     else if (path.startsWith("/api/archive")) {
-      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
-        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { 
-          status: 500, 
-          headers: { "Content-Type": "application/json" } 
+      const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+      const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+
+      if (!dbUrl || !dbToken) {
+        console.error("CRITICAL: Database configuration is missing! Neither TURSO_URL/LIBSQL_URL nor flags are set.");
+        response = new Response(JSON.stringify({ 
+          error: "Database configuration missing", 
+          details: "Please set LIBSQL_URL and LIBSQL_AUTH_TOKEN in Cloudflare Dashboard" 
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
         });
       } else {
         try {
-          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+          const db = createDb(dbUrl, dbToken);
           const matchId = path.split("/")[3];
 
           if (matchId) {
@@ -93,17 +102,20 @@ export default {
     }
     // Live active matches Endpoint
     else if (path.startsWith("/api/live")) {
-      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
+      const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+      const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+
+      if (!dbUrl || !dbToken) {
         response = new Response(JSON.stringify({ error: "Database configuration missing" }), { status: 500, headers: { "Content-Type": "application/json" } });
       } else {
         try {
-          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+          const db = createDb(dbUrl, dbToken);
           const live = await db.select()
             .from(matches)
             .where(eq(matches.status, "active"))
             .orderBy(desc(matches.updatedAt))
             .limit(50);
-            
+
           const enriched = await Promise.all(live.map(async m => {
             try {
               const id = env.CHESS_MATCH.idFromName(m.id);
@@ -114,7 +126,7 @@ export default {
                 return { ...m, spectators: data.count || 0 };
               }
               return { ...m, spectators: 0 };
-            } catch(e) {
+            } catch (e) {
               return { ...m, spectators: 0 };
             }
           }));

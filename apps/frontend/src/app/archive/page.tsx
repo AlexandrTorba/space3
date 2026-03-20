@@ -14,7 +14,13 @@ export default function Archive() {
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-    const host = process.env.NEXT_PUBLIC_EDGE_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+    let host = rawUrl;
+    try {
+      if (rawUrl.includes("://")) {
+        host = new URL(rawUrl).host;
+      }
+    } catch (e) {}
     fetch(`${protocol}//${host}/api/archive`)
       .then(res => res.json())
       .then(data => {
