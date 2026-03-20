@@ -1,16 +1,8 @@
-//import { drizzle } from 'drizzle-orm/libsql';
-//import { createClient } from '@libsql/client/web';
-
 import { ChessMatch } from "./ChessMatch";
 import { Lobby } from "./Lobby";
+import { createDb, matches } from "@antigravity/database";
+import { eq, desc } from "drizzle-orm";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
- // "Access-Control-Allow-Origin": "https://space3-frontend.vercel.app",
- // "Access-Control-Allow-Headers": "Content-Type",
-}
 export { ChessMatch, Lobby };
 
 export interface Env {
@@ -18,23 +10,33 @@ export interface Env {
   LOBBY: DurableObjectNamespace;
   TURSO_URL: string;
   TURSO_AUTH_TOKEN: string;
+}
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 export default {
-  async fetch(request: Request, env: any) {
+  async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
     const path = url.pathname;
-    
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders, });  
-    }
 
-    try {
-      const client = createClient({
-        url: env.TURSO_URL,
-        authToken: env.TURSO_AUTH_TOKEN,
-      });
-      const db = drizzle(client);
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
 
     // Single global lobby for HyperBullet Matchmaking
     if (path.startsWith("/lobby")) {
@@ -55,75 +57,73 @@ export default {
 
     // Archive History Endpoint
     if (path.startsWith("/api/archive")) {
-      if (env.TURSO_URL && env.TURSO_AUTH_TOKEN) {
-        try {
-          const { createDb, matches } = await import("@antigravity/database");
-          const { eq, desc } = await import("drizzle-orm");
-          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
-          
-          const matchId = path.split("/")[3];
-
-          if (matchId) {
-              const singleMatch = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
-              return new Response(JSON.stringify(singleMatch[0] || null), {
-                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-              });
-          }
-
-          const history = await db.select()
-              .from(matches)
-              .where(eq(matches.status, "finished"))
-              .orderBy(desc(matches.createdAt))
-              .limit(50);
-              
-          return new Response(JSON.stringify(history), {
-             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
-        } catch (e) {
-          return new Response(JSON.stringify({ error: "Failed to fetch archive" }), { status: 500 });
-        }
+      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
+        return jsonResponse({ error: "Database configuration missing" }, 500);
       }
-      return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+
+      try {
+        const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+        const matchId = path.split("/")[3];
+
+        if (matchId) {
+          const singleMatch = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+          return jsonResponse(singleMatch[0] || null);
+        }
+
+        const history = await db.select()
+          .from(matches)
+          .where(eq(matches.status, "finished"))
+          .orderBy(desc(matches.createdAt))
+          .limit(50);
+          
+        return jsonResponse(history);
+      } catch (e) {
+        console.error("Archive fetch error:", e);
+        return jsonResponse({ error: "Failed to fetch archive" }, 500);
+      }
     }
 
     // Live active matches Endpoint
     if (path.startsWith("/api/live")) {
-      if (env.TURSO_URL && env.TURSO_AUTH_TOKEN) {
-        try {
-          const { createDb, matches } = await import("@antigravity/database");
-          const { eq, desc } = await import("drizzle-orm");
-          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
-          
-          const live = await db.select()
-              .from(matches)
-              .where(eq(matches.status, "active"))
-              .orderBy(desc(matches.updatedAt))
-              .limit(50);
-              
-          const enriched = await Promise.all(live.map(async m => {
-              try {
-                  const id = env.CHESS_MATCH.idFromName(m.id);
-                  const stub = env.CHESS_MATCH.get(id);
-                  const res = await stub.fetch(`http://localhost/match/${m.id}/spectators`);
-                  const data: any = await res.json();
-                  return { ...m, spectators: data.count || 0 };
-              } catch(e) {
-                  return { ...m, spectators: 0 };
-              }
-          }));
-              
-          return new Response(JSON.stringify(enriched), {
-             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-          });
-        } catch (e) {
-          return new Response(JSON.stringify({ error: "Failed to fetch live matches" }), { status: 500 });
-        }
+      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
+        return jsonResponse({ error: "Database configuration missing" }, 500);
       }
-      return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+
+      try {
+        const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+        
+        const live = await db.select()
+          .from(matches)
+          .where(eq(matches.status, "active"))
+          .orderBy(desc(matches.updatedAt))
+          .limit(50);
+          
+        const enriched = await Promise.all(live.map(async m => {
+          try {
+            const id = env.CHESS_MATCH.idFromName(m.id);
+            const stub = env.CHESS_MATCH.get(id);
+            const res = await stub.fetch(`http://internal/match/${m.id}/spectators`);
+            if (res.ok) {
+              const data: any = await res.json();
+              return { ...m, spectators: data.count || 0 };
+            }
+            return { ...m, spectators: 0 };
+          } catch(e) {
+            return { ...m, spectators: 0 };
+          }
+        }));
+            
+        return jsonResponse(enriched);
+      } catch (e) {
+        console.error("Live fetch error:", e);
+        return jsonResponse({ error: "Failed to fetch live matches" }, 500);
+      }
     }
 
     return new Response(
-      "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history."
+      "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history.",
+      { headers: { "Content-Type": "text/plain" } }
     );
   }
 };
+
