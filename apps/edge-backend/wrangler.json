@@ -17,11 +17,11 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["ChessMatch"]
+      "new_sqlite_classes": ["ChessMatch"]
     },
     {
       "tag": "v2",
-      "new_sqllite_classes": ["Lobby"]
+      "new_sqlite_classes": ["Lobby"]
     }
   ]
 }
