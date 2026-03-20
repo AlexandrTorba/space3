@@ -16,14 +16,14 @@ export interface Env {
 
 export default {
   async fetch(request: Request, env: Env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
+    
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: corsHeaders,
       });  
     }
+    const url = new URL(request.url);
+    const path = url.pathname;
 
     // Single global lobby for HyperBullet Matchmaking
     if (path.startsWith("/lobby")) {
