@@ -12,24 +12,29 @@ export interface Env {
   TURSO_AUTH_TOKEN: string;
 }
 
-const CORS_HEADERS = {
+const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Upgrade", // Added Upgrade for WS check
 };
 
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...CORS_HEADERS,
-      "Content-Type": "application/json",
-    },
+function wrapResponse(response: Response): Response {
+  if (response.status === 101) return response; // Don't touch WebSocket handshakes
+  
+  const newHeaders = new Headers(response.headers);
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    newHeaders.set(key, value);
+  }
+  
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
   });
 }
 
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -38,92 +43,96 @@ export default {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
+    let response: Response;
+
     // Single global lobby for HyperBullet Matchmaking
     if (path.startsWith("/lobby")) {
       const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
       const stub = env.LOBBY.get(id);
-      return stub.fetch(request);
+      response = await stub.fetch(request);
     }
-
     // Individual Match Routing
-    if (path.startsWith("/match/")) {
+    else if (path.startsWith("/match/")) {
       const matchId = path.split("/")[2];
       if (matchId) {
         const id = env.CHESS_MATCH.idFromName(matchId);
         const stub = env.CHESS_MATCH.get(id);
-        return stub.fetch(request);
+        response = await stub.fetch(request);
+      } else {
+        response = new Response("Match ID missing", { status: 400 });
       }
     }
-
     // Archive History Endpoint
-    if (path.startsWith("/api/archive")) {
+    else if (path.startsWith("/api/archive")) {
       if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
-        return jsonResponse({ error: "Database configuration missing" }, 500);
-      }
+        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { 
+          status: 500, 
+          headers: { "Content-Type": "application/json" } 
+        });
+      } else {
+        try {
+          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+          const matchId = path.split("/")[3];
 
-      try {
-        const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
-        const matchId = path.split("/")[3];
-
-        if (matchId) {
-          const singleMatch = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
-          return jsonResponse(singleMatch[0] || null);
-        }
-
-        const history = await db.select()
-          .from(matches)
-          .where(eq(matches.status, "finished"))
-          .orderBy(desc(matches.createdAt))
-          .limit(50);
-          
-        return jsonResponse(history);
-      } catch (e) {
-        console.error("Archive fetch error:", e);
-        return jsonResponse({ error: "Failed to fetch archive" }, 500);
-      }
-    }
-
-    // Live active matches Endpoint
-    if (path.startsWith("/api/live")) {
-      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
-        return jsonResponse({ error: "Database configuration missing" }, 500);
-      }
-
-      try {
-        const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
-        
-        const live = await db.select()
-          .from(matches)
-          .where(eq(matches.status, "active"))
-          .orderBy(desc(matches.updatedAt))
-          .limit(50);
-          
-        const enriched = await Promise.all(live.map(async m => {
-          try {
-            const id = env.CHESS_MATCH.idFromName(m.id);
-            const stub = env.CHESS_MATCH.get(id);
-            const res = await stub.fetch(`http://internal/match/${m.id}/spectators`);
-            if (res.ok) {
-              const data: any = await res.json();
-              return { ...m, spectators: data.count || 0 };
-            }
-            return { ...m, spectators: 0 };
-          } catch(e) {
-            return { ...m, spectators: 0 };
+          if (matchId) {
+            const singleMatch = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+            response = new Response(JSON.stringify(singleMatch[0] || null), { headers: { "Content-Type": "application/json" } });
+          } else {
+            const history = await db.select()
+              .from(matches)
+              .where(eq(matches.status, "finished"))
+              .orderBy(desc(matches.createdAt))
+              .limit(50);
+            response = new Response(JSON.stringify(history), { headers: { "Content-Type": "application/json" } });
           }
-        }));
-            
-        return jsonResponse(enriched);
-      } catch (e) {
-        console.error("Live fetch error:", e);
-        return jsonResponse({ error: "Failed to fetch live matches" }, 500);
+        } catch (e) {
+          console.error("Archive fetch error:", e);
+          response = new Response(JSON.stringify({ error: "Failed to fetch archive" }), { status: 500, headers: { "Content-Type": "application/json" } });
+        }
       }
     }
+    // Live active matches Endpoint
+    else if (path.startsWith("/api/live")) {
+      if (!env.TURSO_URL || !env.TURSO_AUTH_TOKEN) {
+        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { status: 500, headers: { "Content-Type": "application/json" } });
+      } else {
+        try {
+          const db = createDb(env.TURSO_URL, env.TURSO_AUTH_TOKEN);
+          const live = await db.select()
+            .from(matches)
+            .where(eq(matches.status, "active"))
+            .orderBy(desc(matches.updatedAt))
+            .limit(50);
+            
+          const enriched = await Promise.all(live.map(async m => {
+            try {
+              const id = env.CHESS_MATCH.idFromName(m.id);
+              const stub = env.CHESS_MATCH.get(id);
+              const res = await stub.fetch(`http://internal/match/${m.id}/spectators`);
+              if (res.ok) {
+                const data: any = await res.json();
+                return { ...m, spectators: data.count || 0 };
+              }
+              return { ...m, spectators: 0 };
+            } catch(e) {
+              return { ...m, spectators: 0 };
+            }
+          }));
+          response = new Response(JSON.stringify(enriched), { headers: { "Content-Type": "application/json" } });
+        } catch (e) {
+          console.error("Live fetch error:", e);
+          response = new Response(JSON.stringify({ error: "Failed to fetch live matches" }), { status: 500, headers: { "Content-Type": "application/json" } });
+        }
+      }
+    } else {
+      response = new Response(
+        "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history.",
+        { headers: { "Content-Type": "text/plain" } }
+      );
+    }
 
-    return new Response(
-      "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history.",
-      { headers: { "Content-Type": "text/plain" } }
-    );
+    return wrapResponse(response);
   }
 };
+
 
