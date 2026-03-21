@@ -231,16 +231,18 @@ export default function AnalysisView() {
   return (
     <div className="min-h-screen text-white flex flex-col p-4 md:p-8 relative transition-colors duration-700">
         
-        <header className="flex justify-between items-center mb-6 z-10 max-w-6xl w-full mx-auto">
+        <header className="flex justify-between items-center mb-6 z-10 max-w-6xl w-full mx-auto p-4 border border-[var(--surface-border)] bg-[var(--surface-glass)] backdrop-blur-md rounded-3xl shadow-xl">
             <div className="flex items-center gap-3">
-              <Activity className="w-8 h-8 text-blue-400" />
+              <div className="p-2 rounded-xl bg-[var(--brand-primary)]/10">
+                <Activity className="w-8 h-8 text-[var(--brand-primary)]" />
+              </div>
               <div>
-                   <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("analysis_board")}</h1>
-                  <span className="text-xs text-gray-500 font-mono tracking-widest block uppercase">Stockfish 16.1 (NNUE)</span>
+                   <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[var(--text-primary)] to-[var(--brand-primary)] uppercase tracking-tight">{t("analysis_board")}</h1>
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono tracking-[0.2em] block uppercase font-black opacity-60">Stockfish 16.1 (NNUE)</span>
               </div>
             </div>
             
-            <Link href="/" className="flex items-center gap-2 text-sm font-bold bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full transition-all text-slate-300 hover:text-white">
+            <Link href="/" className="flex items-center gap-2 text-sm font-bold bg-[var(--button-bg)] hover:bg-[var(--surface-border)] border border-[var(--surface-border)] px-5 py-2.5 rounded-full transition-all text-[var(--text-primary)] shadow-sm">
                 <ArrowLeft className="w-4 h-4"/> {t("back")}
             </Link>
         </header>
@@ -313,43 +315,45 @@ export default function AnalysisView() {
                 </div>
             </div>
 
-            <div className="bg-[#111827]/60 border border-white/10 rounded-3xl p-6 flex flex-col h-[650px] backdrop-blur-xl shadow-2xl">
+            <div className="bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-[2rem] p-6 flex flex-col h-[650px] backdrop-blur-xl shadow-2xl">
                 
-                <div className="flex flex-col gap-3 mb-4 pb-4 border-b border-white/10">
+                <div className="flex flex-col gap-4 mb-6 pb-6 border-b border-[var(--surface-border)]">
                     <button 
                         onClick={() => setIsBotActive(!isBotActive)}
-                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-black/30 ${
+                        className={`w-full flex items-center justify-center gap-3 py-4 rounded-[1.25rem] font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 ${
                             isBotActive 
-                                ? 'bg-amber-600/20 border border-amber-500/40 text-amber-400' 
-                                : 'bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30'
+                                ? 'bg-amber-600/20 border border-amber-500/40 text-amber-500' 
+                                : 'bg-[var(--brand-primary)] border border-white/10 text-white shadow-[var(--brand-primary)]/20'
                         }`}
                     >
                         <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
                          {botThinking ? t("bot_thinking") : `${t("play_with_bot")} (${settings.botElo})`}
                     </button>
                     
-                    <div className="flex flex-col gap-1 w-full">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("bot_play_as")} ({settings.botElo})</span>
-                        <div className="flex items-center gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
-                             <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-200 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : botColor === 'black' ? 'bg-slate-800 border border-slate-600' : 'bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-600'}`}></div>
+                    <div className="flex flex-col gap-2 w-full">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] pl-1 opacity-60 font-black">{t("bot_play_as")}</span>
+                        <div className="flex items-center gap-3 bg-[var(--button-bg)] p-3 rounded-xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)] transition-colors shadow-inner cursor-pointer">
+                             <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-100 shadow-sm border border-slate-300' : botColor === 'black' ? 'bg-slate-800 border border-slate-700' : 'bg-gradient-to-tr from-slate-950 to-slate-200 border border-slate-600'}`}></div>
                              <select 
                                 value={botColor} 
                                 onChange={e => setBotColor(e.target.value as any)} 
                                 disabled={isBotActive && botThinking}
-                                className="bg-transparent border-none text-white w-full font-bold focus:outline-none appearance-none cursor-pointer text-xs"
+                                className="bg-transparent border-none text-[var(--text-primary)] w-full font-bold focus:outline-none appearance-none cursor-pointer text-xs"
                              >
-                                <option value="black" className="bg-slate-900">⚫ {t("color_black")}</option>
-                                <option value="white" className="bg-slate-900">⚪ {t("color_white")}</option>
-                                <option value="random" className="bg-slate-900">🎲 {t("color_random")}</option>
+                                <option value="black" className="bg-[var(--settings-bg)]">⚫ {t("black") || "Black"}</option>
+                                <option value="white" className="bg-[var(--settings-bg)]">⚪ {t("white") || "White"}</option>
+                                <option value="random" className="bg-[var(--settings-bg)]">🎲 {t("color_random") || "Random"}</option>
                              </select>
                         </div>
                     </div>
                 </div>
 
-                <h3 className="font-bold border-b border-white/10 text-white/80 pb-3 mb-4">{t("move_annotation")}</h3>
+                <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--surface-border)] pb-3 mb-4 flex items-center gap-2">
+                   <Timer className="w-3 h-3" /> {t("move_annotation")}
+                </h3>
                 
-                <div className="flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-white/10 pr-2">
-                    <div className="flex flex-col gap-1">
+                <div className="flex-1 overflow-y-auto mb-6 scrollbar-thin scrollbar-thumb-[var(--surface-border)] pr-2">
+                    <div className="flex flex-col gap-1.5">
                         {Array.from({ length: Math.ceil(history.length / 2) }).map((_, i) => {
                             const wIndex = i * 2;
                             const bIndex = wIndex + 1;
@@ -357,38 +361,38 @@ export default function AnalysisView() {
                             const bMove = history[bIndex];
                             
                             return (
-                                <div key={i} className="grid grid-cols-7 text-sm font-mono rounded overflow-hidden">
-                                    <div className="col-span-1 flex items-center justify-center bg-slate-800/50 text-slate-500 py-1">{i + 1}.</div>
+                                <div key={i} className="grid grid-cols-7 text-xs font-mono rounded overflow-hidden border border-[var(--surface-border)]/50">
+                                    <div className="col-span-1 flex items-center justify-center bg-[var(--button-bg)] text-[var(--text-muted)] py-1.5 font-bold opacity-60">{i + 1}.</div>
                                     <div 
                                       onClick={() => goToMove(wIndex)} 
-                                      className={`col-span-3 px-3 py-1 cursor-pointer transition-colors ${currentMoveIndex === wIndex ? 'bg-blue-600 font-bold text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                                      className={`col-span-3 px-3 py-1.5 cursor-pointer transition-colors ${currentMoveIndex === wIndex ? 'bg-[var(--brand-primary)] font-black text-white' : 'hover:bg-[var(--button-bg)] text-[var(--text-secondary)]'}`}
                                     >
                                         {wMove}
                                     </div>
                                     <div 
                                       onClick={() => goToMove(bIndex)} 
-                                      className={`col-span-3 px-3 py-1 cursor-pointer transition-colors ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-600 font-bold text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                                      className={`col-span-3 px-3 py-1.5 cursor-pointer transition-colors ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-[var(--brand-primary)] font-black text-white' : 'hover:bg-[var(--button-bg)] text-[var(--text-secondary)]'}`}
                                     >
                                         {bMove || ""}
                                     </div>
                                 </div>
                             );
                         })}
-                        {history.length === 0 && <div className="text-slate-500 text-center mt-10">{t("no_moves")}</div>}
+                        {history.length === 0 && <div className="text-[var(--text-muted)] text-center mt-10 font-bold uppercase tracking-widest text-[10px] opacity-40">{t("no_moves")}</div>}
                     </div>
                 </div>
                 
-                <div className="mt-auto border-t border-white/10 pt-4 flex flex-col gap-2">
-                    <p className="text-xs text-slate-400 font-bold ml-1 uppercase tracking-widest flex justify-between">
-                       <span>PGN Import</span>
-                    </p>
+                <div className="mt-auto border-t border-[var(--surface-border)] pt-4 flex flex-col gap-3">
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Upload className="w-3 h-3" /> PGN Import
+                    </label>
                     <textarea 
                        value={pastePgn} 
                        onChange={e => setPastePgn(e.target.value)}
                        placeholder={t("paste_pgn") as string} 
-                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-mono text-slate-300 h-24 focus:outline-none focus:border-blue-500 resize-none flex-shrink-0"
+                       className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-4 text-xs font-mono text-[var(--text-primary)] h-28 focus:outline-none focus:border-[var(--brand-primary)] resize-none flex-shrink-0"
                     />
-                    <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50">
+                    <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95">
                         <Upload className="w-4 h-4"/> {t("load_pgn")}
                     </button>
                 </div>
