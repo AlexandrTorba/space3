@@ -20,6 +20,7 @@ export interface ChessSettings {
   showCoordinates: boolean;
   highlightMoves: boolean;
   enablePremove: boolean;
+  botElo: number;
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
@@ -42,6 +43,7 @@ export function useSettings() {
     showCoordinates: true,
     highlightMoves: true,
     enablePremove: false,
+    botElo: 1100,
   });
 
   useEffect(() => {
