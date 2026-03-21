@@ -230,6 +230,19 @@ export default function PlayArena() {
                             (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
                             
         if (isPromotion) {
+            if (settings.alwaysPromoteToQueen) {
+                const move = gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                updateGameState();
+                logMessage(`Played: ${move.san}`);
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    const uci = sourceSquare + targetSquare + 'q';
+                    const update = create(MatchUpdateSchema, {
+                        event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
+                    });
+                    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+                }
+                return true;
+            }
             setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
             return true;
         }

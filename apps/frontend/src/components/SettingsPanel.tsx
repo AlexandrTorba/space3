@@ -172,6 +172,18 @@ export default function SettingsPanel() {
                              </button>
                          </div>
 
+                         <div className="flex items-center justify-between">
+                             <span className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
+                                 <Layers className="w-3.5 h-3.5 text-[var(--text-muted)]" /> {t("always_promote_to_queen") || "Auto Queen"}
+                             </span>
+                             <button 
+                               onClick={() => updateSettings({ alwaysPromoteToQueen: !settings.alwaysPromoteToQueen })}
+                               className={`w-11 h-6 rounded-full transition-colors relative ${settings.alwaysPromoteToQueen ? 'bg-emerald-500' : 'bg-[var(--button-bg)]'}`}
+                             >
+                                 <motion.div animate={{ x: settings.alwaysPromoteToQueen ? 24 : 4 }} className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-sm" />
+                             </button>
+                         </div>
+
                          <div className="flex flex-col gap-3 pt-2">
                              <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                                  <Cpu className="w-3.5 h-3.5 text-[var(--text-muted)]" /> {t("bot_elo") || "Bot Strength (ELO)"}

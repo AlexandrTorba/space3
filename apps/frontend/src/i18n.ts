@@ -87,7 +87,8 @@ export const translations = {
       play_with_bot: "Play with Bot",
       bot_thinking: "Bot thinking...",
       bot_play_as: "Bot plays as",
-      bot_elo: "Bot Strength (ELO)",
+       bot_elo: "Bot Strength (ELO)",
+      always_promote_to_queen: "Always promote to Queen",
       white: "White",
       black: "Black"
     },
@@ -175,7 +176,8 @@ export const translations = {
       play_with_bot: "Гра з ботом",
       bot_thinking: "Бот думає...",
       bot_play_as: "Боту грати за",
-      bot_elo: "Сила бота (ELO)",
+       bot_elo: "Сила бота (ELO)",
+      always_promote_to_queen: "Автоматичне перетворення на Ферзя",
       white: "Білі",
       black: "Чорні"
     },
@@ -263,7 +265,8 @@ export const translations = {
       play_with_bot: "Jugar con Bot",
       bot_thinking: "Bot pensando...",
       bot_play_as: "Bot juega como",
-      bot_elo: "Fuerza del Bot (ELO)",
+       bot_elo: "Fuerza del Bot (ELO)",
+      always_promote_to_queen: "Siempre coronar dama",
       white: "Blancas",
       black: "Negras"
     },
@@ -351,7 +354,8 @@ export const translations = {
       play_with_bot: "Botla Oyna",
       bot_thinking: "Bot düşünüyor...",
       bot_play_as: "Botun rengi",
-      bot_elo: "Bot Gücü (ELO)",
+       bot_elo: "Bot Gücü (ELO)",
+      always_promote_to_queen: "Her zaman vezire terfi et",
       white: "Beyaz",
       black: "Siyah"
     }

@@ -175,6 +175,11 @@ export default function AnalysisView() {
                             (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
                             
         if (isPromotion) {
+            if (settings.alwaysPromoteToQueen) {
+                gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                updateGameState();
+                return true;
+            }
             setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
             return true;
         }
