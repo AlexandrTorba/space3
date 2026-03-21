@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/chess.proto.
  */
 export const file_v1_chess: GenFile = /*@__PURE__*/
-  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSI5CgRDaGF0EhAKCG1hdGNoX2lkGAEgASgJEg4KBnNlbmRlchgCIAEoCRIPCgdtZXNzYWdlGAMgASgJIqgBCgtNYXRjaFVwZGF0ZRIeCgRtb3ZlGAEgASgLMg4uY2hlc3MudjEuTW92ZUgAEicKBnN0YXR1cxgCIAEoCzIVLmNoZXNzLnYxLk1hdGNoU3RhdHVzSAASJwoGYWN0aW9uGAMgASgLMhUuY2hlc3MudjEuTWF0Y2hBY3Rpb25IABIeCgRjaGF0GAQgASgLMg4uY2hlc3MudjEuQ2hhdEgAQgcKBWV2ZW50YgZwcm90bzM");
+  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSKIAQoLTWF0Y2hVcGRhdGUSHgoEbW92ZRgBIAEoCzIOLmNoZXNzLnYxLk1vdmVIABInCgZzdGF0dXMYAiABKAsyFS5jaGVzcy52MS5NYXRjaFN0YXR1c0gAEicKBmFjdGlvbhgDIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSABCBwoFZXZlbnRiBnByb3RvMw");
 
 /**
  * @generated from message chess.v1.Move
@@ -140,33 +140,6 @@ export const MatchActionSchema: GenMessage<MatchAction> = /*@__PURE__*/
   messageDesc(file_v1_chess, 2);
 
 /**
- * @generated from message chess.v1.Chat
- */
-export type Chat = Message<"chess.v1.Chat"> & {
-  /**
-   * @generated from field: string match_id = 1;
-   */
-  matchId: string;
-
-  /**
-   * @generated from field: string sender = 2;
-   */
-  sender: string;
-
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
-
-/**
- * Describes the message chess.v1.Chat.
- * Use `create(ChatSchema)` to create a new message.
- */
-export const ChatSchema: GenMessage<Chat> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 3);
-
-/**
  * @generated from message chess.v1.MatchUpdate
  */
 export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
@@ -191,12 +164,6 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
      */
     value: MatchAction;
     case: "action";
-  } | {
-    /**
-     * @generated from field: chess.v1.Chat chat = 4;
-     */
-    value: Chat;
-    case: "chat";
   } | { case: undefined; value?: undefined };
 };
 
@@ -205,5 +172,5 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
  * Use `create(MatchUpdateSchema)` to create a new message.
  */
 export const MatchUpdateSchema: GenMessage<MatchUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 4);
+  messageDesc(file_v1_chess, 3);
 

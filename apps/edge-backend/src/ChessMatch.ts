@@ -251,11 +251,6 @@ export class ChessMatch {
             }
           }
         }
-        // 3. Process Chat
-        if (matchUpdate.event.case === "chat") {
-            this.sessions.forEach(s => s.send(event.data));
-            return;
-        }
       } catch (err) {
         console.error("Failed to decode Protobuf message:", err);
       }

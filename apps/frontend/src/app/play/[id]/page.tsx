@@ -18,8 +18,6 @@ import {
   Swords, 
   Flag, 
   Zap, 
-  MessageSquare, 
-  Send,
   AlertCircle,
   Trophy,
   Activity as ActivityIcon,
@@ -55,8 +53,6 @@ export default function PlayArena() {
   const [gameResult, setGameResult] = useState<string | null>(null);
   const [gameReason, setGameReason] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
-  const [chat, setChat] = useState<{sender: string, text: string, time: string}[]>([]);
-  const [message, setMessage] = useState("");
   const [spectatorCount, setSpectatorCount] = useState(0);
   const [rematchState, setRematchState] = useState<"idle" | "offered" | "waiting">("idle");
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
@@ -70,7 +66,7 @@ export default function PlayArena() {
     if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [logs, chat]);
+  }, [logs]);
 
   const logMessage = (msg: string) => {
       setLogs(prev => [...prev.slice(-49), msg]);
@@ -136,10 +132,6 @@ export default function PlayArena() {
                   gameRef.current.move(move.uci);
                   updateGameState();
               } catch(e) {}
-          }
-          else if (update.event.case === "chat") {
-             const c = update.event.value;
-             setChat(prev => [...prev, { sender: c.sender, text: c.message, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
           }
           else if (update.event.case === "action") {
              const action = update.event.value;
@@ -303,16 +295,7 @@ export default function PlayArena() {
       setRematchState("waiting");
   }
 
-  const handleSendMessage = () => {
-      if (!message.trim()) return;
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          const update = create(MatchUpdateSchema, {
-              event: { case: "chat", value: { matchId: id, sender: color === "white" ? wName : bName, message: message } }
-          });
-          wsRef.current.send(toBinary(MatchUpdateSchema, update));
-          setMessage("");
-      }
-  };
+
 
   const formatTime = (ms: number) => {
       const s = Math.ceil(ms / 1000);
@@ -589,43 +572,7 @@ export default function PlayArena() {
                     </div>
                 </div>
 
-                {/* Chat Panel */}
-                <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[350px] shadow-2xl backdrop-blur-xl">
-                    <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
-                           <MessageSquare className="w-3 h-3"/> {t("chat")}
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
-                        {chat.map((msg, i) => (
-                            <div key={i} className={`flex flex-col ${msg.sender === (color === 'white' ? wName : bName) ? 'items-end' : 'items-start'}`}>
-                                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === (color === 'white' ? wName : bName) ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
-                                    {msg.text}
-                                </div>
-                                <span className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">{msg.sender} • {msg.time}</span>
-                            </div>
-                        ))}
-                        {chat.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center opacity-20 gap-2">
-                                <MessageSquare className="w-10 h-10" />
-                                <p className="text-xs font-bold uppercase tracking-widest">{t("no_messages")}</p>
-                            </div>
-                        )}
-                    </div>
-                    <div className="p-3 bg-white/5 border-t border-white/5 flex gap-2">
-                        <input 
-                            type="text" 
-                            value={message}
-                            onChange={e => setMessage(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Send message..."
-                            className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                        />
-                        <button onClick={handleSendMessage} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-all shadow-lg active:scale-95">
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
+
 
                 <div className="bg-blue-900/5 border border-blue-500/10 rounded-2xl p-4 flex flex-col gap-2">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500/60">Match Info</h4>
