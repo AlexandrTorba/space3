@@ -2,111 +2,93 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { ShieldAlert, Zap, Activity, CheckCircle2, Flag, Handshake, SkipBack, ChevronLeft, ChevronRight, SkipForward, Server, Archive, Swords, Database, Copy } from "lucide-react";
-import { MatchUpdateSchema } from "@antigravity/contracts";
-import { fromBinary, toBinary, create } from "@bufbuild/protobuf";
-import { Chess } from "chess.js";
+import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowLeft, 
+  Activity, 
+  ChevronLeft, 
+  ChevronRight, 
+  SkipBack, 
+  SkipForward, 
+  Archive, 
+  Copy, 
+  Timer, 
+  User, 
+  Swords, 
+  Flag, 
+  Zap, 
+  MessageSquare, 
+  Send,
+  AlertCircle,
+  Trophy,
+  Activity as ActivityIcon,
+  CheckCircle2
+} from "lucide-react";
+import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
+import { MatchUpdateSchema } from "@/proto/match_pb";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
-export default function Play() {
-  const router = useRouter();
+export default function PlayArena() {
   const { id } = useParams() as { id: string };
   const searchParams = useSearchParams();
   const color = searchParams.get("color") || "white";
   const tcMode = searchParams.get("tc") || "3";
-  const wName = decodeURIComponent(searchParams.get("w") || "White");
-  const bName = decodeURIComponent(searchParams.get("b") || "Black");
+  const wName = searchParams.get("w") || "White";
+  const bName = searchParams.get("b") || "Black";
+  const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
-  
-  const wsRef = useRef<WebSocket | null>(null);
+
   const isSpectator = color === "spectator";
-  const [spectatorCount, setSpectatorCount] = useState(0);
+
+  const [fen, setFen] = useState("start");
   const [status, setStatus] = useState("Connecting...");
-  const [logs, setLogs] = useState<{ id: number; text: string; time: string }[]>([]);
-  const logId = useRef(0);
-  
-  const [rematchState, setRematchState] = useState<"none" | "offered" | "waiting">("none");
-
-  const [drawOfferedBy, setDrawOfferedBy] = useState<"w" | "b" | null>(null);
-  
-  const gameRef = useRef(new Chess());
-  const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  const [clocks, setClocks] = useState({ white: -1, black: -1 });
-
-  const [preMove, setPreMove] = useState<{from: string; to: string; promotion?: string} | null>(null);
-  const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
-
-  const formatTime = (ms: number) => {
-      if (ms < 0) return "∞";
-      const totalSeconds = Math.ceil(ms / 1000);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-  
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-
+  const [clocks, setClocks] = useState({ white: 0, black: 0 });
+  const [turn, setTurn] = useState<'w' | 'b'>('w');
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
   const [gameReason, setGameReason] = useState<string | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [chat, setChat] = useState<{sender: string, text: string, time: string}[]>([]);
+  const [message, setMessage] = useState("");
+  const [spectatorCount, setSpectatorCount] = useState(0);
+  const [rematchState, setRematchState] = useState<"idle" | "offered" | "waiting">("idle");
+  const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"moves" | "logs">("moves");
+  const gameRef = useRef(new Chess());
+  const wsRef = useRef<WebSocket | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [evaluation, setEvaluation] = useState<string>("0.0");
-  const sfWorker = useRef<Worker | null>(null);
+  useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs, chat]);
 
-  const logMessage = (text: string) => {
-    logId.current++;
-    setLogs((prev) => [{ id: logId.current, text, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 50));
+  const logMessage = (msg: string) => {
+      setLogs(prev => [...prev.slice(-49), msg]);
   };
 
   const updateGameState = () => {
-     setFen(gameRef.current.fen());
-     const newHistory = gameRef.current.history();
-     setHistory(newHistory);
-     setCurrentMoveIndex(newHistory.length - 1);
+      setFen(gameRef.current.fen());
+      const newHistory = gameRef.current.history();
+      setHistory(newHistory);
+      setCurrentMoveIndex(newHistory.length - 1);
+      setTurn(gameRef.current.turn());
+      
+      if (gameRef.current.isGameOver()) {
+          setGameOver(true);
+          if (gameRef.current.isCheckmate()) setGameResult(turn === 'w' ? "Black Wins" : "White Wins");
+          else if (gameRef.current.isDraw()) setGameResult("Draw");
+      }
   };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-       sfWorker.current = new Worker("/stockfish.js");
-       sfWorker.current.onmessage = (e) => {
-          const line = e.data;
-          if (line.includes("score cp ")) {
-             const match = line.match(/score cp (-?\d+)/);
-             if (match) {
-                let score = parseInt(match[1], 10) / 100;
-                if (gameRef.current.turn() === 'b') score = -score;
-                setEvaluation(score > 0 ? `+${score.toFixed(1)}` : score.toFixed(1));
-             }
-          }
-          if (line.includes("score mate ")) {
-             const match = line.match(/score mate (-?\d+)/);
-             if (match) {
-                let mate = parseInt(match[1], 10);
-                if (gameRef.current.turn() === 'b') mate = -mate;
-                setEvaluation(`M${mate}`);
-             }
-          }
-       };
-       sfWorker.current.postMessage("uci");
-    }
-    return () => sfWorker.current?.terminate();
-  }, []);
-
-  useEffect(() => {
-     if (sfWorker.current) {
-        sfWorker.current.postMessage("stop");
-        sfWorker.current.postMessage(`position fen ${fen}`);
-        sfWorker.current.postMessage("go depth 14");
-     }
-  }, [fen]);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -117,98 +99,54 @@ export default function Play() {
         host = new URL(rawUrl).host;
       }
     } catch (e) {}
-    const wParam = encodeURIComponent(wName);
-    const bParam = encodeURIComponent(bName);
-    const ws = new WebSocket(`${protocol}//${host}/match/${id}?tc=${encodeURIComponent(tcMode)}&w=${wParam}&b=${bParam}`);
-    
+
+    const ws = new WebSocket(`${protocol}//${host}/match/${id}?color=${color}`);
     wsRef.current = ws;
+    ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
-      setStatus(`Connected (${color})`);
-      logMessage(`Joined match ${id} as ${color}`);
+      setStatus("Connected");
+      logMessage("Successfully connected to game server.");
     };
 
     ws.onmessage = async (event) => {
+      const data = new Uint8Array(event.data);
       try {
-        const buffer = event.data instanceof Blob 
-           ? new Uint8Array(await event.data.arrayBuffer()) 
-           : new Uint8Array(event.data);
-           
-        const matchUpdate = fromBinary(MatchUpdateSchema, buffer);
-        
-        if (matchUpdate.event.case === "move") {
-           const uci = matchUpdate.event.value.uci;
-           logMessage(`Incoming Move: ${uci}`);
-           
-           try {
-              const from = uci.substring(0, 2);
-              const to = uci.substring(2, 4);
-              const promotion = uci.length > 4 ? uci[4] : undefined;
-              
-              // Only apply if we are synced to the latest move
-              if (currentMoveIndex === history.length - 1) {
-                  gameRef.current.move({ from, to, promotion });
-                  updateGameState();
-              } else {
-                  // We are reviewing history, we must skip to end before applying logic implicitly
-                  // But safely applying it directly to engine
-                  gameRef.current.move({ from, to, promotion });
-                  setHistory(gameRef.current.history());
-              }
-
-              // Clear pre-move if it was played or becomes invalid
-              setPreMove(prev => {
-                  if (!prev) return null;
-                  // Wait a bit to check if it's still our turn and if pre-move is valid
-                  return prev;
+          const update = fromBinary(MatchUpdateSchema, data);
+          if (update.event.case === "gameState") {
+              const state = update.event.value;
+              gameRef.current.load(state.fen);
+              updateGameState();
+              setClocks({
+                  white: Number(state.whiteTime),
+                  black: Number(state.blackTime)
               });
-           } catch(e) {}
-        }
-        else if (matchUpdate.event.case === "status") {
-           const info = matchUpdate.event.value;
-           
-           if (!info.isActive) {
-               setGameOver(true);
-               setGameResult(info.result);
-               setGameReason(info.reason);
-               logMessage(`Game Over! ${info.result} (${info.reason})`);
-           }
-           
-           if (info.whiteTimeMs !== undefined && info.blackTimeMs !== undefined) {
-               setClocks({ white: info.whiteTimeMs, black: info.blackTimeMs });
-           }
-           
-           if (info.spectators !== undefined) {
-               setSpectatorCount(info.spectators);
-           }
-
-           // Sync FEN last as it controls ticking updates!
-           if (info.fen && info.fen !== gameRef.current.fen()) {
-               gameRef.current.load(info.fen);
-               updateGameState();
-           }
-        }
-        else if (matchUpdate.event.case === "action") {
-           const action = matchUpdate.event.value;
-           
-           if (action.actionType === "rematch") {
-               setRematchState("offered");
-           }
-           else if (action.actionType === "rematch_accept") {
-               const newMatchId = action.matchId;
-               const swpColor = color === 'white' ? 'black' : 'white';
-               logMessage(`Rematch accepted! Diverting to ${newMatchId.substring(0,6)}...`);
-               setTimeout(() => {
-                   router.push(`/play/${newMatchId}?color=${swpColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`);
-               }, 300);
-           }
-           else if (action.actionType === "draw_offer") {
-              setDrawOfferedBy(action.playerColor as "w" | "b");
-              logMessage(`${action.playerColor === 'w' ? 'White' : 'Black'} offered a draw.`);
-           }
-        }
+              setSpectatorCount(state.spectators || 0);
+          }
+          else if (update.event.case === "move") {
+              const move = update.event.value;
+              try {
+                  gameRef.current.move(move.uci);
+                  updateGameState();
+              } catch(e) {}
+          }
+          else if (update.event.case === "gameOver") {
+              const res = update.event.value;
+              setGameOver(true);
+              setGameResult(res.result);
+              setGameReason(res.reason);
+              logMessage(`Game Over: ${res.result} (${res.reason})`);
+          }
+          else if (update.event.case === "chat") {
+             const c = update.event.value;
+             setChat(prev => [...prev, { sender: c.sender, text: c.message, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+          }
+          else if (update.event.case === "rematchOffered") {
+             setRematchState("offered");
+             logMessage("Opponent offered a rematch!");
+          }
       } catch (err) {
-         console.error(err);
+          console.error(err);
       }
     };
 
@@ -231,12 +169,14 @@ export default function Play() {
          
          // Check if promotion is needed for pre-move
          const board = gameRef.current.board();
-         const piece = board[parseInt(from[1]) === 1 ? 7 - (parseInt(from[1])-1) : 8 - parseInt(from[1])]?.[from.charCodeAt(0) - 97];
-         // Simple check: is it a pawn moving to last rank?
-         const isPawn = gameRef.current.get(from as any)?.type === 'p';
-         const isPromotion = isPawn && (to[1] === '8' || to[1] === '1');
+         const targetRank = parseInt(to[1]);
+         const sourceRank = parseInt(from[1]);
+         const fileIdx = from.charCodeAt(0) - 97;
+         const piece = board[8 - sourceRank]?.[fileIdx];
          
-         if (isPromotion) moveData.promotion = "q"; // Default for pre-move for now, or we can improve later
+         if (piece?.type === 'p' && (targetRank === 8 || targetRank === 1)) {
+             moveData.promotion = 'q'; // Auto-queen for pre-moves
+         }
 
          try {
              const move = gameRef.current.move(moveData);
@@ -343,8 +283,25 @@ export default function Play() {
   const handleRematch = () => {
       sendAction("rematch");
       setRematchState("waiting");
+  }
+
+  const handleSendMessage = () => {
+      if (!message.trim()) return;
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          const update = create(MatchUpdateSchema, {
+              event: { case: "chat", value: { matchId: id, sender: color === "white" ? wName : bName, message: message } }
+          });
+          wsRef.current.send(toBinary(MatchUpdateSchema, update));
+          setMessage("");
+      }
   };
-  
+
+  const formatTime = (ms: number) => {
+      const s = Math.ceil(ms / 1000);
+      const m = Math.floor(s / 60);
+      return `${m}:${(s % 60).toString().padStart(2, '0')}`;
+  };
+
   const handleDownloadPGN = () => {
       gameRef.current.header(
           "White", color === 'white' ? wName : bName, 
@@ -388,9 +345,9 @@ export default function Play() {
   };
 
 
-  const pieces = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+  const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const customPieces = Object.fromEntries(
-    pieces.map(p => [p, ({ squareWidth }: any) => (
+    piecesLabels.map(p => [p, ({ squareWidth }: any) => (
       <img src={getPieceUrl(p)} style={{ width: squareWidth, height: squareWidth }} alt={p} />
     )])
   );
@@ -421,7 +378,7 @@ export default function Play() {
                )}
                <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono text-xs md:text-sm border backdrop-blur-md
                    ${status.includes('Connected') || status.includes(t("status_connected")) ? 'bg-emerald-900/10 text-emerald-400 border-emerald-500/20' : 'bg-red-900/10 text-red-400 border-red-500/20'}`}>
-                   <Activity className="w-4 h-4" />
+                   <ActivityIcon className="w-4 h-4" />
                    <span>{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
                </div>
             </div>
@@ -445,58 +402,44 @@ export default function Play() {
                                    <p className="text-emerald-400/80 font-mono text-xs uppercase tracking-widest">{gameReason}</p>
                                </div>
                             </div>
-
-                            {/* Engine Request Area */}
-                            <div className="hidden sm:block">
-                                <span className="bg-emerald-900/20 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold">
-                                    {t("match_synced")}
-                                </span>
-                            </div>
                         </motion.div>
                    )}
                 </AnimatePresence>
 
-                {/* Top Player (Opponent) Info Banner */}
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 px-4 py-2 mt-2 lg:mt-0 rounded-t-2xl">
+                {/* Opponent Info Banner */}
+                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-4 py-2 rounded-t-2xl">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400">
                            {color === 'white' ? bName[0]?.toUpperCase() : wName[0]?.toUpperCase()}
                         </div>
                         <span className="font-bold text-slate-300">
                            {color === 'white' ? bName : wName}
                         </span>
-                        {/* Status Eval indicator */}
-                        <span className={`text-xs ml-4 font-mono font-bold tracking-wider ${evaluation.startsWith('+') || evaluation.startsWith('M') && !evaluation.startsWith('M-') ? 'text-white' : 'text-slate-500'}`}>
-                            EVAL: {evaluation}
-                        </span>
                     </div>
-                    <div className={`font-mono font-black text-2xl tracking-tighter ${
+                    <div className={`font-mono font-black text-3xl tracking-tighter ${
                         (color === 'white' ? clocks.black : clocks.white) < 10000 && (color === 'white' ? clocks.black : clocks.white) >= 0
                             ? 'text-red-500 animate-pulse' 
-                            : 'text-slate-300'
+                            : 'text-white'
                     }`}>
                         {formatTime(color === 'white' ? clocks.black : clocks.white)}
                     </div>
                 </div>
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.15)] border-4 border-slate-800 bg-black/50 p-1 lg:p-2 backdrop-blur-xl relative">
+                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden">
                     <Chessboard 
                         options={{
                             position: fen, 
                             onPieceDrop: onDrop as any,
-                            boardOrientation: color as "white" | "black",
+                            boardOrientation: isSpectator ? "white" : color as any,
                             darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].dark },
                             lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].light },
-                            dropSquareStyle: { boxShadow: "inset 0 0 1px 6px rgba(96, 165, 250, 0.5)" },
-                            animationDurationInMs: 150,
-                            allowDragging: !gameOver && currentMoveIndex === history.length - 1,
-                            onSquareClick: () => setPreMove(null),
-                            arrows: preMove ? [{ startSquare: preMove.from, endSquare: preMove.to, color: 'red' }] : [],
-                            pieces: customPieces as any,
-                            showNotation: settings.showCoordinates
+                            animationDurationInMs: 200,
+                            allowDragging: !isSpectator,
+                            showNotation: settings.showCoordinates,
+                            pieces: customPieces as any
                         }}
                     />
-                    
+
                     {/* Promotion Selection Dialog */}
                     <AnimatePresence>
                         {pendingPromotion && (
@@ -504,30 +447,26 @@ export default function Play() {
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                 className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8"
                             >
-                                <div className="bg-slate-900 border border-white/10 p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-6">
-                                    <h3 className="text-xl font-bold text-white tracking-widest">{t("promotion_title") || "PROMOTE PIECE"}</h3>
+                                <div className="bg-[var(--settings-bg)] border border-[var(--surface-border)] p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-8">
+                                    <h3 className="text-xl font-black text-[var(--text-primary)] tracking-widest uppercase">{t("promotion_title") || "PROMOTE PIECE"}</h3>
                                     <div className="flex gap-4">
                                         {['q', 'r', 'b', 'n'].map((p) => (
                                             <button 
                                                 key={p}
                                                 onClick={() => completePromotion(p)}
-                                                className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                                                className="w-20 h-20 bg-[var(--button-bg)] hover:bg-[var(--brand-primary)]/10 border border-[var(--surface-border)] rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group shadow-lg"
                                             >
                                                 <img 
-                                                    src={`/pieces/${pendingPromotion.color}${p.toUpperCase()}.png`} 
+                                                    src={getPieceUrl(`${pendingPromotion.color}${p.toUpperCase()}`)} 
                                                     alt={p} 
-                                                    className="w-12 h-12 object-contain group-hover:drop-shadow-[0_0_8px_white]"
-                                                    onError={(e) => {
-                                                        // Fallback if images don't exist
-                                                        (e.target as any).src = `https://chessboardjs.com/img/chesspieces/wikipedia/${pendingPromotion.color}${p.toUpperCase()}.png`;
-                                                    }}
+                                                    className="w-14 h-14 object-contain group-hover:drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]"
                                                 />
                                             </button>
                                         ) as any)}
                                     </div>
                                     <button 
                                         onClick={() => setPendingPromotion(null)}
-                                        className="text-slate-500 hover:text-white text-sm font-bold mt-2"
+                                        className="text-[var(--text-muted)] hover:text-[var(--brand-primary)] text-sm font-bold mt-2 uppercase tracking-widest transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -565,7 +504,6 @@ export default function Play() {
                 
                 {/* Board Controls */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto w-full">
-                    {/* Only show playback controls actively easily if game over OR user wants to scroll */}
                     <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/80 px-2 py-1 rounded-full flex-shrink-0">
                         <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-4 h-4"/></button>
                         <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-5 h-5"/></button>
@@ -597,76 +535,87 @@ export default function Play() {
                             <button onClick={handleCopyPGN} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-full border border-slate-700 text-sm font-bold transition-all shadow-lg shadow-black/30 whitespace-nowrap">
                                 <Copy className="w-4 h-4" /> {t("copy_pgn")}
                             </button>
-                            
-                            <Link href="/" className="flex items-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 px-5 py-2.5 rounded-full border border-emerald-500/30 text-sm font-bold transition-all shadow-lg shadow-emerald-500/10 whitespace-nowrap">
-                                <Zap className="w-4 h-4" /> {t("new_match")}
-                            </Link>
                         </div>
                     )}
-
+                    
                     {!gameOver && !isSpectator && (
-                        <div className="flex items-center justify-end gap-2 w-full flex-wrap">
-                            <button onClick={() => sendAction("resign")} className="flex items-center justify-center gap-2 bg-red-900/50 hover:bg-red-800/80 text-red-300 px-4 py-2 flex-1 sm:flex-none rounded-full border border-red-500/20 text-sm font-semibold transition-all">
-                                <Flag className="w-4 h-4" /> {t("resign")}
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => sendAction("draw_offer")} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-full border border-slate-700 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
+                                ½ Draw
                             </button>
-                            <button onClick={() => sendAction("draw_offer")} disabled={drawOfferedBy === color[0]} className="flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-700/80 disabled:opacity-50 text-slate-300 px-4 py-2 flex-1 sm:flex-none rounded-full border border-slate-600/50 text-sm font-semibold transition-all">
-                                <Handshake className="w-4 h-4" /> {t("offer_draw")}
+                            <button onClick={() => sendAction("resign")} className="flex items-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 px-4 py-2.5 rounded-full border border-red-500/20 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
+                                <Flag className="w-4 h-4" /> Resign
                             </button>
-                            {drawOfferedBy && drawOfferedBy !== color[0] && (
-                                <button onClick={() => sendAction("draw_accept")} className="bg-blue-900/50 hover:bg-blue-800/80 text-blue-300 px-4 py-2 flex-1 sm:flex-none rounded-full border border-blue-500/20 text-sm font-semibold transition-all animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                                    {t("accept_draw")}
-                                </button>
-                            )}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Sidebar (Moves & Logs Tabs) */}
-            <div className="bg-[#111827]/60 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px] backdrop-blur-xl shadow-2xl">
+            {/* Sidebar with Stats & Chat */}
+            <div className="flex flex-col gap-6">
                 
-                <div className="flex gap-4 border-b border-white/10 mb-4 pb-2">
-                    <button onClick={() => setActiveTab('moves')} className={`pb-2 text-sm font-bold uppercase tracking-widest ${activeTab === 'moves' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500 hover:text-slate-400'}`}>{t("moves")}</button>
-                    <button onClick={() => setActiveTab('logs')} className={`pb-2 text-sm font-bold uppercase tracking-widest ${activeTab === 'logs' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500 hover:text-slate-400'}`}>{t("net_ops")}</button>
-                </div>
-
-                {activeTab === 'moves' && (
-                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
-                        <div className="flex flex-col gap-1">
-                            {Array.from({ length: Math.ceil(history.length / 2) }).map((_, i) => {
-                                const wIndex = i * 2;
-                                const bIndex = wIndex + 1;
-                                const wMove = history[wIndex];
-                                const bMove = history[bIndex];
-                                
-                                return (
-                                    <div key={i} className="grid grid-cols-7 text-sm font-mono rounded overflow-hidden">
-                                        <div className="col-span-1 flex items-center justify-center bg-slate-800/50 text-slate-500 py-1">{i + 1}.</div>
-                                        <div onClick={() => goToMove(wIndex)} className={`col-span-3 px-3 py-1 cursor-pointer transition-colors ${currentMoveIndex === wIndex ? 'bg-blue-600 font-bold text-white' : 'hover:bg-slate-800 text-slate-300'}`}>
-                                            {wMove}
-                                        </div>
-                                        <div onClick={() => goToMove(bIndex)} className={`col-span-3 px-3 py-1 cursor-pointer transition-colors ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-600 font-bold text-white' : 'hover:bg-slate-800 text-slate-300'}`}>
-                                            {bMove || ""}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {history.length === 0 && <div className="text-slate-500 text-center mt-10">{t("no_moves")}</div>}
+                {/* Move Logs Panel */}
+                <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[300px] shadow-2xl backdrop-blur-xl">
+                    <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                           <ActivityIcon className="w-3 h-3"/> Move Log
                         </div>
                     </div>
-                )}
-
-                {activeTab === 'logs' && (
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-white/10">
-                        {logs.map(log => (
-                            <div key={log.id} className="text-xs font-mono bg-white/5 p-3 rounded-xl border border-white/5">
-                                <span className="text-blue-400/80 mb-1 block">[{log.time}]</span>
-                                <span className="text-gray-300 leading-relaxed font-semibold">{log.text}</span>
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
+                        {logs.map((log, i) => (
+                            <div key={i} className={`flex gap-2 ${log.startsWith('Played') ? 'text-blue-400' : 'text-slate-500'}`}>
+                                <span className="opacity-30">[{i+1}]</span>
+                                {log}
                             </div>
                         ))}
                     </div>
-                )}
-                
+                </div>
+
+                {/* Chat Panel */}
+                <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[350px] shadow-2xl backdrop-blur-xl">
+                    <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                         <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                           <MessageSquare className="w-3 h-3"/> {t("chat")}
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+                        {chat.map((msg, i) => (
+                            <div key={i} className={`flex flex-col ${msg.sender === (color === 'white' ? wName : bName) ? 'items-end' : 'items-start'}`}>
+                                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === (color === 'white' ? wName : bName) ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                                    {msg.text}
+                                </div>
+                                <span className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">{msg.sender} • {msg.time}</span>
+                            </div>
+                        ))}
+                        {chat.length === 0 && (
+                            <div className="h-full flex flex-col items-center justify-center opacity-20 gap-2">
+                                <MessageSquare className="w-10 h-10" />
+                                <p className="text-xs font-bold uppercase tracking-widest">{t("no_messages")}</p>
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-3 bg-white/5 border-t border-white/5 flex gap-2">
+                        <input 
+                            type="text" 
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
+                            placeholder="Send message..."
+                            className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <button onClick={handleSendMessage} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-all shadow-lg active:scale-95">
+                            <Send className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-blue-900/5 border border-blue-500/10 rounded-2xl p-4 flex flex-col gap-2">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500/60">Match Info</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        Match is running on <b>Antigravity Edge</b>. 
+                        In case of connection failure, the game will attempt to reconnect automatically.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
