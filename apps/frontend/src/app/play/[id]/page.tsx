@@ -5,7 +5,6 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { 
-  ArrowLeft, 
   Activity, 
   ChevronLeft, 
   ChevronRight, 
@@ -20,7 +19,6 @@ import {
   Zap, 
   AlertCircle,
   Trophy,
-  Activity as ActivityIcon,
   CheckCircle2
 } from "lucide-react";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
@@ -50,14 +48,13 @@ export default function PlayArena() {
 
   const isSpectator = color === "spectator";
 
-  if (!mounted || !id) return <div className="min-h-screen bg-[var(--bg-color)]" />;
-
   const [fen, setFen] = useState("start");
   const [status, setStatus] = useState("Connecting...");
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
   const [clocks, setClocks] = useState({ white: 0, black: 0 });
   const [turn, setTurn] = useState<'w' | 'b'>('w');
+
   const [gameOver, setGameOver] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
   const [gameReason, setGameReason] = useState<string | null>(null);
@@ -70,12 +67,6 @@ export default function PlayArena() {
   const gameRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [logs]);
 
   const logMessage = (msg: string) => {
       setLogs(prev => [...prev.slice(-49), msg]);
@@ -96,6 +87,14 @@ export default function PlayArena() {
   };
 
   useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  useEffect(() => {
+    if (!mounted || !id) return;
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
     let host = rawUrl;
@@ -210,6 +209,8 @@ export default function PlayArena() {
      }, 100);
      return () => clearInterval(interval);
   }, [gameOver, fen, clocks.white < 0, preMove]);
+
+  if (!mounted || !id) return <div className="min-h-screen bg-[var(--bg-color)]" />;
 
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string, targetSquare: string | null, piece: string }) {
     if (!targetSquare || gameOver) return false;
@@ -389,7 +390,7 @@ export default function PlayArena() {
                )}
                <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono text-xs md:text-sm border backdrop-blur-md
                    ${status.includes('Connected') || status.includes(t("status_connected")) ? 'bg-emerald-900/10 text-emerald-400 border-emerald-500/20' : 'bg-red-900/10 text-red-400 border-red-500/20'}`}>
-                   <ActivityIcon className="w-4 h-4" />
+                   <Activity className="w-4 h-4" />
                    <span>{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
                </div>
             </div>
@@ -569,7 +570,7 @@ export default function PlayArena() {
                 <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[300px] shadow-2xl backdrop-blur-xl">
                     <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
-                           <ActivityIcon className="w-3 h-3"/> Move Log
+                           <Activity className="w-3 h-3"/> Move Log
                         </div>
                     </div>
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
