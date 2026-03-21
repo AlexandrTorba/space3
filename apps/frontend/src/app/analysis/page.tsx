@@ -176,9 +176,11 @@ export default function AnalysisView() {
                             
         if (isPromotion) {
             if (settings.alwaysPromoteToQueen) {
-                gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-                updateGameState();
-                return true;
+                try {
+                    gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                    setTimeout(() => updateGameState(), 0);
+                    return true;
+                } catch(e) { return false; }
             }
             setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
             return true;
@@ -197,7 +199,7 @@ export default function AnalysisView() {
       const { from, to } = pendingPromotion;
       try {
           gameRef.current.move({ from, to, promotion: promotionPiece });
-          updateGameState();
+          setTimeout(() => updateGameState(), 0);
       } catch(e) {}
       setPendingPromotion(null);
   };

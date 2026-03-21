@@ -77,7 +77,7 @@ main, .min-h-screen {
 }
 
 /* Accent Overrides */
-.bg-blue-600, .bg-[var(--brand-primary)] {
+.bg-blue-600, [class*='bg-[var(--brand-primary)]'] {
     background-color: var(--brand-primary) !important;
     color: white !important;
 }
