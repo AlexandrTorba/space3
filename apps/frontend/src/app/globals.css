@@ -8,43 +8,118 @@
 }
 
 :root {
-  --bg-color: #f0f0f0;
-  --text-color: #1a1a1a;
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --border-color: rgba(0, 0, 0, 0.1);
+  /* Generic UI Tokens */
+  --bg-color: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  
+  --surface-color: #f8f9fa;
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-glass: rgba(255, 255, 255, 0.8);
+  
+  --brand-primary: #3b82f6;
+  --brand-hover: #2563eb;
+  
   --settings-bg: #ffffff;
-  --button-bg: rgba(0, 0, 0, 0.05);
+  --settings-header: #f1f5f9;
+  
+  --button-ghost-hover: rgba(0, 0, 0, 0.05);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 :root.dark {
   --bg-color: #161512;
-  --text-color: #f0f0f0;
-  --card-bg: rgba(17, 24, 39, 0.6);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --settings-bg: #111827;
-  --button-bg: rgba(255, 255, 255, 0.05);
+  --text-primary: #f0f0f0;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  
+  --surface-color: #1a1917;
+  --surface-border: rgba(255, 255, 255, 0.1);
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  
+  --brand-primary: #3b82f6;
+  --brand-hover: #60a5fa;
+
+  --settings-bg: #1e1d1b;
+  --settings-header: #121210;
+
+  --button-ghost-hover: rgba(255, 255, 255, 0.05);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
 body {
   background-color: var(--bg-color);
-  color: var(--text-color);
+  color: var(--text-primary);
   min-height: 100vh;
-  transition: background-color 0.5s ease, color 0.5s ease;
+  transition: all 0.3s ease;
 }
 
-/* Ensure common components stay readable */
-.bg-slate-900\/60, .bg-slate-900\/80, .bg-slate-800\/50 {
-  background-color: var(--card-bg) !important;
+/* Global Overrides for Theme Awareness */
+[class*='bg-slate-900'], [class*='bg-slate-950'], [class*='bg-[#111827]'], [class*='bg-[#0f172a]'] {
+  background-color: var(--surface-color) !important;
 }
 
-.border-white\/10, .border-slate-700\/50, .border-slate-700\/80 {
-  border-color: var(--border-color) !important;
+[class*='bg-slate-900/'], [class*='bg-slate-800/'], [class*='bg-black/'], [class*='bg-white/'] {
+  background-color: var(--surface-glass) !important;
+  backdrop-filter: blur(12px);
 }
 
-.text-white {
-  color: var(--text-color) !important;
+[class*='border-white/'], [class*='border-slate-800'], [class*='border-slate-700'] {
+  border-color: var(--surface-border) !important;
+}
+
+.text-white, .text-slate-100, .text-slate-200 {
+  color: var(--text-primary) !important;
 }
 
 .text-slate-300, .text-slate-400 {
-   opacity: 0.8;
+  color: var(--text-secondary) !important;
+}
+
+.text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+/* Input & Component Overrides */
+input[type="range"] {
+  accent-color: var(--brand-primary);
+}
+
+select, textarea, input[type="text"] {
+  background-color: var(--surface-color) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--surface-border) !important;
+}
+
+/* Custom classes for the UI */
+.theme-card {
+  background-color: var(--surface-glass);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-sm);
+  border-radius: 1rem;
+}
+
+.theme-button-primary {
+  background-color: var(--brand-primary);
+  color: white !important;
+}
+
+.theme-button-primary:hover {
+  background-color: var(--brand-hover);
+}
+
+.theme-hero-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to bottom right, var(--text-primary), var(--text-secondary), var(--text-muted));
+}
+
+.theme-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
