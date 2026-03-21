@@ -23,19 +23,20 @@ export default function AnalysisView() {
   
   const [isBotActive, setIsBotActive] = useState(false);
   const [botColor, setBotColor] = useState<"white" | "black" | "random">("black");
-  const [resolvedBotColor, setResolvedBotColor] = useState<"white" | "black">("black");
+  const [resolvedBotColor, setResolvedBotColor] = useState<"white" | "black" | null>(null);
   const [botThinking, setBotThinking] = useState(false);
   
   const sfWorker = useRef<Worker | null>(null);
 
   useEffect(() => {
      if (isBotActive && botColor === "random") {
-        // Pick once when activated
-        if (resolvedBotColor === botColor as any) {
+        if (!resolvedBotColor) {
            setResolvedBotColor(Math.random() > 0.5 ? "white" : "black");
         }
      } else if (botColor !== "random") {
         setResolvedBotColor(botColor);
+     } else if (!isBotActive) {
+        setResolvedBotColor(null);
      }
   }, [isBotActive, botColor]);
 
@@ -53,11 +54,14 @@ export default function AnalysisView() {
                 const promotion = moveUci.length > 4 ? moveUci[4] : undefined;
                 
                 try {
-                  gameRef.current.move({ from, to, promotion });
-                  updateGameState();
+                  // Only apply if it's actually the bot's turn to avoid race conditions
+                  if (resolvedBotColor && gameRef.current.turn() === resolvedBotColor[0]) {
+                     gameRef.current.move({ from, to, promotion });
+                     updateGameState();
+                  }
                 } catch(e) {}
-                setBotThinking(false);
              }
+             setBotThinking(false);
           }
 
           if (line.includes("score cp ")) {
@@ -82,15 +86,15 @@ export default function AnalysisView() {
        sfWorker.current.postMessage(`setoption name UCI_Elo value ${settings.botElo}`);
     }
     return () => sfWorker.current?.terminate();
-  }, [isBotActive, settings.botElo]);
+  }, [isBotActive, settings.botElo, resolvedBotColor]);
 
   useEffect(() => {
-    if (isBotActive && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
+    if (isBotActive && resolvedBotColor && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
        setBotThinking(true);
        sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
        sfWorker.current?.postMessage("go movetime 1000");
     }
-  }, [isBotActive, fen, resolvedBotColor]);
+  }, [isBotActive, fen, resolvedBotColor, botThinking]);
 
   const triggerAnalysis = () => {
       if (sfWorker.current) {
@@ -149,7 +153,7 @@ export default function AnalysisView() {
     if (!targetSquare) return false;
     
     // Disallow user moves if bot is thinking OR it's bot's turn
-    if (isBotActive && (botThinking || gameRef.current.turn() === resolvedBotColor[0])) {
+    if (isBotActive && resolvedBotColor && (botThinking || gameRef.current.turn() === resolvedBotColor[0])) {
        return false;
     }
 
@@ -311,7 +315,7 @@ export default function AnalysisView() {
                         }`}
                     >
                         <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
-                        {botThinking ? t("bot_thinking") : t("play_with_bot")}
+                        {botThinking ? t("bot_thinking") : `${t("play_with_bot")} (${settings.botElo})`}
                     </button>
                     
                     <div className="flex flex-col gap-1 w-full">
