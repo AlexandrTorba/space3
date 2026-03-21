@@ -26,7 +26,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
-import { MatchUpdateSchema } from "@/proto/match_pb";
+import { MatchUpdateSchema } from "@antigravity/contracts";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 import { motion, AnimatePresence } from "framer-motion";
@@ -113,15 +113,22 @@ export default function PlayArena() {
       const data = new Uint8Array(event.data);
       try {
           const update = fromBinary(MatchUpdateSchema, data);
-          if (update.event.case === "gameState") {
+          if (update.event.case === "status") {
               const state = update.event.value;
               gameRef.current.load(state.fen);
               updateGameState();
               setClocks({
-                  white: Number(state.whiteTime),
-                  black: Number(state.blackTime)
+                  white: Number(state.whiteTimeMs),
+                  black: Number(state.blackTimeMs)
               });
               setSpectatorCount(state.spectators || 0);
+
+              if (!state.isActive) {
+                  setGameOver(true);
+                  setGameResult(state.result);
+                  setGameReason(state.reason);
+                  logMessage(`Game Over: ${state.result} (${state.reason})`);
+              }
           }
           else if (update.event.case === "move") {
               const move = update.event.value;
@@ -130,20 +137,16 @@ export default function PlayArena() {
                   updateGameState();
               } catch(e) {}
           }
-          else if (update.event.case === "gameOver") {
-              const res = update.event.value;
-              setGameOver(true);
-              setGameResult(res.result);
-              setGameReason(res.reason);
-              logMessage(`Game Over: ${res.result} (${res.reason})`);
-          }
           else if (update.event.case === "chat") {
              const c = update.event.value;
              setChat(prev => [...prev, { sender: c.sender, text: c.message, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
           }
-          else if (update.event.case === "rematchOffered") {
-             setRematchState("offered");
-             logMessage("Opponent offered a rematch!");
+          else if (update.event.case === "action") {
+             const action = update.event.value;
+             if (action.actionType === "rematch") {
+                setRematchState("offered");
+                logMessage("Opponent offered a rematch!");
+             }
           }
       } catch (err) {
           console.error(err);
