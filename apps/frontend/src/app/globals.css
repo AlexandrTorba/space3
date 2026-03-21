@@ -7,30 +7,30 @@
 }
 
 :root {
-  /* 60% - Base Background (Calm and Professional) */
-  --bg-color: #f1f3f5;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  /* 60% - Base Background (Warm Beige/Coffee) */
+  --bg-color: #faf7f2;
+  --text-primary: #3e322b;
+  --text-secondary: #7c6c64;
+  --text-muted: #a69b94;
   
-  /* 30% - Secondary Surface (Cards/Sidebars) */
-  --surface-color: #ffffff;
-  --surface-border: rgba(226, 232, 240, 0.8);
-  --surface-glass: rgba(255, 255, 255, 0.9);
+  /* 30% - Secondary Surface */
+  --surface-color: #f2ede4;
+  --surface-border: #e8e1d5;
+  --surface-glass: rgba(242, 237, 228, 0.9);
   
-  /* 10% - Accent Color (Critical Actions/Status) */
-  --brand-primary: #3b82f6; 
-  --brand-hover: #2563eb;
+  /* 10% - Accent Color (Warm Blue or Deep Coffee) */
+  --brand-primary: #8b6e51; /* Warm Brownish/Coffee Accent */
+  --brand-hover: #7b5d43;
   
-  --settings-bg: #ffffff;
-  --button-bg: #f8fafc;
+  --settings-bg: #faf7f2;
+  --button-bg: #f5eee6;
   
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(62, 50, 43, 0.08);
+  --shadow-lg: 0 10px 25px -5px rgba(62, 50, 43, 0.1);
 }
 
 :root.dark {
-  /* 60% - Base Background (Calm Deep Slate) */
+  /* 60% - Base Background (Deep Obsidian/Calm Dark) */
   --bg-color: #1a1c1e;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
@@ -60,12 +60,12 @@ body {
   font-family: 'Inter', -apple-system, sans-serif;
 }
 
-/* 60% - Mapping Base Classes */
+/* Base Overrides */
 main, .min-h-screen {
   background-color: var(--bg-color) !important;
 }
 
-/* 30% - Mapping Surface Classes */
+/* Surface Overrides */
 [class*='bg-slate-900'], [class*='bg-slate-950'], [class*='bg-[#111827]'], [class*='bg-[#0f172a]'], [class*='bg-black'], [class*='bg-slate-950/'], [class*='bg-slate-900/'] {
   background-color: var(--surface-color) !important;
   border-color: var(--surface-border) !important;
@@ -76,7 +76,7 @@ main, .min-h-screen {
   backdrop-filter: blur(12px);
 }
 
-/* 10% - Mapping Accent Classes */
+/* Accent Overrides */
 .bg-blue-600, .bg-[var(--brand-primary)] {
     background-color: var(--brand-primary) !important;
     color: white !important;
@@ -86,22 +86,21 @@ main, .min-h-screen {
     color: var(--brand-primary) !important;
 }
 
-/* Text Overrides */
+/* Text Polish */
 .text-white, .text-slate-100 { color: var(--text-primary) !important; }
 .text-slate-300, .text-slate-400 { color: var(--text-secondary) !important; }
 .text-slate-500 { color: var(--text-muted) !important; }
-
-/* Custom UI Polish */
-.theme-card {
-  background-color: var(--surface-glass);
-  border: 1px solid var(--surface-border);
-  box-shadow: var(--shadow-sm);
-  border-radius: 1rem;
-}
 
 .theme-hero-gradient {
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   background-image: linear-gradient(135deg, var(--text-primary) 30%, var(--brand-primary) 100%);
+}
+
+.theme-card {
+  background-color: var(--surface-glass);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-sm);
+  border-radius: 1rem;
 }
