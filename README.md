@@ -43,6 +43,13 @@ To run both frontend and backend in development mode:
 npm run dev
 ```
 
-## 📜 License
+## 📜 License & Acknowledgments
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)** - see the [LICENSE](LICENSE) file for details.
+- **Main License**: This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)** - see the [LICENSE](LICENSE) file for details.
+- **Third-Party Components**: For info about Stockfish, piece sets, and other open-source libraries used, see the [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
+
+### ♟️ Stockfish
+AntigravityChess uses **Stockfish 16.1 (GPLv3)** for move analysis and bot games. We comply with the GPLv3 license terms by providing access to our source code and and providing appropriate credits in our [Third-Party Notices](THIRD_PARTY_NOTICES.md).
+
+Source code: [github.com/AlexandrTorba/space3](https://github.com/AlexandrTorba/space3)
+Stockfish website: [stockfishchess.org](https://stockfishchess.org/)
