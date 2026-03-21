@@ -2,7 +2,7 @@
 
 import { useTranslation, Language, translations } from "../i18n";
 import { useSettings, boardThemes, BoardTheme, PieceSet, BackgroundTheme } from "../hooks/useSettings";
-import { Settings, X, Palette, Globe, Layers, Eye } from "lucide-react";
+import { Settings, X, Palette, Globe, Layers, Eye, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
@@ -159,6 +159,24 @@ export default function SettingsPanel() {
                             >
                                 <motion.div animate={{ x: settings.enablePremove ? 22 : 3 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-0.5" />
                             </button>
+                        </div>
+
+                        <div className="flex flex-col gap-2 pt-2">
+                            <label className="text-xs font-bold text-slate-300 flex items-center gap-2 tracking-wide uppercase">
+                                <Cpu className="w-3 h-3 text-slate-500" /> {t("bot_elo") || "Bot Strength (ELO)"}
+                            </label>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="range"
+                                    min="800"
+                                    max="2500"
+                                    step="100"
+                                    value={settings.botElo}
+                                    onChange={(e) => updateSettings({ botElo: parseInt(e.target.value) })}
+                                    className="flex-1 accent-blue-500 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <span className="text-xs font-mono font-black text-blue-400 w-10 text-right">{settings.botElo}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

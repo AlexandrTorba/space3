@@ -79,10 +79,10 @@ export default function AnalysisView() {
        };
        sfWorker.current.postMessage("uci");
        sfWorker.current.postMessage("setoption name UCI_LimitStrength value true");
-       sfWorker.current.postMessage("setoption name UCI_Elo value 1100");
+       sfWorker.current.postMessage(`setoption name UCI_Elo value ${settings.botElo}`);
     }
     return () => sfWorker.current?.terminate();
-  }, [isBotActive]);
+  }, [isBotActive, settings.botElo]);
 
   useEffect(() => {
     if (isBotActive && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
@@ -315,7 +315,7 @@ export default function AnalysisView() {
                     </button>
                     
                     <div className="flex flex-col gap-1 w-full">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("play_as")}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("bot_play_as")}</span>
                         <div className="flex items-center gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
                              <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-200 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : botColor === 'black' ? 'bg-slate-800 border border-slate-600' : 'bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-600'}`}></div>
                              <select 
