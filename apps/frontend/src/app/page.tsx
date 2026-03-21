@@ -5,7 +5,7 @@ import { Loader2, Swords, Timer, User, Activity, Play, X, Trophy } from "lucide-
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/i18n";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings, backgroundGradients } from "@/hooks/useSettings";
 
 export default function Home() {
   const router = useRouter();
@@ -125,14 +125,7 @@ export default function Home() {
       }
   };
 
-  const bgGradients: Record<string, { primary: string; secondary: string; base: string }> = {
-    cosmos: { base: "bg-[#07090E]", primary: "bg-blue-600/10", secondary: "bg-indigo-900/10" },
-    abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-black" },
-    minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/10", secondary: "bg-gray-900/10" },
-    forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/10" },
-  };
-  
-  const currentBg = bgGradients[settings.backgroundTheme] || bgGradients.cosmos;
+  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   return (
     <main className={`flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden ${currentBg.base} transition-all duration-700`}>

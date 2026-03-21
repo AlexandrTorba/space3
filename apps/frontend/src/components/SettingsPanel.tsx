@@ -102,7 +102,7 @@ export default function SettingsPanel() {
                           <Layers className="w-3 h-3" /> {t("piece_set_section") || "Piece Set"}
                        </label>
                        <div className="grid grid-cols-2 gap-2">
-                          {(['wikipedia', 'alpha', 'neo', 'dublin', 'leipzig'] as PieceSet[]).map((set) => (
+                          {(['wikipedia', 'leipzig'] as PieceSet[]).map((set) => (
                              <button 
                                key={set}
                                onClick={() => updateSettings({ pieceSet: set })}
