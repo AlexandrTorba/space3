@@ -27,17 +27,10 @@ message MatchAction {
   string player_color = 3; // "w" or "b"
 }
 
-message Chat {
-  string match_id = 1;
-  string sender = 2;
-  string message = 3;
-}
-
 message MatchUpdate {
   oneof event {
     Move move = 1;
     MatchStatus status = 2;
     MatchAction action = 3;
-    Chat chat = 4;
   }
 }
