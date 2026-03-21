@@ -12,6 +12,7 @@ export interface ChessSettings {
   backgroundTheme: BackgroundTheme;
   showCoordinates: boolean;
   highlightMoves: boolean;
+  enablePremove: boolean;
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
@@ -37,6 +38,7 @@ export function useSettings() {
     backgroundTheme: "cosmos",
     showCoordinates: true,
     highlightMoves: true,
+    enablePremove: false,
   });
 
   useEffect(() => {

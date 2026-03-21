@@ -64,6 +64,9 @@ export const translations = {
      tournaments: "Tournaments",
      no_tournaments: "No active tournaments right now",
      tournaments_desc: "Check back later for upcoming community events and hyperbullet tourneys!",
+     clubs: "Clubs",
+     no_clubs: "No clubs yet",
+     clubs_desc: "Join community clubs or create your own to compete with your crew!",
      loading_archive: "Loading archive...",
      loading_pgn: "Loading PGN...",
      clear_board: "Clear Board",
@@ -77,7 +80,8 @@ export const translations = {
       board_theme_section: "Board Theme",
       piece_set_section: "Piece Set",
       background_section: "System Background",
-      coordinates: "Coordinates"
+      coordinates: "Coordinates",
+      enable_premove: "Enable Pre-move"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -140,6 +144,9 @@ export const translations = {
      tournaments: "Турніри",
      no_tournaments: "Наразі немає активних турнірів",
      tournaments_desc: "Заходьте пізніше, щоб не пропустити нові спільнотні турніри та івенти!",
+     clubs: "Клуби",
+     no_clubs: "Клубів ще немає",
+     clubs_desc: "Приєднуйтесь до клубів спільноти або створюйте свій, щоб змагатися з друзями!",
      loading_archive: "Завантаження архіву...",
      loading_pgn: "Завантаження PGN...",
      clear_board: "Очистити дошку",
@@ -153,7 +160,8 @@ export const translations = {
       board_theme_section: "Тема Дошки",
       piece_set_section: "Набір Фігур",
       background_section: "Фон Системи",
-      coordinates: "Координати"
+      coordinates: "Координати",
+      enable_premove: "Попередній хід"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -216,6 +224,9 @@ export const translations = {
      tournaments: "Torneos",
      no_tournaments: "No hay torneos activos en este momento",
      tournaments_desc: "Vuelve más tarde para los próximos torneos de la comunidad.",
+     clubs: "Clubes",
+     no_clubs: "No hay clubes activos aún",
+     clubs_desc: "¡Únete a los clubes de la comunidad o crea el tuyo para competir!",
      loading_archive: "Cargando archivo...",
      loading_pgn: "Cargando PGN...",
      clear_board: "Limpiar Tablero",
@@ -229,7 +240,8 @@ export const translations = {
       board_theme_section: "Tema del tablero",
       piece_set_section: "Piezas",
       background_section: "Fondo del sistema",
-      coordinates: "Coordenadas"
+      coordinates: "Coordenadas",
+      enable_premove: "Habilitar movimiento previo"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -292,6 +304,9 @@ export const translations = {
      tournaments: "Turnuvalar",
      no_tournaments: "Şu anda aktif turnuva yok",
      tournaments_desc: "Yaklaşan topluluk turnuvaları için daha sonra tekrar kontrol edin.",
+     clubs: "Kulüpler",
+     no_clubs: "Henüz aktif kulüp yok",
+     clubs_desc: "Topluluk kulüplerine katılın veya ekibinizle yarışmak için kendinizinkini oluşturun!",
      loading_archive: "Arşiv yükleniyor...",
      loading_pgn: "PGN Yükleniyor...",
      clear_board: "Tahtayı Temizle",
@@ -305,7 +320,8 @@ export const translations = {
       board_theme_section: "Tahta Teması",
       piece_set_section: "Taş Seti",
       background_section: "Arka Plan",
-      coordinates: "Koordinatlar"
+      coordinates: "Koordinatlar",
+      enable_premove: "Ön Hamle"
     }
 };
 

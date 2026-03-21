@@ -24,6 +24,7 @@ export default function Home() {
   const [myChallengeId, setMyChallengeId] = useState<string | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [activeTab, setActiveTab] = useState<"lobby" | "live">("lobby");
+  const [bottomTab, setBottomTab] = useState<"tournaments" | "clubs">("tournaments");
 
   useEffect(() => {
      let name = localStorage.getItem("ag_name");
@@ -321,16 +322,53 @@ export default function Home() {
         )}
         </AnimatePresence>
         
-        {/* Tournaments Block */}
+        {/* Tournaments & Clubs Block */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-8 max-w-4xl mx-auto bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-amber-500"><Trophy className="w-5 h-5"/> {t("tournaments")}</h2>
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-slate-800/50 border-dashed">
-                 <Trophy className="w-10 h-10 text-amber-500/20 mb-3" />
-                 <p className="text-slate-300 font-bold text-center">{t("no_tournaments")}</p>
-                 <p className="text-slate-500/80 text-sm mt-1 text-center max-w-sm">{t("tournaments_desc")}</p>
+            <div className="flex items-center gap-6 mb-6 border-b border-white/5 pb-4">
+                <button 
+                    onClick={() => setBottomTab("tournaments")}
+                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'tournaments' ? 'text-amber-500' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                    <Trophy className="w-5 h-5"/> {t("tournaments")}
+                    {bottomTab === 'tournaments' && <motion.div layoutId="bottomUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />}
+                </button>
+                <button 
+                    onClick={() => setBottomTab("clubs")}
+                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'clubs' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                    <User className="w-5 h-5"/> {t("clubs")}
+                </button>
             </div>
+
+            <AnimatePresence mode="wait">
+                {bottomTab === "tournaments" ? (
+                    <motion.div 
+                        key="tournaments"
+                        initial={{ opacity: 0, x: -10 }} 
+                        animate={{ opacity: 1, x: 0 }} 
+                        exit={{ opacity: 0, x: 10 }}
+                        className="flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-slate-800/50 border-dashed"
+                    >
+                        <Trophy className="w-10 h-10 text-amber-500/20 mb-3" />
+                        <p className="text-slate-300 font-bold text-center">{t("no_tournaments")}</p>
+                        <p className="text-slate-500/80 text-sm mt-1 text-center max-w-sm">{t("tournaments_desc")}</p>
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        key="clubs"
+                        initial={{ opacity: 0, x: 10 }} 
+                        animate={{ opacity: 1, x: 0 }} 
+                        exit={{ opacity: 0, x: -10 }}
+                        className="flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-slate-800/50 border-dashed"
+                    >
+                        <User className="w-10 h-10 text-blue-400/20 mb-3" />
+                        <p className="text-slate-300 font-bold text-center">{t("no_clubs")}</p>
+                        <p className="text-slate-500/80 text-sm mt-1 text-center max-w-sm">{t("clubs_desc")}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
       </div>
     </main>
