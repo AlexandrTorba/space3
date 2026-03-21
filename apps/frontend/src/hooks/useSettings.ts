@@ -14,6 +14,7 @@ export interface ChessSettings {
   highlightMoves: boolean;
   enablePremove: boolean;
   botElo: number;
+  alwaysPromoteToQueen: boolean;
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
@@ -35,6 +36,7 @@ export function useSettings() {
     highlightMoves: true,
     enablePremove: false,
     botElo: 1100,
+    alwaysPromoteToQueen: false,
   });
 
   useEffect(() => {
