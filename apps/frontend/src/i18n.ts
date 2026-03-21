@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 export const translations = {
   en: {
-     hero_title: "AntigravityChess.",
+     hero_title: "AntigravityChess",
      hero_desc: "A high-performance hyperbullet chess platform driven by Edge computing and Protocol Buffers.",
      find_match: "Find Match",
      searching: "Searching...",
@@ -80,7 +80,7 @@ export const translations = {
       coordinates: "Coordinates"
     },
   uk: {
-     hero_title: "AntigravityChess.",
+     hero_title: "AntigravityChess",
      hero_desc: "Високопродуктивна гіпербуліт шахова платформа на базі Edge-обчислень та Protocol Buffers.",
      find_match: "Шукати Гру",
      searching: "Пошук...",
@@ -156,7 +156,7 @@ export const translations = {
       coordinates: "Координати"
     },
   es: {
-     hero_title: "AntigravityChess.",
+     hero_title: "AntigravityChess",
      hero_desc: "Una plataforma de ajedrez hiperbala de alto rendimiento impulsada por Edge y Protocol Buffers.",
      find_match: "Buscar Partida",
      searching: "Buscando...",
@@ -232,7 +232,7 @@ export const translations = {
       coordinates: "Coordenadas"
     },
   tr: {
-     hero_title: "AntigravityChess.",
+     hero_title: "AntigravityChess",
      hero_desc: "Edge bilişim ve Protokol Arabellekleri ile desteklenen yüksek performanslı hiper mermi satranç platformu.",
      find_match: "Maç Bul",
      searching: "Aranıyor...",

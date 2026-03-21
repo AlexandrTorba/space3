@@ -12,9 +12,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const mainTitle = "AntigravityChess ⚡️ Ultra-High Speed Hyperbullet";
+const description = "The ultimate high-performance chess arena. Hyperbullet, Edge-powered, Sub-second moves.";
+
 export const metadata: Metadata = {
-  title: "AntigravityChess",
-  description: "A high-performance hyperbullet chess platform",
+  title: {
+    default: mainTitle,
+    template: `%s | AntigravityChess`
+  },
+  description,
+  metadataBase: new URL("https://antigravitychess.io"),
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    title: mainTitle,
+    description,
+    url: "https://antigravitychess.io",
+    siteName: "AntigravityChess",
+    images: [{ url: "/og-image.png" }]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: mainTitle,
+    description
+  }
 };
 
 import { SpeedInsights } from "@vercel/speed-insights/next";

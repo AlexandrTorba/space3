@@ -142,7 +142,7 @@ export default function Home() {
           {status === 'Connected' ? `${t("status_connected")} Edge` : status}
         </div>
         
-        <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-br from-white via-gray-200 to-gray-500">
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-br from-white via-gray-200 to-gray-500">
           {t("hero_title")}
         </h1>
         
