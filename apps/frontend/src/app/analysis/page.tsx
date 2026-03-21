@@ -272,15 +272,15 @@ export default function AnalysisView() {
                                 <h3 className="text-xl font-bold text-white tracking-widest uppercase">{t("promotion_title")}</h3>
                                 <div className="flex gap-4">
                                     {['q', 'r', 'b', 'n'].map((p) => (
-                                        <button 
+                                         <button 
                                             key={p}
                                             onClick={() => completePromotion(p)}
-                                            className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                                            className="w-16 h-16 bg-[var(--button-bg)] hover:bg-[var(--brand-primary)]/10 border border-[var(--surface-border)] rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group shadow-lg"
                                         >
                                             <img 
-                                                src={`https://chessboardjs.com/img/chesspieces/wikipedia/${pendingPromotion.color}${p.toUpperCase()}.png`} 
+                                                src={getPieceUrl(`${pendingPromotion.color}${p.toUpperCase()}`)} 
                                                 alt={p} 
-                                                className="w-12 h-12 object-contain group-hover:drop-shadow-[0_0_8px_white]"
+                                                className="w-12 h-12 object-contain group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                                             />
                                         </button>
                                     ))}
