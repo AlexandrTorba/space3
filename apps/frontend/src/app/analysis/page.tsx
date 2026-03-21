@@ -6,7 +6,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
-import { useSettings, boardThemes, backgroundGradients } from "@/hooks/useSettings";
+import { useSettings, boardThemes } from "@/hooks/useSettings";
 
 export default function AnalysisView() {
   const { t } = useTranslation();

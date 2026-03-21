@@ -7,8 +7,44 @@
   --color-antigravity-danger: #EF4444;
 }
 
+:root {
+  --bg-color: #f0f0f0;
+  --text-color: #1a1a1a;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --settings-bg: #ffffff;
+  --button-bg: rgba(0, 0, 0, 0.05);
+}
+
+:root.dark {
+  --bg-color: #161512;
+  --text-color: #f0f0f0;
+  --card-bg: rgba(17, 24, 39, 0.6);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --settings-bg: #111827;
+  --button-bg: rgba(255, 255, 255, 0.05);
+}
+
 body {
-  background-color: var(--color-antigravity-dark);
-  color: white;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   min-height: 100vh;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Ensure common components stay readable */
+.bg-slate-900\/60, .bg-slate-900\/80, .bg-slate-800\/50 {
+  background-color: var(--card-bg) !important;
+}
+
+.border-white\/10, .border-slate-700\/50, .border-slate-700\/80 {
+  border-color: var(--border-color) !important;
+}
+
+.text-white {
+  color: var(--text-color) !important;
+}
+
+.text-slate-300, .text-slate-400 {
+   opacity: 0.8;
 }

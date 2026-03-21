@@ -4,19 +4,12 @@ import { useState, useEffect } from "react";
 
 export type BoardTheme = "wood" | "classic";
 export type PieceSet = "wikipedia" | "leipzig";
-export type BackgroundTheme = "cosmos" | "abyss" | "minimal" | "forest";
-
-export const backgroundGradients: Record<BackgroundTheme, { primary: string; secondary: string; base: string }> = {
-  cosmos: { base: "bg-[#07090E]", primary: "bg-blue-600/10", secondary: "bg-indigo-900/10" },
-  abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-black" },
-  minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
-  forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
-};
+export type UiMode = "dark" | "light";
 
 export interface ChessSettings {
   boardTheme: BoardTheme;
   pieceSet: PieceSet;
-  backgroundTheme: BackgroundTheme;
+  uiMode: UiMode;
   showCoordinates: boolean;
   highlightMoves: boolean;
   enablePremove: boolean;
@@ -37,7 +30,7 @@ export function useSettings() {
   const [settings, setSettings] = useState<ChessSettings>({
     boardTheme: "classic",
     pieceSet: "wikipedia",
-    backgroundTheme: "cosmos",
+    uiMode: "dark",
     showCoordinates: true,
     highlightMoves: true,
     enablePremove: false,
