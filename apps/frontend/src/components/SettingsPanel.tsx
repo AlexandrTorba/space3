@@ -150,6 +150,18 @@ export default function SettingsPanel() {
                      <div className="pt-4 border-t border-[var(--surface-border)] space-y-3">
                          <div className="flex items-center justify-between">
                              <span className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
+                                 <Layers className="w-3 h-3" /> {t("always_promote_to_queen") || "Auto Queen"}
+                             </span>
+                             <button 
+                               onClick={() => updateSettings({ alwaysPromoteToQueen: !settings.alwaysPromoteToQueen })}
+                               className={`w-9 h-5 rounded-full transition-colors relative ${settings.alwaysPromoteToQueen ? 'bg-emerald-500' : 'bg-[var(--button-bg)]'}`}
+                             >
+                                 <motion.div animate={{ x: settings.alwaysPromoteToQueen ? 18 : 3 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
+                             </button>
+                         </div>
+
+                         <div className="flex items-center justify-between">
+                             <span className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
                                  <Eye className="w-3 h-3" /> {t("coordinates") || "Coordinates"}
                              </span>
                              <button 
@@ -169,18 +181,6 @@ export default function SettingsPanel() {
                                className={`w-9 h-5 rounded-full transition-colors relative ${settings.enablePremove ? 'bg-emerald-500' : 'bg-[var(--button-bg)]'}`}
                              >
                                  <motion.div animate={{ x: settings.enablePremove ? 18 : 3 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
-                             </button>
-                         </div>
-
-                         <div className="flex items-center justify-between">
-                             <span className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
-                                 <Layers className="w-3 h-3" /> {t("always_promote_to_queen") || "Auto Queen"}
-                             </span>
-                             <button 
-                               onClick={() => updateSettings({ alwaysPromoteToQueen: !settings.alwaysPromoteToQueen })}
-                               className={`w-9 h-5 rounded-full transition-colors relative ${settings.alwaysPromoteToQueen ? 'bg-emerald-500' : 'bg-[var(--button-bg)]'}`}
-                             >
-                                 <motion.div animate={{ x: settings.alwaysPromoteToQueen ? 18 : 3 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
                              </button>
                          </div>
 
