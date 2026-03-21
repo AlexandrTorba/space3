@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 import { ChevronLeft, ChevronRight, Download, History, SkipBack, SkipForward } from "lucide-react";
 import { Chess } from "chess.js";
@@ -9,8 +10,14 @@ import Link from "next/link";
 
 import { useTranslation } from "@/i18n";
 
-export default function ArchiveView({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
+export default function ArchiveView() {
+  const [mounted, setMounted] = useState(false);
+  const params = useParams();
+  const id = params?.id as string;
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const { t } = useTranslation();
   const [match, setMatch] = useState<{result: string, reason: string, pgn: string} | null>(null);
   
@@ -69,8 +76,8 @@ export default function ArchiveView({ params }: { params: Promise<{ id: string }
      URL.revokeObjectURL(url);
   };
 
-  if (!match) {
-     return <div className="min-h-screen bg-[#07090E] flex items-center justify-center text-white">{t("loading_pgn")}</div>;
+  if (!mounted || !id || !match) {
+     return <div className="min-h-screen bg-[var(--bg-color)] flex items-center justify-center text-[var(--text-primary)]">{t("loading_pgn")}</div>;
   }
 
   return (
