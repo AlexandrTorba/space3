@@ -278,8 +278,10 @@ export default function Play() {
     const isMyTurn = gameRef.current.turn() === color[0];
 
     if (!isMyTurn) {
-        // Record Pre-move
-        setPreMove({ from: sourceSquare, to: targetSquare });
+        // Record Pre-move only if enabled
+        if (settings.enablePremove) {
+            setPreMove({ from: sourceSquare, to: targetSquare });
+        }
         return false;
     }
 
@@ -407,11 +409,16 @@ export default function Play() {
         <div className={`absolute top-0 right-0 w-[500px] h-[500px] ${currentBg.secondary} rounded-full blur-[150px] pointer-events-none translate-x-1/3 -translate-y-1/3 transition-colors duration-1000`} />
 
         <header className="flex justify-between items-center mb-6 lg:mb-10 px-4 z-10 max-w-7xl mx-auto w-full">
-            <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
-              <Zap className="w-6 h-6 text-blue-400 animate-pulse" />
-              <div>
-                  <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("arena_title")}</h1>
-                  <span className="text-xs font-mono text-gray-500">ID: {id.substring(0, 8)}</span>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors mr-2">
+                <ChevronLeft className="w-6 h-6" />
+              </Link>
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
+                <Zap className="w-6 h-6 text-blue-400 animate-pulse" />
+                <div>
+                    <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("arena_title")}</h1>
+                    <span className="text-xs font-mono text-gray-500">ID: {id.substring(0, 8)}</span>
+                </div>
               </div>
             </div>
             
