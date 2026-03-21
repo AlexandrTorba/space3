@@ -10,6 +10,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/i18n";
+import { useSettings, boardThemes } from "@/hooks/useSettings";
 
 export default function Play() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Play() {
   const wName = decodeURIComponent(searchParams.get("w") || "White");
   const bName = decodeURIComponent(searchParams.get("b") || "Black");
   const { t } = useTranslation();
+  const { settings, getPieceUrl } = useSettings();
   
   const wsRef = useRef<WebSocket | null>(null);
   const isSpectator = color === "spectator";
@@ -35,6 +37,9 @@ export default function Play() {
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   const [clocks, setClocks] = useState({ white: -1, black: -1 });
+
+  const [preMove, setPreMove] = useState<{from: string; to: string; promotion?: string} | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
 
   const formatTime = (ms: number) => {
       if (ms < 0) return "∞";
@@ -150,6 +155,13 @@ export default function Play() {
                   gameRef.current.move({ from, to, promotion });
                   setHistory(gameRef.current.history());
               }
+
+              // Clear pre-move if it was played or becomes invalid
+              setPreMove(prev => {
+                  if (!prev) return null;
+                  // Wait a bit to check if it's still our turn and if pre-move is valid
+                  return prev;
+              });
            } catch(e) {}
         }
         else if (matchUpdate.event.case === "status") {
@@ -211,6 +223,40 @@ export default function Play() {
   useEffect(() => {
      if (gameOver || clocks.white < 0) return;
      const turn = gameRef.current.turn();
+     
+     // Handle Pre-move
+     if (turn === color[0] && preMove) {
+         const { from, to } = preMove;
+         const moveData: {from: string; to: string; promotion?: string} = { from, to };
+         
+         // Check if promotion is needed for pre-move
+         const board = gameRef.current.board();
+         const piece = board[parseInt(from[1]) === 1 ? 7 - (parseInt(from[1])-1) : 8 - parseInt(from[1])]?.[from.charCodeAt(0) - 97];
+         // Simple check: is it a pawn moving to last rank?
+         const isPawn = gameRef.current.get(from as any)?.type === 'p';
+         const isPromotion = isPawn && (to[1] === '8' || to[1] === '1');
+         
+         if (isPromotion) moveData.promotion = "q"; // Default for pre-move for now, or we can improve later
+
+         try {
+             const move = gameRef.current.move(moveData);
+             setPreMove(null);
+             updateGameState();
+             logMessage(`Pre-move Played: ${move.san}`);
+             
+             if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                const uci = from + to + (move.promotion || "");
+                const update = create(MatchUpdateSchema, {
+                    event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
+                });
+                wsRef.current.send(toBinary(MatchUpdateSchema, update));
+             }
+         } catch(e) {
+             // Pre-move invalid now
+             setPreMove(null);
+         }
+     }
+
      const interval = setInterval(() => {
          setClocks(prev => ({
              white: turn === 'w' ? Math.max(0, prev.white - 100) : prev.white,
@@ -218,7 +264,7 @@ export default function Play() {
          }));
      }, 100);
      return () => clearInterval(interval);
-  }, [gameOver, fen, clocks.white < 0]);
+  }, [gameOver, fen, clocks.white < 0, preMove]);
 
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string, targetSquare: string | null, piece: string }) {
     if (!targetSquare || gameOver) return false;
@@ -229,22 +275,29 @@ export default function Play() {
        return false;
     }
 
-    if (gameRef.current.turn() !== color[0]) {
-       return false;
+    const isMyTurn = gameRef.current.turn() === color[0];
+
+    if (!isMyTurn) {
+        // Record Pre-move
+        setPreMove({ from: sourceSquare, to: targetSquare });
+        return false;
     }
+
     try {
         const isPromotion = (piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') || 
                             (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
                             
-        const moveData: {from: string; to: string; promotion?: string} = { from: sourceSquare, to: targetSquare };
-        if (isPromotion) moveData.promotion = "q";
+        if (isPromotion) {
+            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
+            return true;
+        }
     
-        const move = gameRef.current.move(moveData);
+        const move = gameRef.current.move({ from: sourceSquare, to: targetSquare });
         updateGameState();
         logMessage(`Played: ${move.san}`);
 
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            const uci = sourceSquare + targetSquare + (move.promotion ? "q" : "");
+            const uci = sourceSquare + targetSquare;
             const update = create(MatchUpdateSchema, {
                 event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
             });
@@ -255,6 +308,25 @@ export default function Play() {
         return false;
     }
   }
+
+  const completePromotion = (promotionPiece: string) => {
+      if (!pendingPromotion) return;
+      const { from, to } = pendingPromotion;
+      try {
+          const move = gameRef.current.move({ from, to, promotion: promotionPiece });
+          updateGameState();
+          logMessage(`Played (Prom): ${move.san}`);
+          
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              const uci = from + to + promotionPiece;
+              const update = create(MatchUpdateSchema, {
+                  event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
+              });
+              wsRef.current.send(toBinary(MatchUpdateSchema, update));
+          }
+      } catch(e) {}
+      setPendingPromotion(null);
+  };
 
   const sendAction = (actionType: "resign" | "draw_offer" | "draw_accept" | "rematch") => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -313,10 +385,26 @@ export default function Play() {
       setFen(engine.fen());
   };
 
+  const bgGradients: Record<string, { primary: string; secondary: string; base: string }> = {
+    cosmos: { base: "bg-[#07090E]", primary: "bg-blue-600/10", secondary: "bg-indigo-900/10" },
+    abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-black" },
+    minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
+    forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
+  };
+  
+  const currentBg = bgGradients[settings.backgroundTheme] || bgGradients.cosmos;
+
+  const pieces = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+  const customPieces = Object.fromEntries(
+    pieces.map(p => [p, ({ squareWidth }: any) => (
+      <img src={getPieceUrl(p)} style={{ width: squareWidth, height: squareWidth }} alt={p} />
+    )])
+  );
+
   return (
-    <div className="min-h-screen bg-[#07090E] text-white flex flex-col p-4 md:p-8 overflow-hidden relative">
-        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
+    <div className={`min-h-screen ${currentBg.base} text-white flex flex-col p-4 md:p-8 overflow-hidden relative transition-colors duration-700`}>
+        <div className={`absolute top-1/2 left-0 w-[600px] h-[600px] ${currentBg.primary} rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2 transition-colors duration-1000`} />
+        <div className={`absolute top-0 right-0 w-[500px] h-[500px] ${currentBg.secondary} rounded-full blur-[150px] pointer-events-none translate-x-1/3 -translate-y-1/3 transition-colors duration-1000`} />
 
         <header className="flex justify-between items-center mb-6 lg:mb-10 px-4 z-10 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
@@ -394,20 +482,69 @@ export default function Play() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.15)] border-4 border-slate-800 bg-black/50 p-1 lg:p-2 backdrop-blur-xl">
+                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.15)] border-4 border-slate-800 bg-black/50 p-1 lg:p-2 backdrop-blur-xl relative">
                     <Chessboard 
                         options={{
                             position: fen, 
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onPieceDrop: onDrop as any,
                             boardOrientation: color as "white" | "black",
-                            darkSquareStyle: { backgroundColor: "#1e293b" },
-                            lightSquareStyle: { backgroundColor: "#334155" },
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].dark },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].light },
                             dropSquareStyle: { boxShadow: "inset 0 0 1px 6px rgba(96, 165, 250, 0.5)" },
                             animationDurationInMs: 150,
-                            allowDragging: !gameOver && currentMoveIndex === history.length - 1
+                            allowDragging: !gameOver && currentMoveIndex === history.length - 1,
+                            onSquareClick: () => setPreMove(null),
+                            arrows: preMove ? [{ startSquare: preMove.from, endSquare: preMove.to, color: 'red' }] : [],
+                            pieces: customPieces as any,
+                            showNotation: settings.showCoordinates
                         }}
                     />
+                    
+                    {/* Promotion Selection Dialog */}
+                    <AnimatePresence>
+                        {pendingPromotion && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+                            >
+                                <div className="bg-slate-900 border border-white/10 p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-6">
+                                    <h3 className="text-xl font-bold text-white tracking-widest">{t("promotion_title") || "PROMOTE PIECE"}</h3>
+                                    <div className="flex gap-4">
+                                        {['q', 'r', 'b', 'n'].map((p) => (
+                                            <button 
+                                                key={p}
+                                                onClick={() => completePromotion(p)}
+                                                className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                                            >
+                                                <img 
+                                                    src={`/pieces/${pendingPromotion.color}${p.toUpperCase()}.png`} 
+                                                    alt={p} 
+                                                    className="w-12 h-12 object-contain group-hover:drop-shadow-[0_0_8px_white]"
+                                                    onError={(e) => {
+                                                        // Fallback if images don't exist
+                                                        (e.target as any).src = `https://chessboardjs.com/img/chesspieces/wikipedia/${pendingPromotion.color}${p.toUpperCase()}.png`;
+                                                    }}
+                                                />
+                                            </button>
+                                        ) as any)}
+                                    </div>
+                                    <button 
+                                        onClick={() => setPendingPromotion(null)}
+                                        className="text-slate-500 hover:text-white text-sm font-bold mt-2"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Pre-move Indicator */}
+                    {preMove && (
+                        <div className="absolute top-4 right-4 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse shadow-lg z-10 border border-red-400">
+                            PREMOVE SET (CLICK TO CANCEL)
+                        </div>
+                    )}
                 </div>
                 
                 {/* Bottom Player (You) Info Banner */}

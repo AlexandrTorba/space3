@@ -6,9 +6,11 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
+import { useSettings, boardThemes } from "@/hooks/useSettings";
 
 export default function AnalysisView() {
   const { t } = useTranslation();
+  const { settings, getPieceUrl } = useSettings();
   
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState(gameRef.current.fen());
@@ -16,6 +18,8 @@ export default function AnalysisView() {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
   const [evaluation, setEvaluation] = useState<string>("0.0");
   const [pastePgn, setPastePgn] = useState("");
+  
+  const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
   
   const sfWorker = useRef<Worker | null>(null);
 
@@ -117,16 +121,28 @@ export default function AnalysisView() {
         const isPromotion = (piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') || 
                             (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
                             
-        const moveData: {from: string; to: string; promotion?: string} = { from: sourceSquare, to: targetSquare };
-        if (isPromotion) moveData.promotion = "q";
+        if (isPromotion) {
+            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
+            return true;
+        }
     
-        gameRef.current.move(moveData);
+        gameRef.current.move({ from: sourceSquare, to: targetSquare });
         updateGameState();
         return true;
     } catch (e) {
         return false;
     }
   }
+
+  const completePromotion = (promotionPiece: string) => {
+      if (!pendingPromotion) return;
+      const { from, to } = pendingPromotion;
+      try {
+          gameRef.current.move({ from, to, promotion: promotionPiece });
+          updateGameState();
+      } catch(e) {}
+      setPendingPromotion(null);
+  };
 
   const goToMove = (index: number) => {
       if (index < -1 || index >= history.length) return;
@@ -144,9 +160,25 @@ export default function AnalysisView() {
       updateGameState();
   };
 
+  const bgGradients: Record<string, { primary: string; secondary: string; base: string }> = {
+    cosmos: { base: "bg-[#07090E]", primary: "bg-indigo-600/10", secondary: "bg-blue-600/10" },
+    abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-slate-900/20" },
+    minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
+    forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
+  };
+  
+  const currentBg = bgGradients[settings.backgroundTheme] || bgGradients.cosmos;
+
+  const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+  const pieces = Object.fromEntries(
+    piecesArr.map(p => [p, ({ squareWidth }: any) => (
+      <img src={getPieceUrl(p)} style={{ width: squareWidth, height: squareWidth }} alt={p} />
+    )])
+  );
+
   return (
-    <div className="min-h-screen bg-[#07090E] text-white flex flex-col p-4 md:p-8 relative overflow-hidden">
-        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2" />
+    <div className={`min-h-screen ${currentBg.base} text-white flex flex-col p-4 md:p-8 relative overflow-hidden transition-colors duration-700`}>
+        <div className={`absolute top-1/2 left-0 w-[600px] h-[600px] ${currentBg.primary} rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2 transition-colors duration-1000`} />
         
         <header className="flex justify-between items-center mb-6 z-10 max-w-6xl w-full mx-auto">
             <div className="flex items-center gap-3">
@@ -175,19 +207,49 @@ export default function AnalysisView() {
                     <button onClick={resetBoard} className="text-xs bg-red-900/30 text-red-400 hover:bg-red-900/60 px-3 py-1 rounded-full border border-red-500/20 font-bold transition-all">{t("clear_board")}</button>
                 </div>
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] bg-black/50 border-4 border-slate-800 p-2 rounded-[1rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] backdrop-blur-xl">
+                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] bg-black/50 border-4 border-slate-800 p-2 rounded-[1rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] backdrop-blur-xl relative">
                     <Chessboard 
                         options={{
                             position: fen, 
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onPieceDrop: onDrop as any,
                             boardOrientation: "white",
-                            darkSquareStyle: { backgroundColor: "#1e293b" },
-                            lightSquareStyle: { backgroundColor: "#334155" },
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].dark },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].light },
                             animationDurationInMs: 150,
-                            allowDragging: true
+                            allowDragging: true,
+                            showNotation: settings.showCoordinates,
+                            pieces: pieces as any
                         }}
                     />
+
+                    {pendingPromotion && (
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+                            <div className="bg-slate-900 border border-white/10 p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-6">
+                                <h3 className="text-xl font-bold text-white tracking-widest uppercase">{t("promotion_title")}</h3>
+                                <div className="flex gap-4">
+                                    {['q', 'r', 'b', 'n'].map((p) => (
+                                        <button 
+                                            key={p}
+                                            onClick={() => completePromotion(p)}
+                                            className="w-16 h-16 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+                                        >
+                                            <img 
+                                                src={`https://chessboardjs.com/img/chesspieces/wikipedia/${pendingPromotion.color}${p.toUpperCase()}.png`} 
+                                                alt={p} 
+                                                className="w-12 h-12 object-contain group-hover:drop-shadow-[0_0_8px_white]"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                <button 
+                                    onClick={() => setPendingPromotion(null)}
+                                    className="text-slate-500 hover:text-white text-sm font-bold mt-2"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 
                 {/* Playback Controls */}
