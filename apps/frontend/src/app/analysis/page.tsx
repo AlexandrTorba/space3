@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
@@ -22,9 +22,22 @@ export default function AnalysisView() {
   const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
   
   const [isBotActive, setIsBotActive] = useState(false);
+  const [botColor, setBotColor] = useState<"white" | "black" | "random">("black");
+  const [resolvedBotColor, setResolvedBotColor] = useState<"white" | "black">("black");
   const [botThinking, setBotThinking] = useState(false);
   
   const sfWorker = useRef<Worker | null>(null);
+
+  useEffect(() => {
+     if (isBotActive && botColor === "random") {
+        // Pick once when activated
+        if (resolvedBotColor === botColor as any) {
+           setResolvedBotColor(Math.random() > 0.5 ? "white" : "black");
+        }
+     } else if (botColor !== "random") {
+        setResolvedBotColor(botColor);
+     }
+  }, [isBotActive, botColor]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -71,6 +84,14 @@ export default function AnalysisView() {
     return () => sfWorker.current?.terminate();
   }, [isBotActive]);
 
+  useEffect(() => {
+    if (isBotActive && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
+       setBotThinking(true);
+       sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
+       sfWorker.current?.postMessage("go movetime 1000");
+    }
+  }, [isBotActive, fen, resolvedBotColor]);
+
   const triggerAnalysis = () => {
       if (sfWorker.current) {
          sfWorker.current.postMessage("stop");
@@ -105,7 +126,6 @@ export default function AnalysisView() {
           }
 
           if (!success) {
-             // Let's attempt to strip messy headers if standard load fails, as chess.js can be extremely strict
              const strippedMoves = cleanPgn.split('\n\n').pop()?.trim() || cleanPgn;
              try {
                 engine.loadPgn(strippedMoves);
@@ -128,9 +148,12 @@ export default function AnalysisView() {
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string, targetSquare: string | null, piece: string }) {
     if (!targetSquare) return false;
     
-    // Disallow moves if user is previewing history
+    // Disallow user moves if bot is thinking OR it's bot's turn
+    if (isBotActive && (botThinking || gameRef.current.turn() === resolvedBotColor[0])) {
+       return false;
+    }
+
     if (currentMoveIndex !== history.length - 1) {
-       // Truncate history! Like normal analysis boards.
        const engine = new Chess();
        for(let i = 0; i <= currentMoveIndex; i++) {
           engine.move(history[i]);
@@ -149,12 +172,6 @@ export default function AnalysisView() {
     
         gameRef.current.move({ from: sourceSquare, to: targetSquare });
         updateGameState();
-
-        if (isBotActive) {
-            setBotThinking(true);
-            sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
-            sfWorker.current?.postMessage("go movetime 1000");
-        }
         return true;
     } catch (e) {
         return false;
@@ -167,12 +184,6 @@ export default function AnalysisView() {
       try {
           gameRef.current.move({ from, to, promotion: promotionPiece });
           updateGameState();
-
-          if (isBotActive) {
-              setBotThinking(true);
-              sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
-              sfWorker.current?.postMessage("go movetime 1000");
-          }
       } catch(e) {}
       setPendingPromotion(null);
   };
@@ -290,10 +301,10 @@ export default function AnalysisView() {
 
             <div className="bg-[#111827]/60 border border-white/10 rounded-3xl p-6 flex flex-col h-[650px] backdrop-blur-xl shadow-2xl">
                 
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                <div className="flex flex-col gap-3 mb-4 pb-4 border-b border-white/10">
                     <button 
                         onClick={() => setIsBotActive(!isBotActive)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-black/30 ${
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-black/30 ${
                             isBotActive 
                                 ? 'bg-amber-600/20 border border-amber-500/40 text-amber-400' 
                                 : 'bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30'
@@ -302,6 +313,23 @@ export default function AnalysisView() {
                         <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
                         {botThinking ? t("bot_thinking") : t("play_with_bot")}
                     </button>
+                    
+                    <div className="flex flex-col gap-1 w-full">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("play_as")}</span>
+                        <div className="flex items-center gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
+                             <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-200 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : botColor === 'black' ? 'bg-slate-800 border border-slate-600' : 'bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-600'}`}></div>
+                             <select 
+                                value={botColor} 
+                                onChange={e => setBotColor(e.target.value as any)} 
+                                disabled={isBotActive && botThinking}
+                                className="bg-transparent border-none text-white w-full font-bold focus:outline-none appearance-none cursor-pointer text-xs"
+                             >
+                                <option value="black" className="bg-slate-900">⚫ {t("color_black")}</option>
+                                <option value="white" className="bg-slate-900">⚪ {t("color_white")}</option>
+                                <option value="random" className="bg-slate-900">🎲 {t("color_random")}</option>
+                             </select>
+                        </div>
+                    </div>
                 </div>
 
                 <h3 className="font-bold border-b border-white/10 text-white/80 pb-3 mb-4">{t("move_annotation")}</h3>

@@ -163,8 +163,9 @@ export default function SettingsPanel() {
                     </div>
                 </div>
 
-                <div className="mt-8 pt-4 border-t border-white/10 text-center">
-                    <p className="text-[9px] uppercase font-black tracking-widest text-slate-600">AntigravityChess Beta 1.3</p>
+                <div className="mt-8 pt-4 border-t border-white/10 text-center flex flex-col gap-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">AntigravityChess Beta 1.3.1</p>
+                    <p className="text-[8px] text-slate-600 font-bold uppercase tracking-[0.2em] opacity-80">Powered by Stockfish (GPLv3) & Chess.js (MIT)</p>
                 </div>
               </div>
             </motion.div>
