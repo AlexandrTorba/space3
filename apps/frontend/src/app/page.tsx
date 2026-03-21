@@ -216,7 +216,7 @@ export default function Home() {
                         <button 
                             onClick={handleCreateChallenge}
                             disabled={!playerName.trim()}
-                            className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white h-[60px] rounded-2xl font-bold transition-all text-lg shadow-[0_0_30px_rgba(59,130,246,0.2)]"
+                            className="flex items-center justify-center gap-2 w-full bg-[var(--brand-primary)] hover:opacity-90 disabled:bg-slate-800 disabled:text-slate-500 text-white h-[60px] rounded-2xl font-bold transition-all text-lg shadow-[0_0_30px_rgba(88,166,255,0.2)]"
                         >
                             <Play className="w-5 h-5 fill-current" /> Create Game
                         </button>
