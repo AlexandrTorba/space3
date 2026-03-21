@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { 
@@ -30,13 +30,13 @@ import { useSettings, boardThemes } from "@/hooks/useSettings";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-export default function PlayArena() {
-  const { id } = useParams() as { id: string };
-  const searchParams = useSearchParams();
-  const color = searchParams.get("color") || "white";
-  const tcMode = searchParams.get("tc") || "3";
-  const wName = searchParams.get("w") || "White";
-  const bName = searchParams.get("b") || "Black";
+export default function PlayArena({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<any> }) {
+  const { id } = React.use(params);
+  const sParams = React.use(searchParams);
+  const color = sParams.color || "white";
+  const tcMode = sParams.tc || "3";
+  const wName = sParams.w || "White";
+  const bName = sParams.b || "Black";
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
@@ -97,8 +97,8 @@ export default function PlayArena() {
     } catch (e) {}
 
     const ws = new WebSocket(`${protocol}//${host}/match/${id}?color=${color}`);
-    wsRef.current = ws;
     ws.binaryType = "arraybuffer";
+    wsRef.current = ws;
 
     ws.onopen = () => {
       setStatus("Connected");
@@ -106,6 +106,7 @@ export default function PlayArena() {
     };
 
     ws.onmessage = async (event) => {
+      if (!(event.data instanceof ArrayBuffer)) return;
       const data = new Uint8Array(event.data);
       try {
           const update = fromBinary(MatchUpdateSchema, data);

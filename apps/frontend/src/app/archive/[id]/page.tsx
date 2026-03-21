@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import React, { useEffect, useState, useRef } from "react";
+
 import { ChevronLeft, ChevronRight, Download, History, SkipBack, SkipForward } from "lucide-react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
@@ -9,8 +9,8 @@ import Link from "next/link";
 
 import { useTranslation } from "@/i18n";
 
-export default function ArchiveView() {
-  const { id } = useParams() as { id: string };
+export default function ArchiveView({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const { t } = useTranslation();
   const [match, setMatch] = useState<{result: string, reason: string, pgn: string} | null>(null);
   
