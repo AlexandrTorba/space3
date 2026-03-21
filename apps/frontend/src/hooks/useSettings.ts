@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export type BoardTheme = "dusk" | "wood" | "ice" | "classic";
+export type BoardTheme = "wood" | "classic";
 export type PieceSet = "wikipedia" | "leipzig";
 export type BackgroundTheme = "cosmos" | "abyss" | "minimal" | "forest";
 
@@ -24,9 +24,7 @@ export interface ChessSettings {
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
-  dusk: { dark: "#1e293b", light: "#334155" },
   wood: { dark: "#8b4513", light: "#d2b48c" },
-  ice: { dark: "#2c3e50", light: "#ecf0f1" },
   classic: { dark: "#4d6d4d", light: "#f0f0f0" },
 };
 
@@ -37,7 +35,7 @@ const PIECE_URLS: Record<PieceSet, string> = {
 
 export function useSettings() {
   const [settings, setSettings] = useState<ChessSettings>({
-    boardTheme: "dusk",
+    boardTheme: "classic",
     pieceSet: "wikipedia",
     backgroundTheme: "cosmos",
     showCoordinates: true,
@@ -56,12 +54,17 @@ export function useSettings() {
   }, []);
 
   const updateSettings = (partial: Partial<ChessSettings>) => {
-    const newSettings = { ...settings, ...partial };
-    setSettings(newSettings);
-    localStorage.setItem("ag_settings", JSON.stringify(newSettings));
-    
-    // Dispatch event for other components to sync
-    window.dispatchEvent(new CustomEvent("ag_settings_update", { detail: newSettings }));
+    setSettings(prev => {
+      const newSettings = { ...prev, ...partial };
+      
+      // Update storage
+      localStorage.setItem("ag_settings", JSON.stringify(newSettings));
+      
+      // Notify other instances
+      window.dispatchEvent(new CustomEvent("ag_settings_update", { detail: newSettings }));
+      
+      return newSettings;
+    });
   };
 
   useEffect(() => {

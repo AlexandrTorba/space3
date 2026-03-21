@@ -125,11 +125,9 @@ export default function Home() {
       }
   };
 
-  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   return (
-    <main className={`flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden ${currentBg.base} transition-all duration-700`}>
-      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ${currentBg.primary} rounded-full blur-[120px] pointer-events-none transition-all duration-1000`} />
+    <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative">
       
       <div className="max-w-4xl w-full text-center z-10">
         <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 font-mono text-sm tracking-widest uppercase">

@@ -208,7 +208,6 @@ export default function AnalysisView() {
       updateGameState();
   };
 
-  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const pieces = Object.fromEntries(
@@ -218,8 +217,7 @@ export default function AnalysisView() {
   );
 
   return (
-    <div className={`min-h-screen ${currentBg.base} text-white flex flex-col p-4 md:p-8 relative overflow-hidden transition-colors duration-700`}>
-        <div className={`absolute top-1/2 left-0 w-[600px] h-[600px] ${currentBg.primary} rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2 transition-colors duration-1000`} />
+    <div className="min-h-screen text-white flex flex-col p-4 md:p-8 relative transition-colors duration-700">
         
         <header className="flex justify-between items-center mb-6 z-10 max-w-6xl w-full mx-auto">
             <div className="flex items-center gap-3">

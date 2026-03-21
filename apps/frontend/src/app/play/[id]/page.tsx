@@ -387,7 +387,6 @@ export default function Play() {
       setFen(engine.fen());
   };
 
-  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   const pieces = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const customPieces = Object.fromEntries(
@@ -397,9 +396,7 @@ export default function Play() {
   );
 
   return (
-    <div className={`min-h-screen ${currentBg.base} text-white flex flex-col p-4 md:p-8 overflow-hidden relative transition-colors duration-700`}>
-        <div className={`absolute top-1/2 left-0 w-[600px] h-[600px] ${currentBg.primary} rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2 transition-colors duration-1000`} />
-        <div className={`absolute top-0 right-0 w-[500px] h-[500px] ${currentBg.secondary} rounded-full blur-[150px] pointer-events-none translate-x-1/3 -translate-y-1/3 transition-colors duration-1000`} />
+    <div className="min-h-screen flex flex-col p-4 md:p-8 relative">
 
         <header className="flex justify-between items-center mb-6 lg:mb-10 px-4 z-10 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3">
