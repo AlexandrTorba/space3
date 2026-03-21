@@ -52,11 +52,11 @@ export function useSettings() {
     setSettings(prev => {
       const newSettings = { ...prev, ...partial };
       
-      // Update storage
-      localStorage.setItem("ag_settings", JSON.stringify(newSettings));
-      
-      // Notify other instances
-      window.dispatchEvent(new CustomEvent("ag_settings_update", { detail: newSettings }));
+      // Defer side effects to next tick to avoid React render cycle issues
+      setTimeout(() => {
+        localStorage.setItem("ag_settings", JSON.stringify(newSettings));
+        window.dispatchEvent(new CustomEvent("ag_settings_update", { detail: newSettings }));
+      }, 0);
       
       return newSettings;
     });
