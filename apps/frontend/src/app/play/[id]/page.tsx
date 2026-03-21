@@ -231,17 +231,19 @@ export default function PlayArena() {
                             
         if (isPromotion) {
             if (settings.alwaysPromoteToQueen) {
-                const move = gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-                updateGameState();
-                logMessage(`Played: ${move.san}`);
-                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                    const uci = sourceSquare + targetSquare + 'q';
-                    const update = create(MatchUpdateSchema, {
-                        event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
-                    });
-                    wsRef.current.send(toBinary(MatchUpdateSchema, update));
-                }
-                return true;
+                try {
+                    const move = gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                    setTimeout(() => updateGameState(), 0);
+                    logMessage(`Played: ${move.san}`);
+                    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                        const uci = sourceSquare + targetSquare + 'q';
+                        const update = create(MatchUpdateSchema, {
+                            event: { case: "move", value: { matchId: id, uci: uci, timestamp: BigInt(Date.now()) } }
+                        });
+                        wsRef.current.send(toBinary(MatchUpdateSchema, update));
+                    }
+                    return true;
+                } catch(e) { return false; }
             }
             setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
             return true;
@@ -269,7 +271,7 @@ export default function PlayArena() {
       const { from, to } = pendingPromotion;
       try {
           const move = gameRef.current.move({ from, to, promotion: promotionPiece });
-          updateGameState();
+          setTimeout(() => updateGameState(), 0);
           logMessage(`Played (Prom): ${move.san}`);
           
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
