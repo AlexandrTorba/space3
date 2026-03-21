@@ -81,7 +81,9 @@ export const translations = {
       piece_set_section: "Piece Set",
       background_section: "System Background",
       coordinates: "Coordinates",
-      enable_premove: "Enable Pre-move"
+      enable_premove: "Enable Pre-move",
+      play_with_bot: "Play with Bot (1100)",
+      bot_thinking: "Bot thinking..."
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -161,7 +163,9 @@ export const translations = {
       piece_set_section: "Набір Фігур",
       background_section: "Фон Системи",
       coordinates: "Координати",
-      enable_premove: "Попередній хід"
+      enable_premove: "Попередній хід",
+      play_with_bot: "Гра з ботом (1100)",
+      bot_thinking: "Бот думає..."
     },
   es: {
      hero_title: "AntigravityChess",
@@ -241,7 +245,9 @@ export const translations = {
       piece_set_section: "Piezas",
       background_section: "Fondo del sistema",
       coordinates: "Coordenadas",
-      enable_premove: "Habilitar movimiento previo"
+      enable_premove: "Habilitar movimiento previo",
+      play_with_bot: "Jugar con Bot (1100)",
+      bot_thinking: "Bot pensando..."
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -321,7 +327,9 @@ export const translations = {
       piece_set_section: "Taş Seti",
       background_section: "Arka Plan",
       coordinates: "Koordinatlar",
-      enable_premove: "Ön Hamle"
+      enable_premove: "Ön Hamle",
+      play_with_bot: "Botla Oyna (1100)",
+      bot_thinking: "Bot düşünüyor..."
     }
 };
 

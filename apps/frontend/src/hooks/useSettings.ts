@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from "react";
 
-export type BoardTheme = "dusk" | "wood" | "ice" | "classic" | "midnight";
-export type PieceSet = "wikipedia" | "alpha" | "neo" | "dublin" | "leipzig";
+export type BoardTheme = "dusk" | "wood" | "ice" | "classic";
+export type PieceSet = "wikipedia" | "leipzig";
 export type BackgroundTheme = "cosmos" | "abyss" | "minimal" | "forest";
+
+export const backgroundGradients: Record<BackgroundTheme, { primary: string; secondary: string; base: string }> = {
+  cosmos: { base: "bg-[#07090E]", primary: "bg-blue-600/10", secondary: "bg-indigo-900/10" },
+  abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-black" },
+  minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
+  forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
+};
 
 export interface ChessSettings {
   boardTheme: BoardTheme;
@@ -20,14 +27,10 @@ export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = 
   wood: { dark: "#8b4513", light: "#d2b48c" },
   ice: { dark: "#2c3e50", light: "#ecf0f1" },
   classic: { dark: "#4d6d4d", light: "#f0f0f0" },
-  midnight: { dark: "#000000", light: "#1a1a1a" },
 };
 
 const PIECE_URLS: Record<PieceSet, string> = {
   wikipedia: "https://chessboardjs.com/img/chesspieces/wikipedia/",
-  alpha: "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/alpha/",
-  neo: "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/neo/",
-  dublin: "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/dublin/",
   leipzig: "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/leipzig/",
 };
 

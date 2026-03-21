@@ -10,7 +10,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/i18n";
-import { useSettings, boardThemes } from "@/hooks/useSettings";
+import { useSettings, boardThemes, backgroundGradients } from "@/hooks/useSettings";
 
 export default function Play() {
   const router = useRouter();
@@ -387,14 +387,7 @@ export default function Play() {
       setFen(engine.fen());
   };
 
-  const bgGradients: Record<string, { primary: string; secondary: string; base: string }> = {
-    cosmos: { base: "bg-[#07090E]", primary: "bg-blue-600/10", secondary: "bg-indigo-900/10" },
-    abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-black" },
-    minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
-    forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
-  };
-  
-  const currentBg = bgGradients[settings.backgroundTheme] || bgGradients.cosmos;
+  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   const pieces = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const customPieces = Object.fromEntries(

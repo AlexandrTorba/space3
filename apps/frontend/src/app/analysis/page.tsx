@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu } from "lucide-react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
-import { useSettings, boardThemes } from "@/hooks/useSettings";
+import { useSettings, boardThemes, backgroundGradients } from "@/hooks/useSettings";
 
 export default function AnalysisView() {
   const { t } = useTranslation();
@@ -21,6 +21,9 @@ export default function AnalysisView() {
   
   const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
   
+  const [isBotActive, setIsBotActive] = useState(false);
+  const [botThinking, setBotThinking] = useState(false);
+  
   const sfWorker = useRef<Worker | null>(null);
 
   useEffect(() => {
@@ -28,6 +31,22 @@ export default function AnalysisView() {
        sfWorker.current = new Worker("/stockfish.js");
        sfWorker.current.onmessage = (e) => {
           const line = e.data;
+          
+          if (line.startsWith("bestmove ") && isBotActive) {
+             const moveUci = line.split(" ")[1];
+             if (moveUci !== "(none)") {
+                const from = moveUci.substring(0, 2);
+                const to = moveUci.substring(2, 4);
+                const promotion = moveUci.length > 4 ? moveUci[4] : undefined;
+                
+                try {
+                  gameRef.current.move({ from, to, promotion });
+                  updateGameState();
+                } catch(e) {}
+                setBotThinking(false);
+             }
+          }
+
           if (line.includes("score cp ")) {
              const match = line.match(/score cp (-?\d+)/);
              if (match) {
@@ -46,9 +65,11 @@ export default function AnalysisView() {
           }
        };
        sfWorker.current.postMessage("uci");
+       sfWorker.current.postMessage("setoption name UCI_LimitStrength value true");
+       sfWorker.current.postMessage("setoption name UCI_Elo value 1100");
     }
     return () => sfWorker.current?.terminate();
-  }, []);
+  }, [isBotActive]);
 
   const triggerAnalysis = () => {
       if (sfWorker.current) {
@@ -128,6 +149,12 @@ export default function AnalysisView() {
     
         gameRef.current.move({ from: sourceSquare, to: targetSquare });
         updateGameState();
+
+        if (isBotActive) {
+            setBotThinking(true);
+            sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
+            sfWorker.current?.postMessage("go movetime 1000");
+        }
         return true;
     } catch (e) {
         return false;
@@ -140,6 +167,12 @@ export default function AnalysisView() {
       try {
           gameRef.current.move({ from, to, promotion: promotionPiece });
           updateGameState();
+
+          if (isBotActive) {
+              setBotThinking(true);
+              sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
+              sfWorker.current?.postMessage("go movetime 1000");
+          }
       } catch(e) {}
       setPendingPromotion(null);
   };
@@ -160,14 +193,7 @@ export default function AnalysisView() {
       updateGameState();
   };
 
-  const bgGradients: Record<string, { primary: string; secondary: string; base: string }> = {
-    cosmos: { base: "bg-[#07090E]", primary: "bg-indigo-600/10", secondary: "bg-blue-600/10" },
-    abyss: { base: "bg-[#020617]", primary: "bg-purple-900/10", secondary: "bg-slate-900/20" },
-    minimal: { base: "bg-[#0a0a0a]", primary: "bg-gray-800/5", secondary: "bg-gray-900/5" },
-    forest: { base: "bg-[#050805]", primary: "bg-emerald-900/10", secondary: "bg-green-900/5" },
-  };
-  
-  const currentBg = bgGradients[settings.backgroundTheme] || bgGradients.cosmos;
+  const currentBg = backgroundGradients[settings.backgroundTheme] || backgroundGradients.cosmos;
 
   const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const pieces = Object.fromEntries(
@@ -264,6 +290,20 @@ export default function AnalysisView() {
 
             <div className="bg-[#111827]/60 border border-white/10 rounded-3xl p-6 flex flex-col h-[650px] backdrop-blur-xl shadow-2xl">
                 
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <button 
+                        onClick={() => setIsBotActive(!isBotActive)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-black/30 ${
+                            isBotActive 
+                                ? 'bg-amber-600/20 border border-amber-500/40 text-amber-400' 
+                                : 'bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30'
+                        }`}
+                    >
+                        <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
+                        {botThinking ? t("bot_thinking") : t("play_with_bot")}
+                    </button>
+                </div>
+
                 <h3 className="font-bold border-b border-white/10 text-white/80 pb-3 mb-4">{t("move_annotation")}</h3>
                 
                 <div className="flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-white/10 pr-2">
