@@ -40,6 +40,8 @@ export default function AnalysisView() {
      }
   }, [isBotActive, botColor]);
 
+   const isBotMoving = useRef(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
        sfWorker.current = new Worker("/stockfish.js");
@@ -48,7 +50,7 @@ export default function AnalysisView() {
           
           if (line.startsWith("bestmove ") && isBotActive) {
              const moveUci = line.split(" ")[1];
-             if (moveUci !== "(none)") {
+             if (moveUci !== "(none)" && isBotMoving.current) {
                 const from = moveUci.substring(0, 2);
                 const to = moveUci.substring(2, 4);
                 const promotion = moveUci.length > 4 ? moveUci[4] : undefined;
@@ -61,6 +63,7 @@ export default function AnalysisView() {
                   }
                 } catch(e) {}
              }
+             isBotMoving.current = false;
              setBotThinking(false);
           }
 
@@ -88,9 +91,11 @@ export default function AnalysisView() {
     return () => sfWorker.current?.terminate();
   }, [isBotActive, settings.botElo, resolvedBotColor]);
 
-  useEffect(() => {
+   useEffect(() => {
     if (isBotActive && resolvedBotColor && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
        setBotThinking(true);
+       isBotMoving.current = true;
+       sfWorker.current?.postMessage("stop"); // Ensure any ongoing analysis stops
        sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
        sfWorker.current?.postMessage("go movetime 1000");
     }
@@ -223,8 +228,8 @@ export default function AnalysisView() {
             <div className="flex items-center gap-3">
               <Activity className="w-8 h-8 text-blue-400" />
               <div>
-                  <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("analysis_board")}</h1>
-                  <span className="text-xs text-gray-500 font-mono tracking-widest block uppercase">Stockfish 16.1 HCE</span>
+                   <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("analysis_board")}</h1>
+                  <span className="text-xs text-gray-500 font-mono tracking-widest block uppercase">Stockfish 18.0 Lite</span>
               </div>
             </div>
             
@@ -313,11 +318,11 @@ export default function AnalysisView() {
                         }`}
                     >
                         <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
-                        {botThinking ? t("bot_thinking") : `${t("play_with_bot")} (${settings.botElo})`}
+                         {botThinking ? t("bot_thinking") : t("play_with_bot")}
                     </button>
                     
                     <div className="flex flex-col gap-1 w-full">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("bot_play_as")}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("bot_play_as")} ({settings.botElo})</span>
                         <div className="flex items-center gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
                              <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-200 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : botColor === 'black' ? 'bg-slate-800 border border-slate-600' : 'bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-600'}`}></div>
                              <select 
