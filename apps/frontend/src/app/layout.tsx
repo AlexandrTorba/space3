@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   description: "A high-performance hyperbullet chess platform",
 };
 
-import LanguageSelector from "@/components/LanguageSelector";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import SettingsPanel from "@/components/SettingsPanel";
 
 export default function RootLayout({
   children,
@@ -31,7 +32,8 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        <LanguageSelector />
+        <SettingsPanel />
+        <SpeedInsights />
       </body>
     </html>
   );
