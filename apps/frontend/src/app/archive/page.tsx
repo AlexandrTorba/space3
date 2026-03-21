@@ -62,26 +62,26 @@ export default function Archive() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090E] p-4 md:p-8 text-white flex flex-col relative overflow-hidden">
-      <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 -translate-x-1/2" />
+    <div className="min-h-screen p-4 md:p-8 flex flex-col relative overflow-hidden bg-transparent">
+      {/* Dynamic Background elements now handled by AppBackground in layout */}
       
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12 max-w-5xl w-full mx-auto z-10 p-4 border border-white/5 bg-slate-900/50 backdrop-blur-md rounded-3xl">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12 max-w-5xl w-full mx-auto z-10 p-4 border border-[var(--surface-border)] bg-[var(--surface-glass)] backdrop-blur-md rounded-3xl shadow-xl">
          <div className="flex items-center gap-3">
-             <Database className="w-8 h-8 text-indigo-400" />
+             <Database className="w-8 h-8 text-[var(--brand-primary)]" />
              <div>
-                 <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("match_archive")}</h1>
-                 <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">{matches.length} {t("matches_found")}</span>
+                 <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[var(--text-primary)] to-[var(--brand-primary)] uppercase tracking-tight">{t("match_archive")}</h1>
+                 <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest font-black opacity-60">{matches.length} {t("matches_found")}</span>
              </div>
          </div>
 
          <div className="flex items-center gap-3">
-            <Link href="/" className="bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-full font-bold text-sm transition-colors">
+            <Link href="/" className="bg-[var(--button-bg)] hover:bg-[var(--surface-border)] text-[var(--text-primary)] px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border border-[var(--surface-border)]">
                {t("play_match")}
             </Link>
             <button 
                 onClick={downloadSelected} 
                 disabled={selected.size === 0}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900/30 disabled:text-blue-500/30 px-5 py-2.5 rounded-full font-bold text-sm transition-all"
+                className="flex items-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-lg"
             >
                <Download className="w-4 h-4"/> 
                {t("download_select")} ({selected.size})
@@ -93,51 +93,51 @@ export default function Archive() {
         
         {matches.length > 0 && (
            <div className="flex items-center gap-2 px-6 py-2">
-               <button onClick={toggleAll} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-                  {selected.size === matches.length ? <CheckSquare className="w-5 h-5 text-blue-400" /> : <Square className="w-5 h-5" />}
+               <button onClick={toggleAll} className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                  {selected.size === matches.length ? <CheckSquare className="w-5 h-5 text-[var(--brand-primary)]" /> : <Square className="w-5 h-5" />}
                   {t("select_all")}
                </button>
            </div>
         )}
 
         {loading ? (
-             <div className="text-center text-slate-500 py-20 animate-pulse">{t("loading_archive")}</div>
+             <div className="text-center text-[var(--text-muted)] py-20 font-bold uppercase tracking-widest animate-pulse">{t("loading_archive")}</div>
         ) : matches.length === 0 ? (
-          <div className="text-center text-slate-500 py-20 bg-slate-900/30 rounded-3xl border border-slate-800">
+          <div className="text-center text-[var(--text-muted)] py-20 bg-[var(--surface-glass)] rounded-3xl border border-[var(--surface-border)] font-bold uppercase tracking-widest">
             {t("no_games")}
           </div>
         ) : matches.map(match => (
-          <Link href={`/archive/${match.id}`} key={match.id} className="group relative bg-slate-900 border border-slate-700/50 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-blue-500/50 hover:bg-slate-800/80 transition-all cursor-pointer overflow-hidden">
+          <Link href={`/archive/${match.id}`} key={match.id} className="group relative bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-2xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-[var(--brand-primary)]/50 transition-all cursor-pointer overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1">
              {/* Selection Checkbox */}
              <div 
                  onClick={(e) => toggleSelect(match.id, e)}
                  className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center hover:bg-white/5 transition-colors z-20"
              >
                  {selected.has(match.id) ? (
-                    <CheckSquare className="w-6 h-6 text-blue-500" />
+                    <CheckSquare className="w-6 h-6 text-[var(--brand-primary)]" />
                  ) : (
-                    <Square className="w-6 h-6 text-slate-600 group-hover:text-slate-400" />
+                    <Square className="w-6 h-6 text-[var(--text-muted)] opacity-30 group-hover:opacity-100 transition-opacity" />
                  )}
              </div>
 
              <div className="flex flex-col gap-1 pl-12">
-                 <span className="text-xs text-slate-500 font-mono">ID: {match.id} {match.timeControl ? `• ${match.timeControl}` : ''}</span>
-                 <div className="flex flex-wrap items-center gap-3 mt-1">
-                     <span className={`font-black text-xl ${match.result === '1/2-1/2' ? 'text-yellow-500' : 'text-emerald-400'}`}>
+                 <span className="text-[10px] text-[var(--text-muted)] font-mono font-bold uppercase tracking-widest opacity-60">ID: {match.id.substring(0,8)} {match.timeControl ? `• ${match.timeControl}` : ''}</span>
+                 <div className="flex flex-wrap items-center gap-4 mt-1">
+                     <span className={`font-black text-2xl tracking-tighter ${match.result === '1/2-1/2' ? 'text-amber-500' : 'text-[var(--brand-primary)]'}`}>
                          {match.result}
                      </span>
-                     <span className="text-slate-300 font-bold text-sm tracking-wide">
-                         {match.whiteName || t("color_white")} <span className="text-slate-600 font-normal px-1">vs</span> {match.blackName || t("color_black")}
+                     <span className="text-[var(--text-primary)] font-bold text-lg tracking-tight">
+                         {match.whiteName || t("white")} <span className="text-[var(--text-muted)] font-normal px-1 opacity-50">vs</span> {match.blackName || t("black")}
                      </span>
-                     <span className="bg-slate-800 border border-slate-700 px-3 py-1 rounded text-xs text-slate-400 uppercase tracking-widest font-bold ml-2">
+                     <span className="bg-[var(--button-bg)] border border-[var(--surface-border)] px-3 py-1 rounded-md text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-black ml-2">
                          {match.reason}
                      </span>
                  </div>
              </div>
              
              <div className="text-left md:text-right pl-12 md:pl-0">
-                <div className="text-slate-400 font-mono text-sm">{new Date(match.createdAt).toLocaleString()}</div>
-                <div className="text-blue-500/0 group-hover:text-blue-500 text-xs font-bold mt-1 transition-all">
+                <div className="text-[var(--text-muted)] font-mono text-xs font-bold">{new Date(match.createdAt).toLocaleDateString()}</div>
+                <div className="text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 text-[10px] font-black mt-2 transition-all uppercase tracking-widest">
                    {t("click_review")} →
                 </div>
              </div>
