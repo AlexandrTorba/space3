@@ -130,7 +130,7 @@ export default function Home() {
     <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative">
       
       <div className="max-w-4xl w-full text-center z-10">
-        <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 font-mono text-sm tracking-widest uppercase">
+        <div className="inline-block mb-4 px-4 py-1.5 rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-mono text-sm tracking-widest uppercase">
           {status === 'Connected' ? `${t("status_connected")} Edge` : status}
         </div>
         
@@ -141,20 +141,20 @@ export default function Home() {
         <AnimatePresence mode="wait">
         {isMatching ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 py-20">
-                <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-emerald-300 animate-pulse">
+                <Loader2 className="w-12 h-12 text-[var(--brand-primary)] animate-spin" />
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--text-secondary)] to-[var(--brand-primary)] animate-pulse">
                     Routing match...
                 </h2>
             </motion.div>
         ) : (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-4xl mx-auto">
             {/* Create Challenge Panel */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col h-full">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Swords className="w-5 h-5 text-blue-400"/> {t("new_game")}</h2>
+            <div className="bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col h-full">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Swords className="w-5 h-5 text-[var(--brand-primary)]"/> {t("new_game")}</h2>
                 
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner">
-                        <User className="w-5 h-5 text-slate-400" />
+                    <div className="flex items-center gap-3 bg-[var(--surface-color)] p-4 rounded-2xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)]/50 transition-colors shadow-inner">
+                        <User className="w-5 h-5 text-[var(--text-muted)]" />
                         <input 
                             type="text" 
                             placeholder={t("enter_name")}
@@ -162,40 +162,40 @@ export default function Home() {
                             maxLength={20}
                             onChange={e => setPlayerName(e.target.value)}
                             onBlur={getNameOrDefault}
-                            className="bg-transparent border-none text-white w-full font-bold focus:outline-none placeholder-slate-600"
+                            className="bg-transparent border-none text-[var(--text-primary)] w-full font-bold focus:outline-none placeholder-[var(--text-muted)]"
                         />
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1 flex flex-col gap-1 w-full">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("time_control")}</span>
-                            <div className="flex-1 flex items-center gap-3 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] pl-1">{t("time_control")}</span>
+                            <div className="flex-1 flex items-center gap-3 bg-[var(--surface-color)] p-3.5 rounded-2xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)]/50 transition-colors shadow-inner cursor-pointer hover:opacity-80">
                                 <Timer className="w-4 h-4 text-emerald-400" />
                                 <select 
                                     value={timeControl} 
                                     onChange={e => setTimeControl(e.target.value)} 
-                                    className="bg-transparent border-none text-white w-full font-bold focus:outline-none appearance-none cursor-pointer text-sm"
+                                    className="bg-transparent border-none text-[var(--text-primary)] w-full font-bold focus:outline-none appearance-none cursor-pointer text-sm"
                                 >
-                                <option value="1" className="bg-slate-900">1 {t("minute")} ⚡️</option>
-                                <option value="3" className="bg-slate-900">3 {t("minutes")} 🔥</option>
-                                <option value="10" className="bg-slate-900">10 {t("minutes")} ⏱</option>
-                                <option value="Unlimited" className="bg-slate-900">{t("unlimited")} ♾️</option>
+                                <option value="1" className="bg-[var(--surface-color)]">1 {t("minute")} ⚡️</option>
+                                <option value="3" className="bg-[var(--surface-color)]">3 {t("minutes")} 🔥</option>
+                                <option value="10" className="bg-[var(--surface-color)]">10 {t("minutes")} ⏱</option>
+                                <option value="Unlimited" className="bg-[var(--surface-color)]">{t("unlimited")} ♾️</option>
                                 </select>
                             </div>
                         </div>
 
                         <div className="flex-1 flex flex-col gap-1 w-full">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 pl-1">{t("play_as")}</span>
-                            <div className="flex-1 flex items-center gap-3 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-colors shadow-inner cursor-pointer hover:bg-slate-900/40">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] pl-1">{t("play_as")}</span>
+                            <div className="flex-1 flex items-center gap-3 bg-[var(--surface-color)] p-3.5 rounded-2xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)]/50 transition-colors shadow-inner cursor-pointer hover:opacity-80">
                                 <span className={`w-3 h-3 rounded-full ${colorPref === 'white' ? 'bg-slate-200' : colorPref === 'black' ? 'bg-slate-800 border border-slate-600' : 'bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-600'}`}></span>
                                 <select 
                                     value={colorPref} 
                                     onChange={e => setColorPref(e.target.value as "white" | "black" | "random")} 
-                                    className="bg-transparent border-none text-white w-full font-bold focus:outline-none appearance-none cursor-pointer text-sm"
+                                    className="bg-transparent border-none text-[var(--text-primary)] w-full font-bold focus:outline-none appearance-none cursor-pointer text-sm"
                                 >
-                                <option value="random" className="bg-slate-900">🎲 {t("color_random")}</option>
-                                <option value="white" className="bg-slate-900">⚪ {t("color_white")}</option>
-                                <option value="black" className="bg-slate-900">⚫ {t("color_black")}</option>
+                                <option value="random" className="bg-[var(--surface-color)]">🎲 {t("color_random")}</option>
+                                <option value="white" className="bg-[var(--surface-color)]">⚪ {t("color_white")}</option>
+                                <option value="black" className="bg-[var(--surface-color)]">⚫ {t("color_black")}</option>
                                 </select>
                             </div>
                         </div>
@@ -205,10 +205,10 @@ export default function Home() {
                 <div className="mt-6 flex-1 flex flex-col justify-end">
                     {myChallengeId ? (
                         <div className="flex flex-col gap-3">
-                            <div className="bg-blue-900/20 border border-blue-500/30 text-blue-300 p-4 rounded-2xl text-center font-bold animate-pulse flex flex-col items-center justify-center h-[60px]">
+                            <div className="bg-[var(--brand-primary)]/10 border border-[var(--brand-primary)]/30 text-[var(--brand-primary)] p-4 rounded-2xl text-center font-bold animate-pulse flex flex-col items-center justify-center h-[60px]">
                                 {t("searching")}
                             </div>
-                            <button onClick={handleCancelChallenge} className="flex items-center justify-center gap-2 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 h-[60px] rounded-2xl font-bold transition-all">
+                            <button onClick={handleCancelChallenge} className="flex items-center justify-center gap-2 w-full bg-[var(--surface-color)] hover:bg-[var(--surface-border)] text-[var(--text-primary)] h-[60px] rounded-2xl font-bold transition-all border border-[var(--surface-border)]">
                                 <X className="w-5 h-5" /> Cancel
                             </button>
                         </div>
@@ -216,39 +216,39 @@ export default function Home() {
                         <button 
                             onClick={handleCreateChallenge}
                             disabled={!playerName.trim()}
-                            className="flex items-center justify-center gap-2 w-full bg-[var(--brand-primary)] hover:opacity-90 disabled:bg-slate-800 disabled:text-slate-500 text-white h-[60px] rounded-2xl font-bold transition-all text-lg shadow-[0_0_30px_rgba(88,166,255,0.2)]"
+                            className="flex items-center justify-center gap-2 w-full bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white h-[60px] rounded-2xl font-bold transition-all text-lg shadow-lg"
                         >
                             <Play className="w-5 h-5 fill-current" /> Create Game
                         </button>
                     )}
                 </div>
                 
-                <button onClick={() => router.push("/analysis")} className="w-full mt-4 flex items-center justify-center gap-2 bg-indigo-900/20 hover:bg-indigo-900/40 border border-indigo-500/20 p-4 rounded-2xl text-indigo-300 font-bold transition-all uppercase tracking-widest text-xs">
+                <button onClick={() => router.push("/analysis")} className="w-full mt-4 flex items-center justify-center gap-2 bg-[var(--button-bg)] hover:bg-[var(--surface-border)] border border-[var(--surface-border)] p-4 rounded-2xl text-[var(--text-primary)] font-bold transition-all uppercase tracking-widest text-xs">
                     <Activity className="w-4 h-4" /> {t("analysis_board")}
                 </button>
             </div>
 
             {/* Lobby List Panel */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col h-full min-h-[500px]">
-                <div className="flex items-center gap-2 mb-4 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800">
+            <div className="bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col h-full min-h-[500px]">
+                <div className="flex items-center gap-2 mb-4 bg-[var(--surface-color)]/50 p-1.5 rounded-xl border border-[var(--surface-border)]">
                     <button 
                         onClick={() => setActiveTab("lobby")}
-                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === "lobby" ? "bg-slate-800 text-emerald-400 shadow-md" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}
+                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === "lobby" ? "bg-[var(--surface-color)] text-[var(--brand-primary)] shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-color)]/50"}`}
                     >
-                        <div className="flex items-center justify-center gap-2"><User className="w-4 h-4"/> {t("lobby_tab")} <span className="text-xs bg-emerald-500/20 px-2 py-0.5 rounded-full">{challenges.length}</span></div>
+                        <div className="flex items-center justify-center gap-2"><User className="w-4 h-4"/> {t("lobby_tab")} <span className="text-xs bg-[var(--brand-primary)]/20 px-2 py-0.5 rounded-full">{challenges.length}</span></div>
                     </button>
                     <button 
                         onClick={() => setActiveTab("live")}
-                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === "live" ? "bg-slate-800 text-purple-400 shadow-md" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}
+                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === "live" ? "bg-[var(--surface-color)] text-purple-400 shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-color)]/50"}`}
                     >
                         <div className="flex items-center justify-center gap-2"><Activity className="w-4 h-4"/> {t("live_games")} <span className="text-xs bg-purple-500/20 px-2 py-0.5 rounded-full">{liveMatches.length}</span></div>
                     </button>
                 </div>
                 
                 {activeTab === "lobby" && (
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-700">
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[var(--surface-border)]">
                         {challenges.map(c => (
-                            <div key={c.id} className="flex items-center justify-between bg-slate-950/50 border border-slate-800 hover:border-slate-700 p-3 rounded-2xl transition-all group">
+                            <div key={c.id} className="flex items-center justify-between bg-[var(--surface-color)]/30 border border-[var(--surface-border)] hover:border-[var(--brand-primary)]/50 p-3 rounded-2xl transition-all group">
                                 <div className="flex items-center gap-3">
                                     <div className="flex flex-col justify-center gap-0.5">
                                       {c.colorPref === "white" && <div title="Plays White" className="w-4 h-4 rounded-full bg-slate-200 border border-slate-400"></div>}
@@ -256,8 +256,8 @@ export default function Home() {
                                       {c.colorPref === "random" && <div title="Random Color" className="w-4 h-4 rounded-full bg-gradient-to-tr from-slate-900 to-slate-200 border border-slate-500"></div>}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-200">{c.playerName}</span>
-                                        <span className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-1">
+                                        <span className="font-bold text-[var(--text-primary)]">{c.playerName}</span>
+                                        <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1 mt-1">
                                             <Timer className="w-3 h-3"/> {c.tc === "Unlimited" ? "Unlimited" : `${c.tc} min`}
                                         </span>
                                     </div>
@@ -265,14 +265,14 @@ export default function Home() {
                                 <button 
                                     onClick={() => handleAcceptChallenge(c.id)}
                                     disabled={myChallengeId === c.id}
-                                    className="bg-emerald-600/20 hover:bg-emerald-500/30 disabled:opacity-30 border border-emerald-500/30 text-emerald-400 px-5 py-2 rounded-xl font-bold text-sm transition-all shadow-lg"
+                                    className="bg-[var(--brand-primary)]/20 hover:bg-[var(--brand-primary)]/30 disabled:opacity-30 border border-[var(--brand-primary)]/30 text-[var(--brand-primary)] px-5 py-2 rounded-xl font-bold text-sm transition-all shadow-lg"
                                 >
                                     Play
                                 </button>
                             </div>
                         ))}
                         {challenges.length === 0 && (
-                            <div className="text-center text-slate-500 mt-20 flex flex-col items-center">
+                            <div className="text-center text-[var(--text-muted)] mt-20 flex flex-col items-center">
                                 <User className="w-8 h-8 mb-2 opacity-20"/>
                                 {t("no_challenges")}
                             </div>
@@ -281,26 +281,26 @@ export default function Home() {
                 )}
 
                 {activeTab === "live" && (
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-700">
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-[var(--surface-border)]">
                         {liveMatches.length > 0 && (
-                            <div className="text-xs text-slate-500 font-bold uppercase tracking-widest px-2 mb-3 mt-1 flex items-center justify-between">
+                            <div className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-widest px-2 mb-3 mt-1 flex items-center justify-between">
                                  <span>{t("live_games")} ({liveMatches.length})</span>
                                  <span className="flex items-center gap-1 text-emerald-400"><Activity className="w-3 h-3 animate-pulse" /> Live</span>
                             </div>
                         )}
                         {liveMatches.map((m: {id: string, whiteName: string, blackName: string, timeControl: string, spectators?: number}) => (
-                            <button key={m.id} onClick={() => router.push(`/play/${m.id}?color=spectator&tc=${m.timeControl.replace('m','')}&w=${encodeURIComponent(m.whiteName)}&b=${encodeURIComponent(m.blackName)}`)} className="w-full flex flex-col items-center justify-center bg-slate-950/30 hover:bg-slate-800/50 border border-slate-800 hover:border-slate-700 p-4 rounded-xl transition-all group relative">
-                                <div className="absolute top-2 right-3 text-[10px] font-bold text-slate-500 bg-slate-900 border border-slate-800 px-2 flex items-center gap-1 py-0.5 rounded-full shadow-inner"><Activity className="w-3 h-3 text-emerald-400" /> {m.spectators || 0}</div>
-                                <div className="w-full flex justify-between items-center text-base font-bold text-slate-300">
+                            <button key={m.id} onClick={() => router.push(`/play/${m.id}?color=spectator&tc=${m.timeControl.replace('m','')}&w=${encodeURIComponent(m.whiteName)}&b=${encodeURIComponent(m.blackName)}`)} className="w-full flex flex-col items-center justify-center bg-[var(--surface-color)]/20 hover:bg-[var(--surface-color)]/50 border border-[var(--surface-border)] hover:border-[var(--brand-primary)]/50 p-4 rounded-xl transition-all group relative shadow-inner">
+                                <div className="absolute top-2 right-3 text-[10px] font-bold text-[var(--text-muted)] bg-[var(--surface-color)] border border-[var(--surface-border)] px-2 flex items-center gap-1 py-0.5 rounded-full shadow-inner"><Activity className="w-3 h-3 text-emerald-400" /> {m.spectators || 0}</div>
+                                <div className="w-full flex justify-between items-center text-base font-bold text-[var(--text-primary)]">
                                     <span className="truncate">{m.whiteName}</span>
-                                    <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 font-mono text-purple-400 mx-2">vs</span>
+                                    <span className="text-xs px-2 py-0.5 rounded-md bg-[var(--button-bg)] font-mono text-purple-400 mx-2">vs</span>
                                     <span className="truncate">{m.blackName}</span>
                                 </div>
-                                <div className="text-xs text-slate-500 mt-2 uppercase tracking-widest flex items-center gap-1"> {t("spectate")} <Timer className="w-3 h-3"/> {m.timeControl}</div>
+                                <div className="text-xs text-[var(--text-muted)] mt-2 uppercase tracking-widest flex items-center gap-1"> {t("spectate")} <Timer className="w-3 h-3"/> {m.timeControl}</div>
                             </button>
                         ))}
                         {liveMatches.length === 0 && (
-                            <div className="text-center text-slate-500 mt-20 flex flex-col items-center text-sm">
+                            <div className="text-center text-[var(--text-muted)] mt-20 flex flex-col items-center text-sm">
                                 <Activity className="w-8 h-8 mb-2 opacity-20"/>
                                 {t("no_live_games")}
                             </div>
@@ -314,20 +314,20 @@ export default function Home() {
         </AnimatePresence>
         
         {/* Tournaments & Clubs Block */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-8 max-w-4xl mx-auto bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-8 max-w-4xl mx-auto bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--brand-primary)]/5 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div className="flex items-center gap-6 mb-6 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-6 mb-6 border-b border-[var(--surface-border)] pb-4">
                 <button 
                     onClick={() => setBottomTab("tournaments")}
-                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'tournaments' ? 'text-amber-500' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'tournaments' ? 'text-amber-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
                     <Trophy className="w-5 h-5"/> {t("tournaments")}
                     {bottomTab === 'tournaments' && <motion.div layoutId="bottomUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />}
                 </button>
                 <button 
                     onClick={() => setBottomTab("clubs")}
-                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'clubs' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-xl font-bold flex items-center gap-2 transition-all ${bottomTab === 'clubs' ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
                     <User className="w-5 h-5"/> {t("clubs")}
                 </button>
@@ -340,11 +340,11 @@ export default function Home() {
                         initial={{ opacity: 0, x: -10 }} 
                         animate={{ opacity: 1, x: 0 }} 
                         exit={{ opacity: 0, x: 10 }}
-                        className="flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-slate-800/50 border-dashed"
+                        className="flex flex-col items-center justify-center p-8 bg-[var(--surface-color)]/30 rounded-2xl border border-[var(--surface-border)] border-dashed"
                     >
                         <Trophy className="w-10 h-10 text-amber-500/20 mb-3" />
-                        <p className="text-slate-300 font-bold text-center">{t("no_tournaments")}</p>
-                        <p className="text-slate-500/80 text-sm mt-1 text-center max-w-sm">{t("tournaments_desc")}</p>
+                        <p className="text-[var(--text-primary)] font-bold text-center">{t("no_tournaments")}</p>
+                        <p className="text-[var(--text-muted)] text-sm mt-1 text-center max-w-sm">{t("tournaments_desc")}</p>
                     </motion.div>
                 ) : (
                     <motion.div 
@@ -352,11 +352,11 @@ export default function Home() {
                         initial={{ opacity: 0, x: 10 }} 
                         animate={{ opacity: 1, x: 0 }} 
                         exit={{ opacity: 0, x: -10 }}
-                        className="flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-slate-800/50 border-dashed"
+                        className="flex flex-col items-center justify-center p-8 bg-[var(--surface-color)]/30 rounded-2xl border border-[var(--surface-border)] border-dashed"
                     >
-                        <User className="w-10 h-10 text-blue-400/20 mb-3" />
-                        <p className="text-slate-300 font-bold text-center">{t("no_clubs")}</p>
-                        <p className="text-slate-500/80 text-sm mt-1 text-center max-w-sm">{t("clubs_desc")}</p>
+                        <User className="w-10 h-10 text-[var(--brand-primary)]/20 mb-3" />
+                        <p className="text-[var(--text-primary)] font-bold text-center">{t("no_clubs")}</p>
+                        <p className="text-[var(--text-muted)] text-sm mt-1 text-center max-w-sm">{t("clubs_desc")}</p>
                     </motion.div>
                 )}
             </AnimatePresence>

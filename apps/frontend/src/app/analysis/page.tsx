@@ -306,12 +306,12 @@ export default function AnalysisView() {
                 </div>
                 
                 {/* Playback Controls */}
-                <div className="flex items-center gap-3 mt-4 bg-slate-900/80 border border-slate-700/80 px-4 py-2 rounded-full w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] justify-center shadow-xl">
-                    <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-5 h-5"/></button>
-                    <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-6 h-6"/></button>
-                    <span className="font-mono text-xs font-bold w-16 text-center text-blue-400">{currentMoveIndex + 1} / {history.length}</span>
-                    <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronRight className="w-6 h-6"/></button>
-                    <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipForward className="w-5 h-5"/></button>
+                <div className="flex items-center gap-3 mt-4 bg-[var(--surface-glass)] border border-[var(--surface-border)] px-4 py-2 rounded-full w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] justify-center shadow-xl backdrop-blur-md">
+                    <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipBack className="w-5 h-5 text-[var(--text-primary)]"/></button>
+                    <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronLeft className="w-6 h-6 text-[var(--text-primary)]"/></button>
+                    <span className="font-mono text-xs font-bold w-16 text-center text-[var(--brand-primary)]">{currentMoveIndex + 1} / {history.length}</span>
+                    <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronRight className="w-6 h-6 text-[var(--text-primary)]"/></button>
+                    <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipForward className="w-5 h-5 text-[var(--text-primary)]"/></button>
                 </div>
             </div>
 
