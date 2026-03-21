@@ -318,7 +318,7 @@ export default function AnalysisView() {
                         }`}
                     >
                         <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
-                         {botThinking ? t("bot_thinking") : t("play_with_bot")}
+                         {botThinking ? t("bot_thinking") : `${t("play_with_bot")} (${settings.botElo})`}
                     </button>
                     
                     <div className="flex flex-col gap-1 w-full">
