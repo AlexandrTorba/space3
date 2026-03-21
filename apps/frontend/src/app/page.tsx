@@ -5,7 +5,7 @@ import { Loader2, Swords, Timer, User, Activity, Play, X, Trophy } from "lucide-
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/i18n";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSettings, backgroundGradients } from "@/hooks/useSettings";
+import { useSettings, boardThemes } from "@/hooks/useSettings";
 
 export default function Home() {
   const router = useRouter();

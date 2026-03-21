@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation, Language, translations } from "../i18n";
-import { useSettings, boardThemes, BoardTheme, PieceSet, BackgroundTheme } from "../hooks/useSettings";
+import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
 import { Settings, X, Palette, Globe, Layers, Eye, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
@@ -38,15 +38,15 @@ export default function SettingsPanel() {
                animate={{ x: 0 }} 
                exit={{ x: "100%" }}
                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-               className="fixed right-0 top-0 bottom-0 w-80 sm:w-80 bg-[#0f172a] border-l border-white/10 z-[80] shadow-2xl overflow-y-auto"
+               className="fixed right-0 top-0 bottom-0 w-80 sm:w-80 bg-[var(--settings-bg)] border-l border-white/10 z-[80] shadow-2xl overflow-y-auto"
             >
               <div className="p-5 h-full flex flex-col">
                 <header className="flex items-center justify-between mb-6">
                    <div className="flex items-center gap-2">
                       <Settings className="w-4 h-4 text-blue-400" />
-                      <h2 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 text-white uppercase tracking-wider uppercase">{t("settings_title") || "Settings"}</h2>
+                      <h2 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-slate-400 uppercase tracking-wider uppercase">{t("settings_title") || "Settings"}</h2>
                    </div>
-                   <button onClick={toggleOpen} className="p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors">
+                   <button onClick={toggleOpen} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-white/5 rounded-full transition-colors">
                       <X className="w-5 h-5" />
                    </button>
                 </header>
@@ -116,23 +116,32 @@ export default function SettingsPanel() {
                        </div>
                     </div>
 
-                    {/* Background Selection Section */}
+                     {/* Appearance (UiMode) Section */}
                     <div className="space-y-3">
                        <label className="text-[10px] font-black text-slate-500 flex items-center gap-2 tracking-widest uppercase">
-                          <Palette className="w-3 h-3" /> {t("background_section") || "Background"}
+                          <Palette className="w-3 h-3" /> {t("background_section") || "Appearance"}
                        </label>
-                       <div className="grid grid-cols-2 gap-2">
-                          {(['cosmos', 'abyss', 'minimal', 'forest'] as BackgroundTheme[]).map((bg) => (
-                             <button 
-                               key={bg}
-                               onClick={() => updateSettings({ backgroundTheme: bg })}
-                               className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all capitalize ${
-                                 settings.backgroundTheme === bg ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
-                               }`}
-                             >
-                               {bg}
-                             </button>
-                          ))}
+                       <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5 shadow-inner">
+                          <button 
+                            onClick={() => updateSettings({ uiMode: "dark" })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all ${
+                              settings.uiMode === "dark" 
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                                : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                          >
+                            ⚫ {t("theme_dark")}
+                          </button>
+                          <button 
+                            onClick={() => updateSettings({ uiMode: "light" })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all ${
+                              settings.uiMode === "light" 
+                                ? 'bg-white text-slate-900 shadow-lg shadow-white/20' 
+                                : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                          >
+                            ⚪ {t("theme_light")}
+                          </button>
                        </div>
                     </div>
 

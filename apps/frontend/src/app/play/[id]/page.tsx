@@ -10,7 +10,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/i18n";
-import { useSettings, boardThemes, backgroundGradients } from "@/hooks/useSettings";
+import { useSettings, boardThemes } from "@/hooks/useSettings";
 
 export default function Play() {
   const router = useRouter();
