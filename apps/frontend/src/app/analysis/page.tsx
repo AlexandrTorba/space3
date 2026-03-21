@@ -229,7 +229,7 @@ export default function AnalysisView() {
               <Activity className="w-8 h-8 text-blue-400" />
               <div>
                    <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("analysis_board")}</h1>
-                  <span className="text-xs text-gray-500 font-mono tracking-widest block uppercase">Stockfish 17.1 Lite</span>
+                  <span className="text-xs text-gray-500 font-mono tracking-widest block uppercase">Stockfish 16.1 (NNUE)</span>
               </div>
             </div>
             
