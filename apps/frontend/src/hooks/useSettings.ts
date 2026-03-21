@@ -36,7 +36,7 @@ export function useSettings() {
     highlightMoves: true,
     enablePremove: false,
     botElo: 1100,
-    alwaysPromoteToQueen: false,
+    alwaysPromoteToQueen: true,
   });
 
   useEffect(() => {
