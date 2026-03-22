@@ -53,25 +53,30 @@ export class ChessMatch {
     this.matchId = url.pathname.split("/")[2];
     
     // Parse params on initial connection if they are provided (only first connection matters to init)
-    if (this.moveCount === 0 && url.searchParams.has("tc")) {
-       this.tc = url.searchParams.get("tc") || "3";
-       this.isUnlimited = this.tc === "Unlimited";
+    if (url.searchParams.has("tc")) {
+       const tc = url.searchParams.get("tc") || "3";
+       const w = url.searchParams.get("w") || "White";
+       const b = url.searchParams.get("b") || "Black";
        
-       if (!this.isUnlimited) {
-          const minutes = parseInt(this.tc, 10);
-          if (!isNaN(minutes)) {
-             this.whiteTimeMs = minutes * 60 * 1000;
-             this.blackTimeMs = minutes * 60 * 1000;
+       console.log(`[MTCH] Init match ${this.matchId}: tc=${tc}, w=${w}, b=${b}`);
+
+       if (this.moveCount === 0) {
+          this.tc = tc;
+          this.isUnlimited = this.tc === "Unlimited";
+          if (!this.isUnlimited) {
+             const minutes = parseInt(this.tc, 10);
+             if (!isNaN(minutes)) {
+                this.whiteTimeMs = minutes * 60 * 1000;
+                this.blackTimeMs = minutes * 60 * 1000;
+             }
           }
+          this.whiteName = w;
+          this.blackName = b;
        }
-       
-       const w = url.searchParams.get("w");
-       if (w) this.whiteName = w;
-       const b = url.searchParams.get("b");
-       if (b) this.blackName = b;
-       
-       if (!this.dbInserted && this.db && w && b) {
+
+       if (!this.dbInserted && this.db && w !== "White" && b !== "Black") {
            this.dbInserted = true;
+           console.log(`[MTCH] Syncing match ${this.matchId} to DB`);
            const p = this.db.insert(matches).values({
               id: this.matchId,
               whiteName: this.whiteName,
@@ -81,7 +86,7 @@ export class ChessMatch {
               fen: this.engine.fen(),
               createdAt: new Date(),
               updatedAt: new Date()
-           }).onConflictDoNothing().execute().catch(console.error);
+           }).onConflictDoNothing().execute().catch((err: any) => console.error("[DB ERROR]", err));
            this.state.waitUntil(p);
        }
     }
@@ -131,13 +136,19 @@ export class ChessMatch {
   handleSession(server: WebSocket) {
     server.accept();
     this.sessions.add(server);
+    console.log(`[MTCH] Session added to match ${this.matchId}. Total: ${this.sessions.size}`);
 
     this.broadcastStatus();
 
     server.addEventListener("message", (event) => {
       try {
-        const buffer = new Uint8Array(event.data as ArrayBuffer);
+        if (!(event.data instanceof ArrayBuffer)) {
+          console.warn("[MTCH] Received non-binary message");
+          return;
+        }
+        const buffer = new Uint8Array(event.data);
         const matchUpdate = fromBinary(MatchUpdateSchema, buffer);
+        console.log(`[MTCH] Event ${matchUpdate.event.case} in ${this.matchId}`);
         
         // Timeout implicit check before processing any action
         if (this.deductTime()) return;
@@ -145,16 +156,13 @@ export class ChessMatch {
         // 1. Process Actions (Resign, Draw, Rematch)
         if (matchUpdate.event.case === "action") {
            const action = matchUpdate.event.value;
-           
-           // Authenticate player actions tightly
-           const claimColor = action.playerColor; // 'w' or 'b'
-           if (claimColor === 'w') {
-               if (!this.whiteSocket) this.whiteSocket = server;
-               else if (this.whiteSocket !== server) return; // Silent drop unauthorized action
-           } else if (claimColor === 'b') {
-               if (!this.blackSocket) this.blackSocket = server;
-               else if (this.blackSocket !== server) return;
-           }
+                      // Authenticate player actions loosely to allow reconnection
+            const claimColor = action.playerColor; // 'w' or 'b'
+            if (claimColor === 'w') {
+                this.whiteSocket = server;
+            } else if (claimColor === 'b') {
+                this.blackSocket = server;
+            }
            
            if (!this.isActive) {
                // Post-game actions
@@ -193,16 +201,13 @@ export class ChessMatch {
         // 2. Process Moves
         if (matchUpdate.event.case === "move" && this.isActive) {
           const move = matchUpdate.event.value;
-          const turn = this.engine.turn(); // 'w' or 'b'
-          
-          // Secure the sockets so black can't play for white
-          if (turn === 'w') {
-              if (!this.whiteSocket) this.whiteSocket = server;
-              else if (this.whiteSocket !== server) return; // Silent drop unauthorized move
-          } else {
-              if (!this.blackSocket) this.blackSocket = server;
-              else if (this.blackSocket !== server) return;
-          }
+           // Identify which socket belongs to which player on the fly
+           const turn = this.engine.turn(); // 'w' or 'b'
+           if (turn === 'w') {
+               this.whiteSocket = server;
+           } else {
+               this.blackSocket = server;
+           }
           
           let isValid = false;
           try {
@@ -259,31 +264,25 @@ export class ChessMatch {
     server.addEventListener("close", () => { 
         this.sessions.delete(server); 
         
-        if (server === this.whiteSocket) this.whiteSocket = null;
-        if (server === this.blackSocket) this.blackSocket = null;
-        
-        this.deductTime();
+        if (server === this.whiteSocket) {
+             console.log(`[MTCH] White socket disconnected in ${this.matchId}`);
+             // Note: Don't set to null immediately to allow grace period if needed, 
+             // but sessions tracker handles the cleanup for broadcast.
+        }
+        if (server === this.blackSocket) {
+             console.log(`[MTCH] Black socket disconnected in ${this.matchId}`);
+        }
         
         if (this.isActive && this.moveCount === 0 && this.sessions.size === 0 && this.db) {
            const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
            this.state.waitUntil(p);
         }
-        else if (this.isActive && this.moveCount > 0) {
-           if (!this.whiteSocket || !this.blackSocket) {
-               this.endGame(this.matchId, "1/2-1/2", "abandoned");
-           }
-        }
+        // Removed aggressive endGame on disconnect to support page refresh
     });
     server.addEventListener("error", () => { 
         this.sessions.delete(server); 
         if (server === this.whiteSocket) this.whiteSocket = null;
         if (server === this.blackSocket) this.blackSocket = null;
-        
-        if (this.isActive && this.moveCount > 0) {
-           if (!this.whiteSocket || !this.blackSocket) {
-               this.endGame(this.matchId, "1/2-1/2", "abandoned");
-           }
-        }
     });
   }
 
