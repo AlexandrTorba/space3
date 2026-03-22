@@ -154,7 +154,7 @@ export default function AnalysisView() {
       }
   };
 
-  function onDrop(sourceSquare: string, targetSquare: string | null, piece: string) {
+  function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare) return false;
     
     // Disallow user moves if bot is thinking OR it's bot's turn

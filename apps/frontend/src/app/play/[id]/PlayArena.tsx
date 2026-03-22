@@ -213,7 +213,7 @@ function PlayArenaContent() {
   // No variable dependencies in JSX to avoid premature crashes.
   if (!mounted || !id) return <div key="skeleton" className="min-h-screen bg-[#07090E]" />;
 
-  function onDrop(sourceSquare: string, targetSquare: string | null, piece: string) {
+  function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare || gameOver) return false;
     
     // Disallow moves if user is previewing history
