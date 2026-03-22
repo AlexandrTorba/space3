@@ -43,7 +43,15 @@ export function useSettings() {
     const saved = localStorage.getItem("ag_settings");
     if (saved) {
       try {
-        setSettings({ ...settings, ...JSON.parse(saved) });
+        const parsed = JSON.parse(saved);
+        // Validate theme/pieces to prevent crashes if localStorage has stale values
+        if (parsed.boardTheme && !boardThemes[parsed.boardTheme as BoardTheme]) {
+            delete parsed.boardTheme;
+        }
+        if (parsed.pieceSet && !["wikipedia", "leipzig"].includes(parsed.pieceSet)) {
+            delete parsed.pieceSet;
+        }
+        setSettings(prev => ({ ...prev, ...parsed }));
       } catch (e) {}
     }
   }, []);
