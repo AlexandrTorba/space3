@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import React from "react";
 import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
@@ -8,10 +9,24 @@ import Link from "next/link";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 
+function makePieceComponent(pieceCode: string, getPieceUrl: (p: string) => string) {
+  function PieceImg(props: { svgStyle?: React.CSSProperties; square?: string } = {}) {
+    return <img src={getPieceUrl(pieceCode)} style={props.svgStyle} className="w-full h-full object-contain" alt={pieceCode} />;
+  }
+  PieceImg.displayName = `Piece_${pieceCode}`;
+  return PieceImg;
+}
+const PIECE_LABELS = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+
 export default function AnalysisView() {
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
   
+  const pieces = useMemo(() => {
+    return Object.fromEntries(PIECE_LABELS.map(p => [p, makePieceComponent(p, getPieceUrl)]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.pieceSet]);
+
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState(gameRef.current.fen());
   const [history, setHistory] = useState<string[]>([]);
@@ -221,12 +236,7 @@ export default function AnalysisView() {
   };
 
 
-  const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
-  const pieces = Object.fromEntries(
-    piecesArr.map(p => [p, (props: any) => (
-      <img src={getPieceUrl(p)} style={props.svgStyle} className="w-full h-full object-contain" alt={p} />
-    )])
-  );
+
 
   return (
     <div className="min-h-screen text-white flex flex-col p-4 md:p-8 relative transition-colors duration-700">
@@ -265,7 +275,7 @@ export default function AnalysisView() {
                         options={{
                             position: fen, 
                             onPieceDrop: onDrop as any,
-                            boardOrientation: isBotActive && resolvedBotColor ? resolvedBotColor : "white",
+                            boardOrientation: isBotActive && resolvedBotColor ? (resolvedBotColor === "white" ? "black" : "white") : "white",
                             darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#1e293b" },
                             lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#334155" },
                             animationDurationInMs: 150,
