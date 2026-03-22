@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import React from "react";
 import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
-import { Chess } from "chess.js";
+import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
@@ -193,22 +193,34 @@ export default function AnalysisView() {
     }
     
     try {
-        const isPromotion = (piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') || 
-                            (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
-                            
+        const pieceCode = typeof piece === 'string' ? piece : (piece as any).pieceType;
+        const isWhitePawn = pieceCode === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8';
+        const isBlackPawn = pieceCode === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1';
+        const isPromotion = isWhitePawn || isBlackPawn;
+
+        // Validation clone
+        const tempGame = new Chess(gameRef.current.fen());
+        try {
+            const moveData = isPromotion 
+                ? { from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' }
+                : { from: sourceSquare as Square, to: targetSquare as Square };
+            const valid = tempGame.move(moveData);
+            if (!valid) return false;
+        } catch (e) { return false; }
+
         if (isPromotion) {
             if (settings.alwaysPromoteToQueen) {
                 try {
-                    gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                    gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
                     setTimeout(() => updateGameState(), 0);
                     return true;
                 } catch(e) { return false; }
             }
-            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
+            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: pieceCode[0] });
             return true;
         }
     
-        gameRef.current.move({ from: sourceSquare, to: targetSquare });
+        gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
         updateGameState();
         return true;
     } catch (e) {
