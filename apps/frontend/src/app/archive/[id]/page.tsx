@@ -100,11 +100,14 @@ export default function ArchiveView() {
                     <Chessboard 
                         options={{
                             position: fen, 
-                            boardOrientation: "white",
-                            darkSquareStyle: { backgroundColor: "#1e293b" },
-                            lightSquareStyle: { backgroundColor: "#334155" },
-                            animationDurationInMs: 150,
-                            allowDragging: false
+                            // onPieceDrop: onDrop as any, // Not applicable in archive view
+                            boardOrientation: "white", // Fixed for archive view
+                            darkSquareStyle: { backgroundColor: "#1e293b" }, // Using existing styles
+                            lightSquareStyle: { backgroundColor: "#334155" }, // Using existing styles
+                            animationDurationInMs: 200, // Updated from 150
+                            allowDragging: false, // Fixed for archive view
+                            showNotation: true, // Using existing value
+                            // pieces: customPieces as any // Not applicable in archive view
                         }}
                     />
                 </div>
