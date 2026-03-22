@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
 import Image from "next/image";
