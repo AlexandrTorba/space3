@@ -121,13 +121,22 @@ function PlayArenaContent() {
       }
     } catch (e) {}
 
-    const ws = new WebSocket(`${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`);
+    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`;
+    logMessage(`Connecting to: ${wsUrl}`);
+    
+    const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
 
     ws.onopen = () => {
       setStatus("Connected");
       logMessage("Successfully connected to game server.");
+    };
+
+    ws.onerror = (e) => {
+      console.error("WS ERROR:", e);
+      setStatus("Error Connecting");
+      logMessage(`WebSocket error occurred.`);
     };
 
     ws.onmessage = async (event) => {
@@ -171,13 +180,18 @@ function PlayArenaContent() {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (e) => {
       setStatus("Disconnected");
-      logMessage("WebSocket closed.");
+      const reason = e.reason || (e.wasClean ? "Normal Closure" : "Abnormal Termination");
+      logMessage(`WebSocket closed: ${reason} (Code: ${e.code})`);
     };
 
-    return () => { ws.close(); };
-  }, [id, color]);
+    return () => { 
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close(); 
+      }
+    };
+  }, [id, color, mounted, tcMode, wName, bName]);
 
   useEffect(() => {
      if (gameOver || clocks.white < 0) return;
