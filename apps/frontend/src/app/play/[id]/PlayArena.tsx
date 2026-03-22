@@ -267,13 +267,28 @@ function PlayArenaContent() {
     }
 
     try {
-        const isPromotion = (piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') || 
-                            (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
+        const pieceCode = typeof piece === 'string' ? piece : (piece as any).pieceType;
+        const isWhitePawn = pieceCode === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8';
+        const isBlackPawn = pieceCode === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1';
+        const isPromotion = isWhitePawn || isBlackPawn;
+
+        // Clone the game to validate the move BEFORE showing modal or applying
+        const tempGame = new Chess(gameRef.current.fen());
+        try {
+            const moveData = isPromotion 
+                ? { from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' }
+                : { from: sourceSquare as Square, to: targetSquare as Square };
+                
+            const valid = tempGame.move(moveData);
+            if (!valid) return false;
+        } catch (e) {
+            return false;
+        }
                             
         if (isPromotion) {
             if (settings.alwaysPromoteToQueen) {
                 try {
-                    const move = gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+                    const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
                     setTimeout(() => updateGameState(), 0);
                     logMessage(`Played: ${move.san}`);
                     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -286,11 +301,11 @@ function PlayArenaContent() {
                     return true;
                 } catch(e) { return false; }
             }
-            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: piece[0] });
+            setPendingPromotion({ from: sourceSquare, to: targetSquare, color: pieceCode[0] });
             return true;
         }
     
-        const move = gameRef.current.move({ from: sourceSquare, to: targetSquare });
+        const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
         updateGameState();
         logMessage(`Played: ${move.san}`);
 
