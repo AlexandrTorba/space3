@@ -90,7 +90,8 @@ export const translations = {
        bot_elo: "Bot Strength (ELO)",
       always_promote_to_queen: "Always promote to Queen",
       white: "White",
-      black: "Black"
+      black: "Black",
+      waiting_for_first_move: "Waiting for first move..."
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -179,7 +180,8 @@ export const translations = {
        bot_elo: "Сила бота (ELO)",
       always_promote_to_queen: "Автоматичне перетворення на Ферзя",
       white: "Білі",
-      black: "Чорні"
+      black: "Чорні",
+      waiting_for_first_move: "Очікування першого ходу..."
     },
   es: {
      hero_title: "AntigravityChess",
@@ -268,7 +270,8 @@ export const translations = {
        bot_elo: "Fuerza del Bot (ELO)",
       always_promote_to_queen: "Siempre coronar dama",
       white: "Blancas",
-      black: "Negras"
+      black: "Negras",
+      waiting_for_first_move: "Esperando primer movimiento..."
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -357,7 +360,8 @@ export const translations = {
        bot_elo: "Bot Gücü (ELO)",
       always_promote_to_queen: "Her zaman vezire terfi et",
       white: "Beyaz",
-      black: "Siyah"
+      black: "Siyah",
+      waiting_for_first_move: "İlk hamle bekleniyor..."
     }
 };
 
