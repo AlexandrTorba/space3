@@ -27,6 +27,23 @@ import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 import Link from "next/link";
 
+const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+
+// Stable piece component factory
+function makePieceComponent(pieceCode: string, urlRef: React.MutableRefObject<(p: string) => string>) {
+  function PieceImg(props: { svgStyle?: React.CSSProperties; square?: string } = {}) {
+    return <img src={urlRef.current(pieceCode)} style={props.svgStyle} className="w-full h-full object-contain pointer-events-none" alt={pieceCode} />;
+  }
+  return PieceImg;
+}
+
+const getPieceUrlRef: { current: (p: string) => string } = { current: () => "" };
+
+const stableCustomPieces = Object.fromEntries(
+  piecesLabels.map(p => [p, makePieceComponent(p, getPieceUrlRef)])
+);
+
+
 function PlayArenaContent() {
   const [mounted, setMounted] = useState(false);
   const params = useParams();
@@ -44,10 +61,11 @@ function PlayArenaContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
+  getPieceUrlRef.current = getPieceUrl;
 
   const isSpectator = color === "spectator";
 
-  const [fen, setFen] = useState("start");
+  const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   const [status, setStatus] = useState("Connecting...");
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
@@ -358,13 +376,6 @@ function PlayArenaContent() {
   };
 
 
-  const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
-  const customPieces = Object.fromEntries(
-    piecesLabels.map(p => [p, (props: any) => (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={getPieceUrl(p)} style={props.svgStyle} className="w-full h-full object-contain" alt={p} />
-    )])
-  );
 
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 relative">
@@ -447,7 +458,7 @@ function PlayArenaContent() {
                             animationDurationInMs: 200,
                             allowDragging: !isSpectator,
                             showNotation: settings.showCoordinates,
-                            pieces: customPieces as any
+                            pieces: stableCustomPieces as any
                         }}
                     />
 
