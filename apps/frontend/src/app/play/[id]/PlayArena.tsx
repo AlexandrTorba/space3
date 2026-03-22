@@ -121,7 +121,7 @@ function PlayArenaContent() {
       }
     } catch (e) {}
 
-    const ws = new WebSocket(`${protocol}//${host}/match/${id}?color=${color}`);
+    const ws = new WebSocket(`${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`);
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
 
