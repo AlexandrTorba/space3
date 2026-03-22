@@ -27,7 +27,7 @@ import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 import Link from "next/link";
 
-export default function PlayArena() {
+function PlayArenaContent() {
   const [mounted, setMounted] = useState(false);
   const params = useParams();
   const searchParams = useSearchParams();
@@ -591,5 +591,13 @@ export default function PlayArena() {
             </div>
         </div>
     </div>
+  );
+}
+
+export default function PlayArena() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading match...</div>}>
+      <PlayArenaContent />
+    </React.Suspense>
   );
 }
