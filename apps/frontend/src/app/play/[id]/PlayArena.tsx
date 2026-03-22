@@ -480,20 +480,22 @@ function PlayArenaContent() {
 
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden">
                     <Chessboard 
-                        position={fen}
-                        onPieceDrop={onDrop as any}
-                        boardOrientation={isSpectator ? "white" : color as any}
-                        customDarkSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" }}
-                        customLightSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" }}
-                        animationDuration={200}
-                        arePiecesDraggable={!isSpectator && !gameOver && currentMoveIndex === history.length - 1}
-                        showBoardNotation={settings.showCoordinates}
-                        customPieces={stableCustomPieces as any}
-                        customSquareStyles={{
-                            ...(preMove ? {
-                                [preMove.from]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' },
-                                [preMove.to]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' }
-                            } : {})
+                        options={{
+                            position: fen,
+                            onPieceDrop: onDrop as any,
+                            boardOrientation: isSpectator ? "white" : color as any,
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
+                            animationDurationInMs: 200,
+                            allowDragging: !isSpectator && !gameOver && currentMoveIndex === history.length - 1,
+                            showNotation: settings.showCoordinates,
+                            pieces: stableCustomPieces as any,
+                            squareStyles: {
+                                ...(preMove ? {
+                                    [preMove.from]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' },
+                                    [preMove.to]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' }
+                                } : {})
+                            }
                         }}
                     />
 

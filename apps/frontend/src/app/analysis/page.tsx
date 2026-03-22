@@ -291,16 +291,18 @@ export default function AnalysisView() {
 
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] bg-black/50 border-4 border-slate-800 p-2 rounded-[1rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] backdrop-blur-xl relative">
                     <Chessboard 
-                        id="AnalysisBoard"
-                        position={fen}
-                        onPieceDrop={onDrop as any}
-                        boardOrientation={isBotActive && resolvedBotColor ? (resolvedBotColor === "white" ? "black" : "white") : "white"}
-                        customDarkSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.dark || "#1e293b" }}
-                        customLightSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.light || "#334155" }}
-                        animationDuration={150}
-                        arePiecesDraggable={true}
-                        showBoardNotation={settings.showCoordinates}
-                        customPieces={pieces as any}
+                        options={{
+                            id: "AnalysisBoard",
+                            position: fen,
+                            onPieceDrop: onDrop as any,
+                            boardOrientation: isBotActive && resolvedBotColor ? (resolvedBotColor === "white" ? "black" : "white") : "white",
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#1e293b" },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#334155" },
+                            animationDurationInMs: 150,
+                            allowDragging: true,
+                            showNotation: settings.showCoordinates,
+                            pieces: pieces as any
+                        }}
                     />
 
                     {pendingPromotion && (
