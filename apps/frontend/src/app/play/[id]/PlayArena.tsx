@@ -95,7 +95,7 @@ export default function PlayArena() {
     if (!mounted || !id) return;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
+    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
     let host = rawUrl;
     try {
       if (rawUrl.includes("://")) {
