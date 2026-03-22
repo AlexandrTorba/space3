@@ -362,8 +362,9 @@ export default function PlayArena() {
 
   const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const customPieces = Object.fromEntries(
-    piecesLabels.map(p => [p, ({ squareWidth }: { squareWidth: number }) => (
-      <Image src={getPieceUrl(p)} width={squareWidth} height={squareWidth} alt={p} priority={p.startsWith('w')} />
+    piecesLabels.map(p => [p, (props: any) => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={getPieceUrl(p)} alt={p} className="w-full h-full object-contain" style={props.svgStyle} />
     )])
   );
 
