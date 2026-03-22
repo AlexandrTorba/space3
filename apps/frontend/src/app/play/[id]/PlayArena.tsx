@@ -492,10 +492,17 @@ function PlayArenaContent() {
                             pieces: stableCustomPieces as any,
                             squareStyles: {
                                 ...(preMove ? {
-                                    [preMove.from]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' },
-                                    [preMove.to]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' }
+                                    [preMove.from]: { backgroundColor: 'rgba(255, 255, 0, 0.4)', borderRadius: '50%' },
+                                    [preMove.to]: { backgroundColor: 'rgba(255, 255, 0, 0.4)', borderRadius: '50%' }
                                 } : {})
-                            }
+                            },
+                            arrows: preMove ? [
+                                {
+                                    startSquare: preMove.from,
+                                    endSquare: preMove.to,
+                                    color: 'rgba(255, 255, 0, 0.9)'
+                                }
+                            ] : []
                         }}
                     />
 
