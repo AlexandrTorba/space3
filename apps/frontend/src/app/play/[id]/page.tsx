@@ -212,7 +212,7 @@ export default function PlayArena() {
 
   if (!mounted || !id) return <div className="min-h-screen bg-[var(--bg-color)]" />;
 
-  function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string, targetSquare: string | null, piece: string }) {
+  function onDrop(sourceSquare: string, targetSquare: string | null, piece: string) {
     if (!targetSquare || gameOver) return false;
     
     // Disallow moves if user is previewing history
