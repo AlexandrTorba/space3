@@ -158,7 +158,14 @@ export default function AnalysisView() {
           }
 
           if (!success) {
-             alert("Failed to load PGN. Please check formatting.");
+              try {
+                  engine.load(cleanPgn);
+                  success = true;
+              } catch(e) {}
+          }
+
+          if (!success) {
+             alert("Failed to load PGN/FEN. Please check formatting.");
              return;
           }
           
