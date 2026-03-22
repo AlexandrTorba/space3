@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useSettingsContext } from "./providers/SettingsProvider";
 
 export const translations = {
   en: {
@@ -364,32 +364,7 @@ export const translations = {
 export type Language = keyof typeof translations;
 
 export function useTranslation() {
-   const [lang, setLang] = useState<Language>("uk");
-   
-   useEffect(() => {
-      const stored = localStorage.getItem("ag_lang") as Language;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (stored && translations[stored]) setLang(stored);
-      
-      const handleCustom = (e: Event) => {
-          const detail = (e as CustomEvent).detail;
-          if (detail && translations[detail as Language]) {
-             setLang(detail);
-          }
-      };
-      window.addEventListener("ag_lang_update", handleCustom);
-      return () => window.removeEventListener("ag_lang_update", handleCustom);
-   }, []);
-   
-   const changeLanguage = (newLang: Language) => {
-      localStorage.setItem("ag_lang", newLang);
-      window.dispatchEvent(new CustomEvent("ag_lang_update", { detail: newLang }));
-      setLang(newLang);
-   };
-
-   const t = (key: keyof typeof translations['en']) => {
-      return translations[lang]?.[key] || translations['en'][key] || key;
-   };
-
-   return { t, lang, changeLanguage };
+  const { t, lang, changeLanguage } = useSettingsContext();
+  return { t, lang, changeLanguage };
 }
+

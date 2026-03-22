@@ -1,7 +1,6 @@
-"use client";
-
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
+import Image from "next/image";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
@@ -56,7 +55,6 @@ export default function AnalysisView() {
                 const promotion = moveUci.length > 4 ? moveUci[4] : undefined;
                 
                 try {
-                  // Only apply if it's actually the bot's turn to avoid race conditions
                   if (resolvedBotColor && gameRef.current.turn() === resolvedBotColor[0]) {
                      gameRef.current.move({ from, to, promotion });
                      updateGameState();
@@ -86,16 +84,21 @@ export default function AnalysisView() {
        };
        sfWorker.current.postMessage("uci");
        sfWorker.current.postMessage("setoption name UCI_LimitStrength value true");
-       sfWorker.current.postMessage(`setoption name UCI_Elo value ${settings.botElo}`);
     }
     return () => sfWorker.current?.terminate();
-  }, [isBotActive, settings.botElo, resolvedBotColor]);
+  }, []); // Only create worker once
 
-   useEffect(() => {
+  useEffect(() => {
+    if (sfWorker.current) {
+       sfWorker.current.postMessage(`setoption name UCI_Elo value ${settings.botElo}`);
+    }
+  }, [settings.botElo]);
+
+  useEffect(() => {
     if (isBotActive && resolvedBotColor && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
        setBotThinking(true);
        isBotMoving.current = true;
-       sfWorker.current?.postMessage("stop"); // Ensure any ongoing analysis stops
+       sfWorker.current?.postMessage("stop");
        sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
        sfWorker.current?.postMessage("go movetime 1000");
     }
@@ -222,11 +225,18 @@ export default function AnalysisView() {
 
 
   const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
-  const pieces = Object.fromEntries(
-    piecesArr.map(p => [p, ({ squareWidth }: any) => (
-      <img src={getPieceUrl(p)} style={{ width: squareWidth, height: squareWidth }} alt={p} />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pieces = useMemo(() => Object.fromEntries(
+    piecesArr.map(p => [p, ({ squareWidth }: { squareWidth: number }) => (
+      <Image 
+        src={getPieceUrl(p)} 
+        width={squareWidth} 
+        height={squareWidth} 
+        alt={p} 
+        priority={p.startsWith('w')}
+      />
     )])
-  );
+  ), [settings.pieceSet]);
 
   return (
     <div className="min-h-screen text-white flex flex-col p-4 md:p-8 relative transition-colors duration-700">
@@ -262,15 +272,17 @@ export default function AnalysisView() {
 
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] bg-black/50 border-4 border-slate-800 p-2 rounded-[1rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] backdrop-blur-xl relative">
                     <Chessboard 
-                        position={fen} 
-                        onPieceDrop={onDrop as any}
-                        boardOrientation="white"
-                        darkSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.dark || "#1e293b" }}
-                        lightSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.light || "#334155" }}
-                        animationDuration={150}
-                        arePiecesDraggable={true}
-                        showBoardNotation={settings.showCoordinates}
-                        customPieces={pieces as any}
+                        options={{
+                            position: fen, 
+                            onPieceDrop: onDrop as any,
+                            boardOrientation: "white",
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#1e293b" },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#334155" },
+                            animationDurationInMs: 150,
+                            allowDragging: true,
+                            showNotation: settings.showCoordinates,
+                            pieces: pieces as any
+                        } as any}
                     />
 
                     {pendingPromotion && (
