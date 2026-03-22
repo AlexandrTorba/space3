@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation, Language, translations } from "../i18n";
-import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
+import { useSettings, boardThemes, BoardTheme, PieceSet } from "../hooks/useSettings";
 import { Settings, X, Palette, Globe, Layers, Eye, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";

@@ -19,8 +19,10 @@ import {
   Zap, 
   AlertCircle,
   Trophy,
-  CheckCircle
+  CheckCircle,
+  Image as ImageIcon
 } from "lucide-react";
+import Image from "next/image";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
 import { useTranslation } from "@/i18n";
@@ -360,8 +362,8 @@ export default function PlayArena() {
 
   const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
   const customPieces = Object.fromEntries(
-    piecesLabels.map(p => [p, ({ squareWidth }: any) => (
-      <img src={getPieceUrl(p)} style={{ width: squareWidth, height: squareWidth }} alt={p} />
+    piecesLabels.map(p => [p, ({ squareWidth }: { squareWidth: number }) => (
+      <Image src={getPieceUrl(p)} width={squareWidth} height={squareWidth} alt={p} priority={p.startsWith('w')} />
     )])
   );
 
@@ -447,7 +449,7 @@ export default function PlayArena() {
                             allowDragging: !isSpectator,
                             showNotation: settings.showCoordinates,
                             pieces: customPieces as any
-                        }}
+                        } as any}
                     />
 
                     {/* Promotion Selection Dialog */}
@@ -464,13 +466,15 @@ export default function PlayArena() {
                                                 onClick={() => completePromotion(p)}
                                                 className="w-20 h-20 bg-[var(--button-bg)] hover:bg-[var(--brand-primary)]/10 border border-[var(--surface-border)] rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 group shadow-lg"
                                             >
-                                                <img 
+                                                <Image 
                                                     src={getPieceUrl(`${pendingPromotion.color}${p.toUpperCase()}`)} 
                                                     alt={p} 
-                                                    className="w-14 h-14 object-contain group-hover:drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]"
+                                                    width={56}
+                                                    height={56}
+                                                    className="object-contain group-hover:drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]"
                                                 />
                                             </button>
-                                        ) as any)}
+                                        ))}
                                     </div>
                                     <button 
                                         onClick={() => setPendingPromotion(null)}

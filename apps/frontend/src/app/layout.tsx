@@ -43,6 +43,7 @@ export const metadata: Metadata = {
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AppBackground from "@/components/AppBackground";
 import SettingsPanel from "@/components/SettingsPanel";
+import { SettingsProvider } from "@/providers/SettingsProvider";
 
 export default function RootLayout({
   children,
@@ -55,13 +56,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col transition-colors duration-700">
-        <AppBackground />
-        <div className="relative z-10 flex-1">
-          {children}
-        </div>
-        <SettingsPanel />
-        <SpeedInsights />
+        <SettingsProvider>
+          <AppBackground />
+          <div className="relative z-10 flex-1">
+            {children}
+          </div>
+          <SettingsPanel />
+          <SpeedInsights />
+        </SettingsProvider>
       </body>
     </html>
   );
 }
+
