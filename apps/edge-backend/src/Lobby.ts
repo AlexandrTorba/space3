@@ -29,8 +29,15 @@ export class Lobby {
   }
 
   async fetch(request: Request) {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/clear")) {
+       this.challenges.clear();
+       this.broadcastChallenges();
+       return new Response(JSON.stringify({ success: true }));
+    }
+
     if (request.headers.get("Upgrade") !== "websocket") {
-      return new Response("Expected Upgrade: websocket", { status: 426 });
+       return new Response("Expected Upgrade: websocket", { status: 426 });
     }
 
     const pair = new WebSocketPair();
@@ -114,6 +121,10 @@ export class Lobby {
         }
         else if (data.type === "cancel") {
           this.removeUserChallenges(server);
+          this.broadcastChallenges();
+        }
+        else if (data.type === "clear") {
+          this.challenges.clear();
           this.broadcastChallenges();
         }
       } catch (err) {

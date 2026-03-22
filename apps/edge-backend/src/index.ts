@@ -136,9 +136,41 @@ export default {
           response = new Response(JSON.stringify({ error: "Failed to fetch live matches" }), { status: 500, headers: { "Content-Type": "application/json" } });
         }
       }
+    }
+    // Admin Cleanup Endpoint
+    else if (path === "/api/admin/clear") {
+      const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+      const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+
+      if (!dbUrl || !dbToken) {
+        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { status: 500 });
+      } else {
+        try {
+          const db = createDb(dbUrl, dbToken);
+          // Set all active games to 'finished' with reason 'abandoned'
+          await db.update(matches)
+            .set({ status: 'finished', result: '1/2-1/2', reason: 'cleanup', updatedAt: new Date() })
+            .where(eq(matches.status, 'active'))
+            .execute();
+          
+          // Clear Lobby challenges
+          try {
+             const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
+             const stub = env.LOBBY.get(id);
+             await stub.fetch("http://internal/clear", { method: "POST" });
+          } catch(e) {}
+
+          response = new Response(JSON.stringify({ success: true, message: "All active matches cleared" }), { 
+            headers: { "Content-Type": "application/json" } 
+          });
+        } catch (e) {
+          console.error("Cleanup error:", e);
+          response = new Response(JSON.stringify({ error: "Failed to clear matches" }), { status: 500 });
+        }
+      }
     } else {
       response = new Response(
-        "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history.",
+        "AntigravityChess Edge Backend.\n- WSS /lobby to find a match\n- WSS /match/<match_id> to connect to a game.\n- GET /api/archive for game history.\n- GET /api/admin/clear to clear live games.",
         { headers: { "Content-Type": "text/plain" } }
       );
     }
