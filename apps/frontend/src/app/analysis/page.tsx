@@ -188,6 +188,7 @@ export default function AnalysisView() {
              return;
           }
           
+          setPreMove(null); 
           gameRef.current = engine;
           updateGameState();
       } catch (e) {
@@ -275,11 +276,13 @@ export default function AnalysisView() {
       }
       setCurrentMoveIndex(index);
       setFen(engine.fen());
+      setPreMove(null);
   };
 
-  const resetBoard = () => {
+   const resetBoard = () => {
       gameRef.current = new Chess();
       setPastePgn("");
+      setPreMove(null);
       updateGameState();
   };
 
