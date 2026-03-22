@@ -69,7 +69,8 @@ function PlayArenaContent() {
   const [status, setStatus] = useState("Connecting...");
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-  const [clocks, setClocks] = useState({ white: 0, black: 0 });
+  const initialTime = tcMode === "Unlimited" ? -1 : (parseInt(tcMode, 10) || 3) * 60 * 1000;
+  const [clocks, setClocks] = useState({ white: initialTime, black: initialTime });
   const [turn, setTurn] = useState<'w' | 'b'>('w');
 
   const [gameOver, setGameOver] = useState(false);
@@ -232,12 +233,13 @@ function PlayArenaContent() {
          }
      }
 
-     const interval = setInterval(() => {
-         setClocks(prev => ({
-             white: turn === 'w' ? Math.max(0, prev.white - 100) : prev.white,
-             black: turn === 'b' ? Math.max(0, prev.black - 100) : prev.black,
-         }));
-     }, 100);
+      const interval = setInterval(() => {
+          if (history.length === 0) return; // Clocks don't tick until white makes the first move
+          setClocks(prev => ({
+              white: turn === 'w' ? Math.max(0, prev.white - 100) : prev.white,
+              black: turn === 'b' ? Math.max(0, prev.black - 100) : prev.black,
+          }));
+      }, 100);
      return () => clearInterval(interval);
   }, [gameOver, fen, clocks.white < 0, preMove]);
 
