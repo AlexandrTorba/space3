@@ -227,17 +227,12 @@ export default function AnalysisView() {
 
 
   const piecesArr = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const pieces = useMemo(() => Object.fromEntries(
-    piecesArr.map(p => [p, ({ squareWidth }: { squareWidth: number }) => (
-      <Image 
-        src={getPieceUrl(p)} 
-        width={squareWidth} 
-        height={squareWidth} 
-        alt={p} 
-        priority={p.startsWith('w')}
-      />
-    )])
+    piecesArr.map(p => [p, (props: any) => {
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={getPieceUrl(p)} alt={p} className="w-full h-full object-contain" style={props.svgStyle} />;
+    }])
   ), [settings.pieceSet]);
 
   return (

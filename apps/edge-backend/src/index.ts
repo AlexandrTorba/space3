@@ -138,7 +138,7 @@ export default {
       }
     }
     // Admin Cleanup Endpoint
-    else if (path === "/api/admin/clear") {
+    else if (path.startsWith("/api/admin/clear")) {
       const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
       const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
 
