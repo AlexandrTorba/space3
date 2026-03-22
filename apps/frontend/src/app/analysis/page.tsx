@@ -40,6 +40,7 @@ export default function AnalysisView() {
   const [botColor, setBotColor] = useState<"white" | "black" | "random">("black");
   const [resolvedBotColor, setResolvedBotColor] = useState<"white" | "black" | null>(null);
   const [botThinking, setBotThinking] = useState(false);
+  const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
   
   const sfWorker = useRef<Worker | null>(null);
 
@@ -134,6 +135,24 @@ export default function AnalysisView() {
       const newHistory = gameRef.current.history();
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
+      
+      // Auto-trigger pre-moves
+      if (settings.enablePremove && preMove) {
+          const turn = gameRef.current.turn();
+          const targetColor = preMove.from ? (gameRef.current.get(preMove.from as Square)?.color) : null;
+          
+          if (targetColor === turn) {
+              try {
+                  const move = gameRef.current.move({ from: preMove.from as Square, to: preMove.to as Square, promotion: 'q' });
+                  if (move) {
+                      setPreMove(null);
+                      setTimeout(() => updateGameState(), 200);
+                  }
+              } catch(e) {
+                  setPreMove(null); 
+              }
+          }
+      }
   };
 
   const loadPgn = () => {
@@ -175,12 +194,22 @@ export default function AnalysisView() {
           alert("Error parsing PGN string");
       }
   };
-
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare) return false;
     
-    // Disallow user moves if bot is thinking OR it's bot's turn
-    if (isBotActive && resolvedBotColor && (botThinking || gameRef.current.turn() === resolvedBotColor[0])) {
+    const turn = gameRef.current.turn();
+    const pieceColor = piece[0];
+
+    // Handle premove if it's not our turn
+    if (pieceColor !== turn) {
+        if (settings.enablePremove) {
+            setPreMove({ from: sourceSquare, to: targetSquare });
+        }
+        return false;
+    }
+
+    // Disallow user moves if bot is thinking 
+    if (isBotActive && botThinking) {
        return false;
     }
 
@@ -301,7 +330,20 @@ export default function AnalysisView() {
                             animationDurationInMs: 150,
                             allowDragging: true,
                             showNotation: settings.showCoordinates,
-                            pieces: pieces as any
+                            pieces: pieces as any,
+                            squareStyles: {
+                                ...(preMove ? {
+                                    [preMove.from]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' },
+                                    [preMove.to]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' }
+                                } : {})
+                            },
+                            arrows: preMove ? [
+                                {
+                                    startSquare: preMove.from,
+                                    endSquare: preMove.to,
+                                    color: 'rgba(219, 165, 33, 0.9)'
+                                }
+                            ] : []
                         }}
                     />
 
@@ -332,6 +374,15 @@ export default function AnalysisView() {
                                 </button>
                             </div>
                         </div>
+                    )}
+
+                    {preMove && (
+                        <button 
+                            onClick={() => setPreMove(null)}
+                            className="absolute top-4 right-4 bg-amber-600/90 hover:bg-amber-600 text-white text-[10px] px-3 py-1.5 rounded-full font-black animate-pulse shadow-xl z-20 border border-amber-400/50 backdrop-blur-sm transition-all active:scale-95"
+                        >
+                            PREMOVE ACTIVE (CLICK TO CANCEL)
+                        </button>
                     )}
                 </div>
                 
