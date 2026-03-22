@@ -25,7 +25,6 @@ import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export default function PlayArena() {
@@ -403,10 +402,8 @@ export default function PlayArena() {
             <div className="lg:col-span-2 flex flex-col p-2 relative">
                 
                 {/* Result Announcement Strip */}
-                <AnimatePresence>
-                   {gameOver && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+                {gameOver && (
+                        <div 
                           className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-4 flex justify-between items-center shadow-xl backdrop-blur-xl"
                         >
                             <div className="flex items-center gap-4">
@@ -416,9 +413,8 @@ export default function PlayArena() {
                                    <p className="text-emerald-400/80 font-mono text-xs uppercase tracking-widest">{gameReason}</p>
                                </div>
                             </div>
-                        </motion.div>
-                   )}
-                </AnimatePresence>
+                        </div>
+                )}
 
                 {/* Opponent Info Banner */}
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-4 py-2 rounded-t-2xl">
@@ -455,10 +451,8 @@ export default function PlayArena() {
                     />
 
                     {/* Promotion Selection Dialog */}
-                    <AnimatePresence>
-                        {pendingPromotion && (
-                            <motion.div 
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    {pendingPromotion && (
+                            <div 
                                 className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8"
                             >
                                 <div className="bg-[var(--settings-bg)] border border-[var(--surface-border)] p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-8">
@@ -485,9 +479,8 @@ export default function PlayArena() {
                                         Cancel
                                     </button>
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            </div>
+                    )}
 
                     {/* Pre-move Indicator */}
                     {preMove && (
