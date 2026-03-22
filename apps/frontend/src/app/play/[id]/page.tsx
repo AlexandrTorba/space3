@@ -13,5 +13,9 @@ const PlayArenaClient = dynamic(() => import("./PlayArena"), {
 });
 
 export default function Page() {
-    return <PlayArenaClient />;
+    return (
+        <React.Suspense fallback={<div className="min-h-screen bg-[#07090E] flex items-center justify-center text-white">Initializing...</div>}>
+            <PlayArenaClient />
+        </React.Suspense>
+    );
 }

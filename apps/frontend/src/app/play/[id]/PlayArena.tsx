@@ -37,10 +37,10 @@ export default function PlayArena() {
   }, []);
 
   const id = params?.id as string;
-  const color = searchParams?.get("color") || "white";
-  const tcMode = searchParams?.get("tc") || "3";
-  const wName = searchParams?.get("w") || "White";
-  const bName = searchParams?.get("b") || "Black";
+  const color = searchParams ? (searchParams.get("color") || "white") : "white";
+  const tcMode = searchParams ? (searchParams.get("tc") || "3") : "3";
+  const wName = searchParams ? (searchParams.get("w") || "Гравець 1") : "Гравець 1";
+  const bName = searchParams ? (searchParams.get("b") || "Гравець 2") : "Гравець 2";
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
