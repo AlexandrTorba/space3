@@ -19,7 +19,7 @@ import {
   Zap, 
   AlertCircle,
   Trophy,
-  CheckCircle2
+  CheckCircle
 } from "lucide-react";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
@@ -210,7 +210,9 @@ export default function PlayArena() {
      return () => clearInterval(interval);
   }, [gameOver, fen, clocks.white < 0, preMove]);
 
-  if (!mounted || !id) return <div className="min-h-screen bg-[var(--bg-color)]" />;
+  // Final neutral guard for SSR and hydration. 
+  // No variable dependencies in JSX to avoid premature crashes.
+  if (!mounted || !id) return <div key="skeleton" className="min-h-screen bg-[#07090E]" />;
 
   function onDrop(sourceSquare: string, targetSquare: string | null, piece: string) {
     if (!targetSquare || gameOver) return false;
@@ -408,7 +410,7 @@ export default function PlayArena() {
                           className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-4 flex justify-between items-center shadow-xl backdrop-blur-xl"
                         >
                             <div className="flex items-center gap-4">
-                               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                               <CheckCircle className="w-8 h-8 text-emerald-500" />
                                <div>
                                    <h2 className="text-xl font-black text-white">{gameResult}</h2>
                                    <p className="text-emerald-400/80 font-mono text-xs uppercase tracking-widest">{gameReason}</p>
@@ -443,8 +445,8 @@ export default function PlayArena() {
                             position: fen, 
                             onPieceDrop: onDrop as any,
                             boardOrientation: isSpectator ? "white" : color as any,
-                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].dark },
-                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme].light },
+                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
+                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                             animationDurationInMs: 200,
                             allowDragging: !isSpectator,
                             showNotation: settings.showCoordinates,
