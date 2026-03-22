@@ -480,16 +480,20 @@ function PlayArenaContent() {
 
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden">
                     <Chessboard 
-                        options={{
-                            position: fen, 
-                            onPieceDrop: onDrop as any,
-                            boardOrientation: isSpectator ? "white" : color as any,
-                            darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
-                            lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
-                            animationDurationInMs: 200,
-                            allowDragging: !isSpectator,
-                            showNotation: settings.showCoordinates,
-                            pieces: stableCustomPieces as any
+                        position={fen}
+                        onPieceDrop={onDrop as any}
+                        boardOrientation={isSpectator ? "white" : color as any}
+                        customDarkSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" }}
+                        customLightSquareStyle={{ backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" }}
+                        animationDuration={200}
+                        arePiecesDraggable={!isSpectator && !gameOver && currentMoveIndex === history.length - 1}
+                        showBoardNotation={settings.showCoordinates}
+                        customPieces={stableCustomPieces as any}
+                        customSquareStyles={{
+                            ...(preMove ? {
+                                [preMove.from]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' },
+                                [preMove.to]: { backgroundColor: 'rgba(255, 0, 0, 0.3)', borderRadius: '50%' }
+                            } : {})
                         }}
                     />
 
@@ -527,9 +531,12 @@ function PlayArenaContent() {
 
                     {/* Pre-move Indicator */}
                     {preMove && (
-                        <div className="absolute top-4 right-4 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse shadow-lg z-10 border border-red-400">
-                            PREMOVE SET (CLICK TO CANCEL)
-                        </div>
+                        <button 
+                            onClick={() => setPreMove(null)}
+                            className="absolute top-4 right-4 bg-red-600/90 hover:bg-red-600 text-white text-[10px] px-3 py-1.5 rounded-full font-black animate-pulse shadow-xl z-20 border border-red-400/50 backdrop-blur-sm transition-all active:scale-95"
+                        >
+                            PREMOVE ACTIVE (CLICK TO CANCEL)
+                        </button>
                     )}
                 </div>
                 
