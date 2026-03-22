@@ -198,8 +198,9 @@ export default function AnalysisView() {
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare) return false;
     
+    const pieceCode = typeof piece === 'string' ? piece : (piece as any).pieceType;
     const turn = gameRef.current.turn();
-    const pieceColor = piece[0];
+    const pieceColor = pieceCode[0];
 
     // Handle premove if it's not our turn
     if (pieceColor !== turn) {
@@ -223,7 +224,6 @@ export default function AnalysisView() {
     }
     
     try {
-        const pieceCode = typeof piece === 'string' ? piece : (piece as any).pieceType;
         const isWhitePawn = pieceCode === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8';
         const isBlackPawn = pieceCode === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1';
         const isPromotion = isWhitePawn || isBlackPawn;
