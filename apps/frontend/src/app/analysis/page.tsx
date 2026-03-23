@@ -43,7 +43,7 @@ export default function AnalysisView() {
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
   
   const sfWorker = useRef<Worker | null>(null);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("pgn");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("openings");
   const [activeOpeningIndex, setActiveOpeningIndex] = useState<number | null>(null);
   const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
   const [openingPage, setOpeningPage] = useState(0);
@@ -562,39 +562,31 @@ export default function AnalysisView() {
 
             <div className="bg-[var(--surface-glass)] border border-[var(--surface-border)] rounded-[2rem] p-6 flex flex-col h-[650px] backdrop-blur-xl shadow-2xl">
                 
-                <div className="flex flex-col gap-4 mb-6 pb-6 border-b border-[var(--surface-border)]">
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[var(--surface-border)]">
                     <button 
                         onClick={() => setIsBotActive(!isBotActive)}
-                        className={`w-full flex items-center justify-center gap-3 py-4 rounded-[1.25rem] font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95 ${
                             isBotActive 
                                 ? 'bg-amber-600/20 border border-amber-500/40 text-amber-500' 
                                 : 'bg-[var(--brand-primary)] border border-white/10 text-white shadow-[var(--brand-primary)]/20'
                         }`}
                     >
-                        <Cpu className={`w-5 h-5 ${botThinking ? 'animate-spin' : ''}`} />
+                        <Cpu className={`w-4 h-4 ${botThinking ? 'animate-spin' : ''}`} />
                          {botThinking ? t("bot_thinking") : `${t("play_with_bot")} (${settings.botElo})`}
                     </button>
                     
-                    <div className="flex flex-col gap-2 w-full">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] pl-1 opacity-60 font-black">{t("bot_play_as")}</span>
-                        <div className="flex items-center gap-3 bg-[var(--button-bg)] p-3 rounded-xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)] transition-colors shadow-inner cursor-pointer">
-                             <div className={`w-3 h-3 rounded-full ${botColor === 'white' ? 'bg-slate-100 shadow-sm border border-slate-300' : botColor === 'black' ? 'bg-slate-800 border border-slate-700' : 'bg-gradient-to-tr from-slate-950 to-slate-200 border border-slate-600'}`}></div>
-                             <select 
-                                value={botColor} 
-                                onChange={e => setBotColor(e.target.value as any)} 
-                                disabled={isBotActive && botThinking}
-                                className="bg-transparent border-none text-[var(--text-primary)] w-full font-bold focus:outline-none appearance-none cursor-pointer text-xs"
-                             >
-                                <option value="black" className="bg-[var(--settings-bg)]">⚫ {t("black") || "Black"}</option>
-                                <option value="white" className="bg-[var(--settings-bg)]">⚪ {t("white") || "White"}</option>
-                             </select>
-                        </div>
+                    <div className="flex bg-[var(--button-bg)] p-1.5 rounded-xl border border-[var(--surface-border)] focus-within:border-[var(--brand-primary)] transition-colors h-[42px] items-center min-w-[50px]">
+                         <select 
+                            value={botColor} 
+                            onChange={e => setBotColor(e.target.value as any)} 
+                            disabled={isBotActive && botThinking}
+                            className="bg-transparent border-none text-[var(--text-primary)] w-full font-black focus:outline-none appearance-none cursor-pointer text-[10px] text-center"
+                         >
+                            <option value="black" className="bg-[var(--settings-bg)]">⚫</option>
+                            <option value="white" className="bg-[var(--settings-bg)]">⚪</option>
+                         </select>
                     </div>
                 </div>
-
-                <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--surface-border)] pb-3 mb-4 flex items-center gap-2">
-                   <Timer className="w-3 h-3" /> {t("move_annotation")}
-                </h3>
                 
                 <div className="flex-1 overflow-y-auto mb-6 scrollbar-thin scrollbar-thumb-[var(--surface-border)] pr-2">
                     <div className="flex flex-col gap-1.5">
@@ -629,29 +621,29 @@ export default function AnalysisView() {
                 <div className="mt-auto border-t border-[var(--surface-border)] pt-4 flex flex-col gap-3">
                     <div className="flex bg-[var(--button-bg)] p-1 rounded-xl mb-1 border border-[var(--surface-border)]">
                         <button 
-                            onClick={() => setActiveSidebarTab("pgn")}
-                            className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "pgn" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
-                        >
-                           <Upload className="w-3 h-3 inline-block mr-1 mb-0.5" /> PGN
-                        </button>
-                        <button 
                             onClick={() => setActiveSidebarTab("openings")}
                             className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "openings" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
                         >
                            <Globe className="w-3 h-3 inline-block mr-1 mb-0.5" /> {t("openings_tab") || "DEBUTS"}
                         </button>
+                        <button 
+                            onClick={() => setActiveSidebarTab("pgn")}
+                            className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "pgn" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
+                        >
+                           <Upload className="w-3 h-3 inline-block mr-1 mb-0.5" /> PGN
+                        </button>
                     </div>
 
                     {activeSidebarTab === "pgn" ? (
-                        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <textarea 
                                value={pastePgn} 
                                onChange={e => setPastePgn(e.target.value)}
                                placeholder={t("paste_pgn") as string} 
-                               className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-4 text-xs font-mono text-[var(--text-primary)] h-28 focus:outline-none focus:border-[var(--brand-primary)] resize-none flex-shrink-0"
+                               className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-3 text-[10px] font-mono text-[var(--text-primary)] h-12 focus:outline-none focus:border-[var(--brand-primary)] resize-none"
                             />
-                            <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95">
-                                <Upload className="w-4 h-4"/> {t("load_pgn")}
+                            <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95">
+                                <Upload className="w-3.5 h-3.5"/> {t("load_pgn")}
                             </button>
                         </div>
                     ) : (
