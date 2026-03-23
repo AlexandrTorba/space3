@@ -634,81 +634,83 @@ export default function AnalysisView() {
                         </button>
                     </div>
 
-                    {activeSidebarTab === "pgn" ? (
-                        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <textarea 
-                               value={pastePgn} 
-                               onChange={e => setPastePgn(e.target.value)}
-                               placeholder={t("paste_pgn") as string} 
-                               className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-3 text-[10px] font-mono text-[var(--text-primary)] h-12 focus:outline-none focus:border-[var(--brand-primary)] resize-none"
-                            />
-                            <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95">
-                                <Upload className="w-3.5 h-3.5"/> {t("load_pgn")}
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                             <div className="flex items-center justify-between mb-1 px-1">
-                                <button 
-                                    onClick={() => setOpeningPage(p => Math.max(0, p - 1))} 
-                                    disabled={openingPage === 0}
-                                    className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
-                                >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <div className="h-[200px] flex flex-col overflow-hidden">
+                        {activeSidebarTab === "pgn" ? (
+                            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full">
+                                <textarea 
+                                   value={pastePgn} 
+                                   onChange={e => setPastePgn(e.target.value)}
+                                   placeholder={t("paste_pgn") as string} 
+                                   className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-3 text-[10px] font-mono text-[var(--text-primary)] h-[130px] focus:outline-none focus:border-[var(--brand-primary)] resize-none"
+                                />
+                                <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95">
+                                    <Upload className="w-3.5 h-3.5"/> {t("load_pgn")}
                                 </button>
-                                <span className="text-[9px] font-black font-mono tracking-widest text-[var(--brand-primary)] opacity-60 uppercase">Page {openingPage + 1}/3</span>
-                                <button 
-                                    onClick={() => setOpeningPage(p => Math.min(2, p + 1))} 
-                                    disabled={openingPage === 2}
-                                    className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
-                                >
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                             </div>
-
-                             <div className="grid grid-cols-1 gap-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
-                                {TOP_OPENINGS.slice(openingPage * 4, (openingPage + 1) * 4).map((op, localIdx) => {
-                                    const i = openingPage * 4 + localIdx;
-                                    return (
-                                        <div key={i} className="flex flex-col gap-1">
-                                            <div className={`flex items-center justify-between border p-2 rounded-xl transition-all group ${
-                                                activeOpeningIndex === i 
-                                                ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
-                                                : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
-                                            }`}>
-                                                <button 
-                                                    onClick={() => loadOpening(i)}
-                                                    className="flex items-center gap-2 flex-1 text-left"
-                                                >
-                                                    <span className={`text-[10px] font-mono font-black w-4 opacity-40 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
-                                                    <span className={`text-[11px] font-bold truncate ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
-                                                </button>
-                                                
-                                                <select 
-                                                   onChange={(e) => {
-                                                       if (e.target.value) {
-                                                           setActiveOpeningIndex(i);
-                                                           loadPgnInternal(e.target.value);
-                                                       }
-                                                   }}
-                                                   className={`ml-1 text-[9px] font-bold border border-[var(--surface-border)] rounded-md px-1.5 py-0.5 focus:outline-none max-w-[80px] cursor-pointer ${
-                                                       activeOpeningIndex === i 
-                                                       ? 'bg-white/20 text-white border-white/30' 
-                                                       : 'bg-[var(--settings-bg)] text-[var(--text-muted)]'
-                                                   }`}
-                                                >
-                                                    <option value={op.pgn} className="bg-[var(--settings-bg)]">Main Line</option>
-                                                    {op.variations.map((v, vIdx) => (
-                                                        <option key={vIdx} value={v.pgn} className="bg-[var(--settings-bg)]">{v.name}</option>
-                                                    ))}
-                                                </select>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2 h-full">
+                                 <div className="flex items-center justify-between mb-1 px-1">
+                                    <button 
+                                        onClick={() => setOpeningPage(p => Math.max(0, p - 1))} 
+                                        disabled={openingPage === 0}
+                                        className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
+                                    >
+                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <span className="text-[9px] font-black font-mono tracking-widest text-[var(--brand-primary)] opacity-60 uppercase">Page {openingPage + 1}/3</span>
+                                    <button 
+                                        onClick={() => setOpeningPage(p => Math.min(2, p + 1))} 
+                                        disabled={openingPage === 2}
+                                        className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
+                                    >
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                 </div>
+    
+                                 <div className="grid grid-cols-1 gap-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
+                                    {TOP_OPENINGS.slice(openingPage * 4, (openingPage + 1) * 4).map((op, localIdx) => {
+                                        const i = openingPage * 4 + localIdx;
+                                        return (
+                                            <div key={i} className="flex flex-col gap-1">
+                                                <div className={`flex items-center justify-between border p-2 rounded-xl transition-all group ${
+                                                    activeOpeningIndex === i 
+                                                    ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
+                                                    : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
+                                                }`}>
+                                                    <button 
+                                                        onClick={() => loadOpening(i)}
+                                                        className="flex items-center gap-2 flex-1 text-left min-w-0"
+                                                    >
+                                                        <span className={`text-[10px] font-mono font-black w-4 flex-shrink-0 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
+                                                        <span className={`text-[11px] font-bold truncate pr-1 ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
+                                                    </button>
+                                                    
+                                                    <select 
+                                                       onChange={(e) => {
+                                                           if (e.target.value) {
+                                                               setActiveOpeningIndex(i);
+                                                               loadPgnInternal(e.target.value);
+                                                           }
+                                                       }}
+                                                       className={`text-[9px] font-bold border border-[var(--surface-border)] rounded-md px-1.5 py-0.5 focus:outline-none max-w-[85px] cursor-pointer flex-shrink-0 ${
+                                                           activeOpeningIndex === i 
+                                                           ? 'bg-white/20 text-white border-white/30' 
+                                                           : 'bg-[var(--settings-bg)] text-[var(--text-muted)]'
+                                                       }`}
+                                                    >
+                                                        <option value={op.pgn} className="bg-[var(--settings-bg)]">Main Line</option>
+                                                        {op.variations.map((v, vIdx) => (
+                                                            <option key={vIdx} value={v.pgn} className="bg-[var(--settings-bg)]">{v.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                             </div>
-                        </div>
-                    )}
+                                        );
+                                    })}
+                                 </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
