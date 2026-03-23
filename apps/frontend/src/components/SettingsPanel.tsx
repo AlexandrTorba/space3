@@ -81,13 +81,15 @@ export default function SettingsPanel() {
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Palette className="w-2.5 h-2.5" /> {t("board_theme_section") || "Board Theme"}
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex gap-1.5 p-1 bg-[var(--button-bg)] rounded-xl border border-[var(--surface-border)]">
                            {(Object.keys(boardThemes) as BoardTheme[]).map((theme) => (
                               <button 
                                 key={theme}
                                 onClick={() => updateSettings({ boardTheme: theme })}
-                                className={`flex items-center gap-2 px-3 py-2 text-[12px] font-bold rounded-lg border transition-all ${
-                                  settings.boardTheme === theme ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-lg shadow-[var(--brand-primary)]/20' : 'bg-[var(--button-bg)] border-transparent text-[var(--text-secondary)] hover:bg-[var(--button-bg)]'
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                                  settings.boardTheme === theme 
+                                    ? 'bg-[var(--brand-primary)] text-white shadow-md' 
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                                 }`}
                               >
                                 <div className="flex flex-col w-3 h-3 rounded-sm overflow-hidden rotate-45 flex-shrink-0">
@@ -105,13 +107,15 @@ export default function SettingsPanel() {
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Layers className="w-2.5 h-2.5" /> {t("piece_set_section") || "Piece Set"}
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex gap-1.5 p-1 bg-[var(--button-bg)] rounded-xl border border-[var(--surface-border)]">
                            {(['wikipedia', 'leipzig'] as PieceSet[]).map((set) => (
                               <button 
                                 key={set}
                                 onClick={() => updateSettings({ pieceSet: set })}
-                                className={`px-3 py-2 text-[12px] font-bold rounded-lg border transition-all capitalize ${
-                                  settings.pieceSet === set ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-lg shadow-[var(--brand-primary)]/20' : 'bg-[var(--button-bg)] border-transparent text-[var(--text-secondary)] hover:bg-[var(--button-bg)]'
+                                className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all capitalize ${
+                                  settings.pieceSet === set 
+                                    ? 'bg-[var(--brand-primary)] text-white shadow-md' 
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                                 }`}
                               >
                                 {set}
