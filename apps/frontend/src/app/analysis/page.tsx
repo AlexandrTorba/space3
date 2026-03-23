@@ -50,48 +50,25 @@ export default function AnalysisView() {
 
   const TOP_OPENINGS = [
     { 
-      name: "Ruy Lopez", 
-      pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5",
-      variations: [
-        { name: "Berlin Defense", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6" },
-        { name: "Exchange Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6" },
-        { name: "Marshall Attack", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5" }
-      ]
-    },
-    { 
       name: "Sicilian Def.", 
       pgn: "1. e4 c5",
       variations: [
         { name: "Najdorf", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6" },
-        { name: "Dragon", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6" },
-        { name: "Rossolimo", pgn: "1. e4 c5 2. Nf3 Nc6 3. Bb5" }
+        { name: "Paulsen", pgn: "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6" },
+        { name: "Classical", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6" },
+        { name: "Alapin", pgn: "1. e4 c5 2. c3" },
+        { name: "Closed", pgn: "1. e4 c5 2. Nc3" }
       ]
     },
     { 
-      name: "Queen's Gambit", 
-      pgn: "1. d4 d5 2. c4",
+      name: "Ruy Lopez", 
+      pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5",
       variations: [
-        { name: "Declined", pgn: "1. d4 d5 2. c4 e6" },
-        { name: "Accepted", pgn: "1. d4 d5 2. c4 dxc4" },
-        { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" }
-      ]
-    },
-    { 
-      name: "French Def.", 
-      pgn: "1. e4 e6",
-      variations: [
-        { name: "Winawer", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Bb4" },
-        { name: "Classical", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Nf6" },
-        { name: "Advance", pgn: "1. e4 e6 2. d4 d5 3. e5" }
-      ]
-    },
-    { 
-      name: "Caro-Kann Def.", 
-      pgn: "1. e4 c6",
-      variations: [
-        { name: "Advance", pgn: "1. e4 c6 2. d4 d5 3. e5" },
-        { name: "Classical", pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5" },
-        { name: "Two Knights", pgn: "1. e4 c6 2. Nf3 d5 3. Nc3" }
+        { name: "Closed", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6" },
+        { name: "Berlin Defense", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6" },
+        { name: "Exchange Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6" },
+        { name: "Open Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4" },
+        { name: "Anti-Marshall", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. a4" }
       ]
     },
     { 
@@ -100,23 +77,21 @@ export default function AnalysisView() {
       variations: [
         { name: "Giuoco Piano", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5" },
         { name: "Two Knights", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6" },
-        { name: "Evans Gambit", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4" }
+        { name: "Evans Gambit", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4" },
+        { name: "Giuoco Pianissimo", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3" }
       ]
     },
     { 
-      name: "King's Indian", 
-      pgn: "1. d4 Nf6 2. c4 g6",
+      name: "Queen's Gambit", 
+      pgn: "1. d4 d5 2. c4",
       variations: [
-        { name: "Classical", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5" },
-        { name: "Saemisch", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3" }
-      ]
-    },
-    { 
-      name: "Slav Defense", 
-      pgn: "1. d4 d5 2. c4 c6",
-      variations: [
-        { name: "Exchange", pgn: "1. d4 d5 2. c4 c6 3. cxd5 cxd5" },
-        { name: "Semi-Slav", pgn: "1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6" }
+        { name: "Declined", pgn: "1. d4 d5 2. c4 e6" },
+        { name: "Accepted", pgn: "1. d4 d5 2. c4 dxc4" },
+        { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" },
+        { name: "Exchange Var.", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5" },
+        { name: "Tarrasch", pgn: "1. d4 d5 2. c4 e6 3. Nc3 c5" },
+        { name: "Cambridge Springs", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7 5. e3 c6 6. Nf3 Qa5" },
+        { name: "Albin Counter", pgn: "1. d4 d5 2. c4 e5" }
       ]
     },
     { 
@@ -124,31 +99,70 @@ export default function AnalysisView() {
       pgn: "1. c4",
       variations: [
         { name: "Symmetrical", pgn: "1. c4 c5" },
-        { name: "King's English", pgn: "1. c4 e5" }
+        { name: "Reversed Sicil.", pgn: "1. c4 e5" },
+        { name: "Anglo-Indian", pgn: "1. c4 Nf6" },
+        { name: "Mikenas-Flohr", pgn: "1. c4 Nf6 2. Nc3 e6 3. e4" },
+        { name: "Double Fianch.", pgn: "1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. Nf3 Nf6 6. O-O O-O" },
+        { name: "Anglo-Dutch", pgn: "1. c4 f5" }
       ]
     },
     { 
-      name: "Scandinavian", 
-      pgn: "1. e4 d5",
+      name: "Caro-Kann Def.", 
+      pgn: "1. e4 c6",
       variations: [
-        { name: "Modern", pgn: "1. e4 d5 2. exd5 Nf6" },
-        { name: "Mieses-Kotroc", pgn: "1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5" }
+        { name: "Classical", pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5" },
+        { name: "Advance Var.", pgn: "1. e4 c6 2. d4 d5 3. e5" },
+        { name: "Panov Attack", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4" },
+        { name: "Steiner Var.", pgn: "1. e4 c6 2. c4" },
+        { name: "Exchange Var.", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Bd3" }
+      ]
+    },
+    { 
+      name: "Grunfeld Def.", 
+      pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5",
+      variations: [
+        { name: "Modern Var.", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Nf3 Bg7 5. Bf4" },
+        { name: "Exchange Var.", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4" }
+      ]
+    },
+    { 
+      name: "French Def.", 
+      pgn: "1. e4 e6",
+      variations: [
+        { name: "Paulsen", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Nf6" },
+        { name: "Winawer", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Bb4" },
+        { name: "Tarrasch", pgn: "1. e4 e6 2. d4 d5 3. Nd2" }
+      ]
+    },
+    { 
+      name: "King's Indian", 
+      pgn: "1. d4 Nf6 2. c4 g6",
+      variations: [
+        { name: "Classical", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5" },
+        { name: "Saemisch", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3" },
+        { name: "Fianchetto", pgn: "1. d4 Nf6 2. c4 g6 3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6" }
+      ]
+    },
+    { 
+      name: "Catalan Open", 
+      pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5",
+      variations: [
+        { name: "Open Catalan", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4" },
+        { name: "Closed Catalan", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 c6" }
+      ]
+    },
+    { 
+      name: "Slav Defense", 
+      pgn: "1. d4 d5 2. c4 c6",
+      variations: [
+        { name: "Meran Var.", pgn: "1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7 6. Bd3 dxc4 7. Bxc4 b5" }
       ]
     },
     { 
       name: "Pirc Defense", 
       pgn: "1. e4 d6",
       variations: [
-        { name: "Austrian Attack", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4" },
-        { name: "Classical", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Nf3" }
-      ]
-    },
-    { 
-      name: "Nimzo-Indian", 
-      pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4",
-      variations: [
-        { name: "Rubinstein", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3" },
-        { name: "Classical", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2" }
+        { name: "Austrian Attack", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4" }
       ]
     },
   ];
