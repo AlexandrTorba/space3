@@ -41,6 +41,7 @@ export const metadata: Metadata = {
 };
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import AppBackground from "@/components/AppBackground";
 import SettingsPanel from "@/components/SettingsPanel";
 
@@ -61,6 +62,7 @@ export default function RootLayout({
         </div>
         <SettingsPanel />
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
