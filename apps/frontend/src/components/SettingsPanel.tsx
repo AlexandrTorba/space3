@@ -59,13 +59,15 @@ export default function SettingsPanel() {
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Globe className="w-2.5 h-2.5" /> {t("language_section") || "Language"}
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex gap-1.5 p-1 bg-[var(--button-bg)] rounded-xl border border-[var(--surface-border)]">
                            {Object.keys(translations).map((l) => (
                               <button 
                                 key={l}
                                 onClick={() => changeLanguage(l as Language)}
-                                className={`px-3 py-2 text-[12px] font-bold rounded-lg border transition-all ${
-                                  lang === l ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-lg shadow-[var(--brand-primary)]/20' : 'bg-[var(--button-bg)] border-transparent text-[var(--text-secondary)] hover:bg-[var(--button-bg)]'
+                                className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                                  lang === l 
+                                    ? 'bg-[var(--brand-primary)] text-white shadow-md' 
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                                 }`}
                               >
                                 {l.toUpperCase()}
