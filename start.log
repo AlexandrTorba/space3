@@ -1,0 +1,15 @@
+
+> frontend@0.1.1 start
+> next start
+
+▲ Next.js 16.2.0
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.138:3000
+✓ Ready in 55ms
+npm error Lifecycle script `start` failed with error:
+npm error code 143
+npm error path /Users/torba/antigravity/space3/apps/frontend
+npm error workspace frontend@0.1.1
+npm error location /Users/torba/antigravity/space3/apps/frontend
+npm error command failed
+npm error command sh -c next start

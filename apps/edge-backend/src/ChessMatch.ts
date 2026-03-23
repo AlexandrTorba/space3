@@ -172,6 +172,7 @@ export class ChessMatch {
                    
                    if (this.rematchOffers.has("w") && this.rematchOffers.has("b")) {
                       const newMatchId = crypto.randomUUID();
+                      this.rematchOffers.clear(); // Clear so multiple messages don't spawn multiple games
                       const response = create(MatchUpdateSchema, {
                          event: { case: "action", value: { matchId: newMatchId, actionType: "rematch_accept", playerColor: "" } }
                       });

@@ -1,0 +1,401 @@
+
+> frontend@0.1.1 dev
+> next dev -H 0.0.0.0
+
+▲ Next.js 16.2.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+✓ Ready in 191ms
+
+ GET /play/123 200 in 338ms (next.js: 212ms, application-code: 126ms)
+[browser] Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `Piece`.
+    at Array.map (<anonymous>)
+    at Array.map (<anonymous>)
+    at PlayArenaContent (src/app/play/[id]/page.tsx:453:21)
+    at PlayArena (src/app/play/[id]/page.tsx:580:7)
+  451 |
+  452 |                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)]...
+> 453 |                     <Chessboard 
+      |                     ^
+  454 |                         options={{
+  455 |                             position: "start",
+  456 |                             boardOrientation: "white",
+ GET /play/123 200 in 25ms (next.js: 3ms, application-code: 22ms)
+[browser] Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `Piece`.
+    at Array.map (<anonymous>)
+    at Array.map (<anonymous>)
+    at PlayArenaContent (src/app/play/[id]/page.tsx:453:21)
+    at PlayArena (src/app/play/[id]/page.tsx:580:7)
+  451 |
+  452 |                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)]...
+> 453 |                     <Chessboard 
+      |                     ^
+  454 |                         options={{
+  455 |                             position: "start",
+  456 |                             boardOrientation: "white",
+⨯ ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  [90m5332 |[0m ...
+  [90m5333 |[0m ...
+[31m[1m>[0m [90m5334 |[0m ...[36mypeof[0m pieces, pieces [36mconst[0m [33mPieceSvg[0m = pieces[pi...
+  [90m     |[0m                         [31m[1m^^^^^[0m
+  [90m5335 |[0m ...${pieceType[32m}-[0m${position[32m}`[0m, [32m"data-piece"[0m: pieceT...
+  [90m5336 |[0m ...
+  [90m5337 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+
+ GET /play/123 500 in 96ms (next.js: 43ms, application-code: 53ms)
+[browser] Uncaught Error: ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./node_modules/react-chessboard/dist/index.esm.js:5334:64)
+[browser] ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component] 
+[browser] ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component] 
+⨯ ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  [90m5332 |[0m ...
+  [90m5333 |[0m ...
+[31m[1m>[0m [90m5334 |[0m ...[36mypeof[0m pieces, pieces [36mconst[0m [33mPieceSvg[0m = pieces[pi...
+  [90m     |[0m                         [31m[1m^^^^^[0m
+  [90m5335 |[0m ...${pieceType[32m}-[0m${position[32m}`[0m, [32m"data-piece"[0m: pieceT...
+  [90m5336 |[0m ...
+  [90m5337 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+
+ GET /play/123 500 in 7ms (next.js: 3ms, application-code: 4ms)
+[browser] Uncaught Error: ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./node_modules/react-chessboard/dist/index.esm.js:5334:64)
+[browser] ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component] 
+[browser] ./node_modules/react-chessboard/dist/index.esm.js:5334:64
+Expected ',', got 'const'
+  5332 | ...
+  5333 | ...
+> 5334 | ...ypeof pieces, pieces const PieceSvg = pieces[pi...
+       |                         ^^^^^
+  5335 | ...${pieceType}-${position}`, "data-piece": pieceT...
+  5336 | ...
+  5337 | ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-chessboard/dist/index.esm.js [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component] 
+⨯ ./apps/frontend/src/app/play/[id]/page.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m.[32m..[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./apps/frontend/src/app/play/[id]/page.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m.[32m..[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./apps/frontend/src/app/play/[id]/page.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m.[32m..[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./apps/frontend/src/app/play/[id]/page.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m.[32m..[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component SSR]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+✓ Compiled in 57ms
+ GET /play/123 200 in 124ms (next.js: 35ms, application-code: 89ms)
+[browser] Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `Piece`.
+    at Array.map (<anonymous>)
+    at Array.map (<anonymous>)
+    at PlayArenaContent (src/app/play/[id]/page.tsx:453:21)
+    at PlayArena (src/app/play/[id]/page.tsx:580:7)
+  451 |
+  452 |                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)]...
+> 453 |                     <Chessboard 
+      |                     ^
+  454 |                         options={{
+  455 |                             position: "start",
+  456 |                             boardOrientation: "white",
+ GET /play/123 200 in 40ms (next.js: 3ms, application-code: 36ms)
+[browser] Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `Piece`.
+    at Array.map (<anonymous>)
+    at Array.map (<anonymous>)
+    at PlayArenaContent (src/app/play/[id]/page.tsx:453:21)
+    at PlayArena (src/app/play/[id]/page.tsx:580:7)
+  451 |
+  452 |                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)]...
+> 453 |                     <Chessboard 
+      |                     ^
+  454 |                         options={{
+  455 |                             position: "start",
+  456 |                             boardOrientation: "white",
+✓ Compiled in 140ms
+ GET /play/123 200 in 113ms (next.js: 37ms, application-code: 76ms)
+⨯ ./apps/frontend/src/app/play/[id]/PlayArena.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m [32m"next/...[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import trace:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/PlayArena.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./apps/frontend/src/app/play/[id]/PlayArena.tsx:6:1
+Module not found: Can't resolve 'react-chessboard'
+  [90m4 |[0m [36mimport[0m { useParams, useSearchParams, useRouter } [36mfrom[0m [32m"next/...[0m
+  [90m5 |[0m [36mimport[0m { [33mChess[0m, [33mSquare[0m } [36mfrom[0m [32m"chess.js"[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m { [33mChessboard[0m } [36mfrom[0m [32m"react-chessboard"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mimport[0m { 
+  [90m8 |[0m   [33mActivity[0m, 
+  [90m9 |[0m   [33mChevronLeft[0m,
+
+
+
+Import trace:
+  Client Component Browser:
+    ./apps/frontend/src/app/play/[id]/PlayArena.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Client Component Browser]
+    ./apps/frontend/src/app/play/[id]/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+✓ Compiled in 95ms
+[?25h
