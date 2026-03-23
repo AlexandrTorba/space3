@@ -92,7 +92,8 @@ export const translations = {
       white: "White",
       black: "Black",
       waiting_for_first_move: "Waiting for first move...",
-      to_move: "to move"
+      to_move: "to move",
+      openings_tab: "Openings"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -183,7 +184,8 @@ export const translations = {
       white: "Білі",
       black: "Чорні",
       waiting_for_first_move: "Очікування першого ходу...",
-      to_move: "хід"
+      to_move: "хід",
+      openings_tab: "Дебюти"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -274,7 +276,8 @@ export const translations = {
       white: "Blancas",
       black: "Negras",
       waiting_for_first_move: "Esperando primer movimiento...",
-      to_move: "mueven"
+      to_move: "mueven",
+      openings_tab: "Aperturas"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -365,7 +368,8 @@ export const translations = {
       white: "Beyaz",
       black: "Siyah",
       waiting_for_first_move: "İlk hamle bekleniyor...",
-      to_move: "hamlesi"
+      to_move: "hamlesi",
+      openings_tab: "Açılışlar"
     }
 };
 

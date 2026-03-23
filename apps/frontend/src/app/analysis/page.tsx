@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import React from "react";
-import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer, Globe } from "lucide-react";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import Link from "next/link";
@@ -43,6 +43,22 @@ export default function AnalysisView() {
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
   
   const sfWorker = useRef<Worker | null>(null);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("pgn");
+
+  const TOP_OPENINGS = [
+    { name: "Ruy Lopez", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5" },
+    { name: "Sicilian Defense", pgn: "1. e4 c5" },
+    { name: "Queen's Gambit", pgn: "1. d4 d5 2. c4" },
+    { name: "French Defense", pgn: "1. e4 e6" },
+    { name: "Caro-Kann Defense", pgn: "1. e4 c6" },
+    { name: "Italian Game", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4" },
+    { name: "King's Indian", pgn: "1. d4 Nf6 2. c4 g6" },
+    { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" },
+    { name: "English Opening", pgn: "1. c4" },
+    { name: "Scandinavian", pgn: "1. e4 d5" },
+    { name: "Pirc Defense", pgn: "1. e4 d6" },
+    { name: "Nimzo-Indian", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4" },
+  ];
 
   useEffect(() => {
      if (isBotActive) {
@@ -153,17 +169,23 @@ export default function AnalysisView() {
   };
 
   const loadPgn = () => {
+      loadPgnInternal(pastePgn);
+  };
+
+  const loadOpening = (pgn: string) => {
+      loadPgnInternal(pgn);
+  };
+
+  const loadPgnInternal = (pgnString: string) => {
       try {
           const engine = new Chess();
-          const cleanPgn = pastePgn.trim().replace(/\r\n/g, '\n');
+          const cleanPgn = pgnString.trim().replace(/\r\n/g, '\n');
           
           let success = false;
           try {
               engine.loadPgn(cleanPgn); 
               success = true;
-          } catch(err) {
-              console.error(err);
-          }
+          } catch(err) {}
 
           if (!success) {
              const strippedMoves = cleanPgn.split('\n\n').pop()?.trim() || cleanPgn;
@@ -174,10 +196,10 @@ export default function AnalysisView() {
           }
 
           if (!success) {
-              try {
-                  engine.load(cleanPgn);
-                  success = true;
-              } catch(e) {}
+               try {
+                   engine.load(cleanPgn);
+                   success = true;
+               } catch(e) {}
           }
 
           if (!success) {
@@ -472,18 +494,47 @@ export default function AnalysisView() {
                 </div>
                 
                 <div className="mt-auto border-t border-[var(--surface-border)] pt-4 flex flex-col gap-3">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Upload className="w-3 h-3" /> PGN Import
-                    </label>
-                    <textarea 
-                       value={pastePgn} 
-                       onChange={e => setPastePgn(e.target.value)}
-                       placeholder={t("paste_pgn") as string} 
-                       className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-4 text-xs font-mono text-[var(--text-primary)] h-28 focus:outline-none focus:border-[var(--brand-primary)] resize-none flex-shrink-0"
-                    />
-                    <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95">
-                        <Upload className="w-4 h-4"/> {t("load_pgn")}
-                    </button>
+                    <div className="flex bg-[var(--button-bg)] p-1 rounded-xl mb-1 border border-[var(--surface-border)]">
+                        <button 
+                            onClick={() => setActiveSidebarTab("pgn")}
+                            className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "pgn" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
+                        >
+                           <Upload className="w-3 h-3 inline-block mr-1 mb-0.5" /> PGN
+                        </button>
+                        <button 
+                            onClick={() => setActiveSidebarTab("openings")}
+                            className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "openings" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
+                        >
+                           <Globe className="w-3 h-3 inline-block mr-1 mb-0.5" /> {t("openings_tab") || "DEBUTS"}
+                        </button>
+                    </div>
+
+                    {activeSidebarTab === "pgn" ? (
+                        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <textarea 
+                               value={pastePgn} 
+                               onChange={e => setPastePgn(e.target.value)}
+                               placeholder={t("paste_pgn") as string} 
+                               className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-4 text-xs font-mono text-[var(--text-primary)] h-28 focus:outline-none focus:border-[var(--brand-primary)] resize-none flex-shrink-0"
+                            />
+                            <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95">
+                                <Upload className="w-4 h-4"/> {t("load_pgn")}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[var(--surface-border)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+                             {TOP_OPENINGS.map((op, i) => (
+                                 <button 
+                                    key={i}
+                                    onClick={() => loadOpening(op.pgn)}
+                                    className="flex items-center gap-3 bg-[var(--button-bg)] hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30 border border-transparent p-2 rounded-xl transition-all group text-left"
+                                 >
+                                     <span className="text-[10px] font-mono font-black text-[var(--brand-primary)] w-4 opacity-40">{i+1}.</span>
+                                     <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-primary)] truncate">{op.name}</span>
+                                 </button>
+                             ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
