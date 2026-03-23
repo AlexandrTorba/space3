@@ -53,9 +53,9 @@ export default function SettingsPanel() {
                     </button>
                  </header>
 
-                 <div className="space-y-5 flex-1 overflow-y-auto pr-1">
+                 <div className="space-y-4 flex-1 overflow-y-auto pr-1">
                      {/* Language Section */}
-                     <div className="space-y-3">
+                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Globe className="w-2.5 h-2.5" /> {t("language_section") || "Language"}
                         </label>
@@ -77,7 +77,7 @@ export default function SettingsPanel() {
                      </div>
 
                      {/* Board Themes Section */}
-                     <div className="space-y-3">
+                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Palette className="w-2.5 h-2.5" /> {t("board_theme_section") || "Board Theme"}
                         </label>
@@ -103,7 +103,7 @@ export default function SettingsPanel() {
                      </div>
 
                      {/* Piece Sets Section */}
-                     <div className="space-y-3">
+                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Layers className="w-2.5 h-2.5" /> {t("piece_set_section") || "Piece Set"}
                         </label>
@@ -125,7 +125,7 @@ export default function SettingsPanel() {
                      </div>
 
                       {/* Appearance Section */}
-                     <div className="space-y-3">
+                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Palette className="w-2.5 h-2.5" /> {t("background_section") || "Appearance"}
                         </label>
@@ -153,7 +153,7 @@ export default function SettingsPanel() {
                         </div>
                      </div>
 
-                     <div className="pt-4 border-t border-[var(--surface-border)] space-y-3">
+                     <div className="pt-3 border-t border-[var(--surface-border)] space-y-2">
                          <div className="flex items-center justify-between">
                              <span className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
                                  <Layers className="w-3 h-3" /> {t("always_promote_to_queen") || "Auto Queen"}
@@ -190,21 +190,20 @@ export default function SettingsPanel() {
                              </button>
                          </div>
 
-                         <div className="flex flex-col gap-2 pt-1">
-                             <label className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
-                                 <Cpu className="w-3 h-3" /> {t("bot_elo") || "Bot Strength (ELO)"}
-                             </label>
+                         <div className="flex items-center justify-between pt-1">
                              <div className="flex items-center gap-3">
-                                 <input 
-                                     type="range"
-                                     min="800"
-                                     max="2500"
-                                     step="100"
+                                 <select 
                                      value={settings.botElo}
                                      onChange={(e) => updateSettings({ botElo: parseInt(e.target.value) })}
-                                     className="flex-1 accent-[var(--brand-primary)] h-1 bg-[var(--button-bg)] rounded-lg appearance-none cursor-pointer"
-                                 />
-                                 <span className="text-[12px] font-mono font-black text-[var(--brand-primary)] w-8 text-right">{settings.botElo}</span>
+                                     className="bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg py-1 px-2 text-[12px] font-black text-[var(--brand-primary)] focus:outline-none focus:border-[var(--brand-primary)] cursor-pointer"
+                                 >
+                                     {Array.from({ length: 15 }, (_, i) => 1100 + i * 100).map(elo => (
+                                         <option key={elo} value={elo} className="bg-[var(--settings-bg)]">{elo}</option>
+                                     ))}
+                                 </select>
+                                 <label className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
+                                     <Cpu className="w-3 h-3" /> {t("bot_elo") || "Bot Strength (ELO)"}
+                                 </label>
                              </div>
                          </div>
                      </div>
