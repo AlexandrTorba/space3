@@ -46,20 +46,111 @@ export default function AnalysisView() {
   const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("pgn");
   const [activeOpeningIndex, setActiveOpeningIndex] = useState<number | null>(null);
   const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
+  const [openingPage, setOpeningPage] = useState(0);
 
   const TOP_OPENINGS = [
-    { name: "Ruy Lopez", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5" },
-    { name: "Sicilian Defense", pgn: "1. e4 c5" },
-    { name: "Queen's Gambit", pgn: "1. d4 d5 2. c4" },
-    { name: "French Defense", pgn: "1. e4 e6" },
-    { name: "Caro-Kann Defense", pgn: "1. e4 c6" },
-    { name: "Italian Game", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4" },
-    { name: "King's Indian", pgn: "1. d4 Nf6 2. c4 g6" },
-    { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" },
-    { name: "English Opening", pgn: "1. c4" },
-    { name: "Scandinavian", pgn: "1. e4 d5" },
-    { name: "Pirc Defense", pgn: "1. e4 d6" },
-    { name: "Nimzo-Indian", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4" },
+    { 
+      name: "Ruy Lopez", 
+      pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5",
+      variations: [
+        { name: "Berlin Defense", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6" },
+        { name: "Exchange Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6" },
+        { name: "Marshall Attack", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5" }
+      ]
+    },
+    { 
+      name: "Sicilian Def.", 
+      pgn: "1. e4 c5",
+      variations: [
+        { name: "Najdorf", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6" },
+        { name: "Dragon", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6" },
+        { name: "Rossolimo", pgn: "1. e4 c5 2. Nf3 Nc6 3. Bb5" }
+      ]
+    },
+    { 
+      name: "Queen's Gambit", 
+      pgn: "1. d4 d5 2. c4",
+      variations: [
+        { name: "Declined", pgn: "1. d4 d5 2. c4 e6" },
+        { name: "Accepted", pgn: "1. d4 d5 2. c4 dxc4" },
+        { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" }
+      ]
+    },
+    { 
+      name: "French Def.", 
+      pgn: "1. e4 e6",
+      variations: [
+        { name: "Winawer", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Bb4" },
+        { name: "Classical", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Nf6" },
+        { name: "Advance", pgn: "1. e4 e6 2. d4 d5 3. e5" }
+      ]
+    },
+    { 
+      name: "Caro-Kann Def.", 
+      pgn: "1. e4 c6",
+      variations: [
+        { name: "Advance", pgn: "1. e4 c6 2. d4 d5 3. e5" },
+        { name: "Classical", pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5" },
+        { name: "Two Knights", pgn: "1. e4 c6 2. Nf3 d5 3. Nc3" }
+      ]
+    },
+    { 
+      name: "Italian Game", 
+      pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4",
+      variations: [
+        { name: "Giuoco Piano", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5" },
+        { name: "Two Knights", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6" },
+        { name: "Evans Gambit", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4" }
+      ]
+    },
+    { 
+      name: "King's Indian", 
+      pgn: "1. d4 Nf6 2. c4 g6",
+      variations: [
+        { name: "Classical", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5" },
+        { name: "Saemisch", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3" }
+      ]
+    },
+    { 
+      name: "Slav Defense", 
+      pgn: "1. d4 d5 2. c4 c6",
+      variations: [
+        { name: "Exchange", pgn: "1. d4 d5 2. c4 c6 3. cxd5 cxd5" },
+        { name: "Semi-Slav", pgn: "1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6" }
+      ]
+    },
+    { 
+      name: "English Open", 
+      pgn: "1. c4",
+      variations: [
+        { name: "Symmetrical", pgn: "1. c4 c5" },
+        { name: "King's English", pgn: "1. c4 e5" }
+      ]
+    },
+    { 
+      name: "Scandinavian", 
+      pgn: "1. e4 d5",
+      variations: [
+        { name: "Modern", pgn: "1. e4 d5 2. exd5 Nf6" },
+        { name: "Mieses-Kotroc", pgn: "1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5" }
+      ]
+    },
+    { 
+      name: "Pirc Defense", 
+      pgn: "1. e4 d6",
+      variations: [
+        { name: "Austrian Attack", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4" },
+        { name: "Classical", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Nf3" }
+      ]
+    },
+    { 
+      name: "Nimzo-Indian", 
+      pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4",
+      variations: [
+        { name: "Rubinstein", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3" },
+        { name: "Classical", pgn: "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2" }
+      ]
+    },
   ];
 
   useEffect(() => {
@@ -564,21 +655,66 @@ export default function AnalysisView() {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[var(--surface-border)] animate-in fade-in slide-in-from-bottom-2 duration-300">
-                             {TOP_OPENINGS.map((op, i) => (
-                                 <button 
-                                    key={i}
-                                    onClick={() => loadOpening(i)}
-                                    className={`flex items-center gap-3 border p-2 rounded-xl transition-all group text-left ${
-                                        activeOpeningIndex === i 
-                                        ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
-                                        : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
-                                    }`}
-                                 >
-                                     <span className={`text-[10px] font-mono font-black w-4 opacity-40 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
-                                     <span className={`text-[11px] font-bold truncate ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
-                                 </button>
-                             ))}
+                        <div className="flex flex-col gap-2">
+                             <div className="flex items-center justify-between mb-1 px-1">
+                                <button 
+                                    onClick={() => setOpeningPage(p => Math.max(0, p - 1))} 
+                                    disabled={openingPage === 0}
+                                    className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
+                                >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-[9px] font-black font-mono tracking-widest text-[var(--brand-primary)] opacity-60 uppercase">Page {openingPage + 1}/3</span>
+                                <button 
+                                    onClick={() => setOpeningPage(p => Math.min(2, p + 1))} 
+                                    disabled={openingPage === 2}
+                                    className="p-1.5 bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg hover:bg-[var(--surface-border)] disabled:opacity-20 transition-all active:scale-90"
+                                >
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                             </div>
+
+                             <div className="grid grid-cols-1 gap-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
+                                {TOP_OPENINGS.slice(openingPage * 4, (openingPage + 1) * 4).map((op, localIdx) => {
+                                    const i = openingPage * 4 + localIdx;
+                                    return (
+                                        <div key={i} className="flex flex-col gap-1">
+                                            <div className={`flex items-center justify-between border p-2 rounded-xl transition-all group ${
+                                                activeOpeningIndex === i 
+                                                ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
+                                                : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
+                                            }`}>
+                                                <button 
+                                                    onClick={() => loadOpening(i)}
+                                                    className="flex items-center gap-2 flex-1 text-left"
+                                                >
+                                                    <span className={`text-[10px] font-mono font-black w-4 opacity-40 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
+                                                    <span className={`text-[11px] font-bold truncate ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
+                                                </button>
+                                                
+                                                <select 
+                                                   onChange={(e) => {
+                                                       if (e.target.value) {
+                                                           setActiveOpeningIndex(i);
+                                                           loadPgnInternal(e.target.value);
+                                                       }
+                                                   }}
+                                                   className={`ml-1 text-[9px] font-bold border border-[var(--surface-border)] rounded-md px-1.5 py-0.5 focus:outline-none max-w-[80px] cursor-pointer ${
+                                                       activeOpeningIndex === i 
+                                                       ? 'bg-white/20 text-white border-white/30' 
+                                                       : 'bg-[var(--settings-bg)] text-[var(--text-muted)]'
+                                                   }`}
+                                                >
+                                                    <option value={op.pgn} className="bg-[var(--settings-bg)]">Main Line</option>
+                                                    {op.variations.map((v, vIdx) => (
+                                                        <option key={vIdx} value={v.pgn} className="bg-[var(--settings-bg)]">{v.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                             </div>
                         </div>
                     )}
                 </div>
