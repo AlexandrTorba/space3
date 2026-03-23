@@ -675,14 +675,14 @@ export default function AnalysisView() {
                                                 <div className={`flex items-center justify-between border p-2 rounded-xl transition-all group ${
                                                     activeOpeningIndex === i 
                                                     ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
-                                                    : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
+                                                    : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/20 hover:border-[var(--brand-primary)]/40 hover:shadow-md'
                                                 }`}>
                                                     <button 
                                                         onClick={() => loadOpening(i)}
                                                         className="flex items-center gap-2 flex-1 text-left min-w-0"
                                                     >
-                                                        <span className={`text-[10px] font-mono font-black w-4 flex-shrink-0 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
-                                                        <span className={`text-[11px] font-bold truncate pr-1 ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
+                                                        <span className={`text-[10px] font-mono font-black w-4 flex-shrink-0 transition-colors ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)] group-hover:text-[var(--brand-primary)]'}`}>{i+1}.</span>
+                                                        <span className={`text-[11px] font-bold truncate pr-1 transition-colors ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-white'}`}>{op.name}</span>
                                                     </button>
                                                     
                                                     <select 
