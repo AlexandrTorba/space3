@@ -72,6 +72,7 @@ export class ChessMatch {
           }
           this.whiteName = w;
           this.blackName = b;
+          this.state.storage.put("createdAt", Date.now());
        }
 
        if (!this.dbInserted && this.db && w !== "White" && b !== "Black") {
@@ -89,6 +90,12 @@ export class ChessMatch {
            }).onConflictDoNothing().execute().catch((err: any) => console.error("[DB ERROR]", err));
            this.state.waitUntil(p);
        }
+    }
+
+    // Ensure an alarm is set to check for abandonment even if no moves are made
+    const alarm = await this.state.storage.getAlarm();
+    if (!alarm) {
+       await this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000); // 10 mins initial grace
     }
     
     if (url.pathname.endsWith("/spectators")) {
@@ -231,6 +238,9 @@ export class ChessMatch {
             if (this.moveCount === 1 && !this.isUnlimited) {
                this.lastMoveTimestamp = Date.now();
             }
+
+            // Schedule / Reschedule cleanup alarm on move
+            this.state.storage.setAlarm(Date.now() + 5 * 60 * 1000); // Check in 5 mins
             
             this.sessions.forEach(session => {
                if (session !== server) {
@@ -335,6 +345,35 @@ export class ChessMatch {
          .where(eq(matches.id, matchId))
          .execute().catch(console.error);
        this.state.waitUntil(p);
+    }
+  }
+
+  async alarm() {
+    console.log(`[MTCH] Alarm triggered for ${this.matchId}. Checking for inactivity...`);
+    
+    // 1. Absolute Sanity Limit: Matches shouldn't live more than 12 hours in DO memory/status
+    const matchData: any = await this.state.storage.get("createdAt");
+    const createdTime = matchData ? new Date(matchData).getTime() : Date.now();
+    const ageMs = Date.now() - createdTime;
+
+    if (ageMs > 12 * 60 * 60 * 1000) {
+        console.log(`[MTCH] Force-closing match ${this.matchId} due to absolute age limit (12h)`);
+        this.endGame(this.matchId, "0-0", "stale");
+        return;
+    }
+
+    // 2. Abandonment Check: 
+    // If no moves for 5 minutes AND no one is connected, end it as abandoned.
+    // If moves happened, we check since lastMoveTimestamp.
+    const lastActivity = this.lastMoveTimestamp || createdTime;
+    const inactiveMs = Date.now() - lastActivity;
+
+    if (this.isActive && this.sessions.size === 0 && inactiveMs > 5 * 60 * 1000) {
+        console.log(`[MTCH] Clean-up: Game ${this.matchId} abandoned (no activity/sessions for 5m)`);
+        this.endGame(this.matchId, "0-0", "abandoned");
+    } else if (this.isActive) {
+        // If still active but not abandoned yet, reschedule check
+        await this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000);
     }
   }
 }
