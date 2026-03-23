@@ -1,0 +1,209 @@
+{
+  "wallTime": 0,
+  "cpuTime": 0,
+  "truncated": false,
+  "executionModel": "durableObject",
+  "outcome": "ok",
+  "durableObjectId": "c5fc58685d166622b7bfdbd76c6a2c568a038763319f6694713f72a18a20c25e",
+  "scriptVersion": {
+    "id": "038e796c-8625-4da1-bd2a-741ed5474ad2"
+  },
+  "entrypoint": "ChessMatch",
+  "scriptName": "antigravity-edge-backend",
+  "diagnosticsChannelEvents": [],
+  "exceptions": [],
+  "logs": [],
+  "eventTimestamp": 1774205173136,
+  "event": {
+    "request": {
+      "url": "http://internal/match/test123/spectators",
+      "method": "GET",
+      "headers": {}
+    },
+    "response": {
+      "status": 200
+    }
+  }
+}
+{
+  "wallTime": 73,
+  "cpuTime": 2,
+  "truncated": false,
+  "executionModel": "stateless",
+  "outcome": "ok",
+  "scriptVersion": {
+    "id": "038e796c-8625-4da1-bd2a-741ed5474ad2"
+  },
+  "scriptName": "antigravity-edge-backend",
+  "diagnosticsChannelEvents": [],
+  "exceptions": [],
+  "logs": [],
+  "eventTimestamp": 1774205178079,
+  "event": {
+    "request": {
+      "url": "https://antigravity-edge-backend.achitora.workers.dev/api/live",
+      "method": "GET",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, br",
+        "accept-language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cf-connecting-ip": "2a0d:3341:c72e:e10:f53c:7724:8593:88ae",
+        "cf-ipcountry": "UA",
+        "cf-ray": "9e075bbafa2dadc1",
+        "cf-visitor": "{\"scheme\":\"https\"}",
+        "connection": "Keep-Alive",
+        "host": "antigravity-edge-backend.achitora.workers.dev",
+        "origin": "https://space3-frontend.vercel.app",
+        "priority": "u=1, i",
+        "referer": "https://space3-frontend.vercel.app/",
+        "sec-ch-ua": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+        "x-forwarded-proto": "https",
+        "x-real-ip": "2a0d:3341:c72e:e10:f53c:7724:8593:88ae"
+      },
+      "cf": {
+        "httpProtocol": "HTTP/3",
+        "clientAcceptEncoding": "gzip, deflate, br",
+        "requestPriority": "",
+        "edgeRequestKeepAliveStatus": 1,
+        "requestHeaderNames": {},
+        "clientTcpRtt": 0,
+        "colo": "WAW",
+        "asn": 14593,
+        "asOrganization": "SpaceX Services, Inc.",
+        "country": "UA",
+        "isEUCountry": false,
+        "city": "Kyiv",
+        "continent": "EU",
+        "region": "Kyiv City",
+        "regionCode": "30",
+        "timezone": "Europe/Kyiv",
+        "longitude": "30.5238",
+        "latitude": "50.45466",
+        "postalCode": "03027",
+        "tlsVersion": "TLSv1.3",
+        "tlsCipher": "AEAD-AES128-GCM-SHA256",
+        "tlsClientRandom": "YZyYpWnSiecV+5IfacKFTyhBeLsNnQU9zWqgeABpctc=",
+        "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+        "tlsClientExtensionsSha1": "rlyoxnq66UzBtttr/duJrltSFJM=",
+        "tlsClientExtensionsSha1Le": "ZdUx3kKsID+iR1SvjAFhjlC/+is=",
+        "tlsExportedAuthenticator": {
+          "clientHandshake": "d6b9d6f61ef27ed553a586ad51d6e7154f3efdf4eac32165fdcb27b3a0d3353f",
+          "serverHandshake": "f819b51086ef3dc2d126924ed9bf46eff4dd9166ca29b57cf24bf2842da0bfa9",
+          "clientFinished": "f92bc858bddef2ef83d88684c3163e536e89ad01057b21af48406497e674ced9",
+          "serverFinished": "9ffdc9bc0c0ad4a2a6f4dc26396cc4ca9a456fe578542d4fcc4b17e32ca35b62"
+        },
+        "tlsClientHelloLength": "1776",
+        "tlsClientAuth": {
+          "certPresented": "0",
+          "certVerified": "NONE",
+          "certRevoked": "0",
+          "certIssuerDN": "",
+          "certSubjectDN": "",
+          "certIssuerDNRFC2253": "",
+          "certSubjectDNRFC2253": "",
+          "certIssuerDNLegacy": "",
+          "certSubjectDNLegacy": "",
+          "certSerial": "",
+          "certIssuerSerial": "",
+          "certSKI": "",
+          "certIssuerSKI": "",
+          "certFingerprintSHA1": "",
+          "certFingerprintSHA256": "",
+          "certNotBefore": "",
+          "certNotAfter": ""
+        },
+        "verifiedBotCategory": ""
+      }
+    },
+    "response": {
+      "status": 200
+    }
+  }
+}
+{
+  "wallTime": 0,
+  "cpuTime": 0,
+  "truncated": false,
+  "executionModel": "durableObject",
+  "outcome": "ok",
+  "durableObjectId": "aa0163338ad31ff7b04b973025b9d50100b24eafe1c9b786b3a29cef06f128e7",
+  "scriptVersion": {
+    "id": "038e796c-8625-4da1-bd2a-741ed5474ad2"
+  },
+  "entrypoint": "ChessMatch",
+  "scriptName": "antigravity-edge-backend",
+  "diagnosticsChannelEvents": [],
+  "exceptions": [],
+  "logs": [],
+  "eventTimestamp": 1774205173135,
+  "event": {
+    "request": {
+      "url": "http://internal/match/REDACTED/spectators",
+      "method": "GET",
+      "headers": {}
+    },
+    "response": {
+      "status": 200
+    }
+  }
+}
+{
+  "wallTime": 0,
+  "cpuTime": 0,
+  "truncated": false,
+  "executionModel": "durableObject",
+  "outcome": "ok",
+  "durableObjectId": "c05d6fb0a597bbea22a126a1a0abe61ceb84692cb2e4cd375c48159f9a4a44a7",
+  "scriptVersion": {
+    "id": "038e796c-8625-4da1-bd2a-741ed5474ad2"
+  },
+  "entrypoint": "ChessMatch",
+  "scriptName": "antigravity-edge-backend",
+  "diagnosticsChannelEvents": [],
+  "exceptions": [],
+  "logs": [],
+  "eventTimestamp": 1774205173140,
+  "event": {
+    "request": {
+      "url": "http://internal/match/REDACTED/spectators",
+      "method": "GET",
+      "headers": {}
+    },
+    "response": {
+      "status": 200
+    }
+  }
+}
+{
+  "wallTime": 0,
+  "cpuTime": 0,
+  "truncated": false,
+  "executionModel": "durableObject",
+  "outcome": "ok",
+  "durableObjectId": "87deecb551d192ce7e76d41cd9dc2030be3efdbddc02f244c67b5d7738a6c702",
+  "scriptVersion": {
+    "id": "038e796c-8625-4da1-bd2a-741ed5474ad2"
+  },
+  "entrypoint": "ChessMatch",
+  "scriptName": "antigravity-edge-backend",
+  "diagnosticsChannelEvents": [],
+  "exceptions": [],
+  "logs": [],
+  "eventTimestamp": 1774205173140,
+  "event": {
+    "request": {
+      "url": "http://internal/match/REDACTED/spectators",
+      "method": "GET",
+      "headers": {}
+    },
+    "response": {
+      "status": 200
+    }
+  }
+}

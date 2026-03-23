@@ -174,6 +174,11 @@ function PlayArenaContent() {
              if (action.actionType === "rematch") {
                 setRematchState("offered");
                 logMessage("Opponent offered a rematch!");
+             } else if (action.actionType === "rematch_accept") {
+                const newId = action.matchId;
+                const newColor = isSpectator ? "spectator" : (color === "white" ? "black" : "white");
+                // Swap names for the next match: the old black player becomes the new white player
+                router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}`);
              }
           }
       } catch (err) {
@@ -409,7 +414,7 @@ function PlayArenaContent() {
 
 
   return (
-    <div className="min-h-screen flex flex-col p-4 md:p-8 relative">
+    <div className="min-h-screen flex flex-col p-4 md:p-8 relative overscroll-none">
 
         <header className="flex justify-between items-center mb-6 lg:mb-10 px-4 z-10 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3">
@@ -478,7 +483,7 @@ function PlayArenaContent() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden">
+                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
                     <Chessboard 
                         options={{
                             position: fen,
