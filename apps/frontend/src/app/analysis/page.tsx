@@ -50,119 +50,119 @@ export default function AnalysisView() {
 
   const TOP_OPENINGS = [
     { 
-      name: "Sicilian Def.", 
+      nameKey: "op_sicilian", 
       pgn: "1. e4 c5",
       variations: [
-        { name: "Najdorf", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6" },
-        { name: "Paulsen", pgn: "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6" },
-        { name: "Classical", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6" },
-        { name: "Alapin", pgn: "1. e4 c5 2. c3" },
-        { name: "Closed", pgn: "1. e4 c5 2. Nc3" }
+        { nameKey: "op_sicilian_najdorf", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6" },
+        { nameKey: "op_sicilian_paulsen", pgn: "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6" },
+        { nameKey: "op_sicilian_classical", pgn: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6" },
+        { nameKey: "op_sicilian_alapin", pgn: "1. e4 c5 2. c3" },
+        { nameKey: "op_sicilian_closed", pgn: "1. e4 c5 2. Nc3" }
       ]
     },
     { 
-      name: "Ruy Lopez", 
+      nameKey: "op_ruy_lopez", 
       pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5",
       variations: [
-        { name: "Closed", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6" },
-        { name: "Berlin Defense", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6" },
-        { name: "Exchange Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6" },
-        { name: "Open Var.", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4" },
-        { name: "Anti-Marshall", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. a4" }
+        { nameKey: "op_ruy_lopez_closed", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6" },
+        { nameKey: "op_ruy_lopez_berlin", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6" },
+        { nameKey: "op_ruy_lopez_exchange", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6" },
+        { nameKey: "op_ruy_lopez_open", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4" },
+        { nameKey: "op_ruy_lopez_anti_marshall", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. a4" }
       ]
     },
     { 
-      name: "Italian Game", 
+      nameKey: "op_italian", 
       pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4",
       variations: [
-        { name: "Giuoco Piano", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5" },
-        { name: "Two Knights", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6" },
-        { name: "Evans Gambit", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4" },
-        { name: "Giuoco Pianissimo", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3" }
+        { nameKey: "op_italian_piano", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5" },
+        { nameKey: "op_italian_two_knights", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6" },
+        { nameKey: "op_italian_evans", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4" },
+        { nameKey: "op_italian_pianissimo", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3" }
       ]
     },
     { 
-      name: "Queen's Gambit", 
+      nameKey: "op_queens_gambit", 
       pgn: "1. d4 d5 2. c4",
       variations: [
-        { name: "Declined", pgn: "1. d4 d5 2. c4 e6" },
-        { name: "Accepted", pgn: "1. d4 d5 2. c4 dxc4" },
-        { name: "Slav Defense", pgn: "1. d4 d5 2. c4 c6" },
-        { name: "Exchange Var.", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5" },
-        { name: "Tarrasch", pgn: "1. d4 d5 2. c4 e6 3. Nc3 c5" },
-        { name: "Cambridge Springs", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7 5. e3 c6 6. Nf3 Qa5" },
-        { name: "Albin Counter", pgn: "1. d4 d5 2. c4 e5" }
+        { nameKey: "op_qg_declined", pgn: "1. d4 d5 2. c4 e6" },
+        { nameKey: "op_qg_accepted", pgn: "1. d4 d5 2. c4 dxc4" },
+        { nameKey: "op_qg_slav", pgn: "1. d4 d5 2. c4 c6" },
+        { nameKey: "op_qg_exchange", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5" },
+        { nameKey: "op_qg_tarrasch", pgn: "1. d4 d5 2. c4 e6 3. Nc3 c5" },
+        { nameKey: "op_qg_cambridge", pgn: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7 5. e3 c6 6. Nf3 Qa5" },
+        { nameKey: "op_qg_albin", pgn: "1. d4 d5 2. c4 e5" }
       ]
     },
     { 
-      name: "English Open", 
+      nameKey: "op_english", 
       pgn: "1. c4",
       variations: [
-        { name: "Symmetrical", pgn: "1. c4 c5" },
-        { name: "Reversed Sicil.", pgn: "1. c4 e5" },
-        { name: "Anglo-Indian", pgn: "1. c4 Nf6" },
-        { name: "Mikenas-Flohr", pgn: "1. c4 Nf6 2. Nc3 e6 3. e4" },
-        { name: "Double Fianch.", pgn: "1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. Nf3 Nf6 6. O-O O-O" },
-        { name: "Anglo-Dutch", pgn: "1. c4 f5" }
+        { nameKey: "op_english_sym", pgn: "1. c4 c5" },
+        { nameKey: "op_english_rev", pgn: "1. c4 e5" },
+        { nameKey: "op_english_ind", pgn: "1. c4 Nf6" },
+        { nameKey: "op_english_mf", pgn: "1. c4 Nf6 2. Nc3 e6 3. e4" },
+        { nameKey: "op_english_df", pgn: "1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. Nf3 Nf6 6. O-O O-O" },
+        { nameKey: "op_english_ad", pgn: "1. c4 f5" }
       ]
     },
     { 
-      name: "Caro-Kann Def.", 
+      nameKey: "op_carokann", 
       pgn: "1. e4 c6",
       variations: [
-        { name: "Classical", pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5" },
-        { name: "Advance Var.", pgn: "1. e4 c6 2. d4 d5 3. e5" },
-        { name: "Panov Attack", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4" },
-        { name: "Steiner Var.", pgn: "1. e4 c6 2. c4" },
-        { name: "Exchange Var.", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Bd3" }
+        { nameKey: "op_ck_classical", pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5" },
+        { nameKey: "op_ck_advance", pgn: "1. e4 c6 2. d4 d5 3. e5" },
+        { nameKey: "op_ck_panov", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4" },
+        { nameKey: "op_ck_steiner", pgn: "1. e4 c6 2. c4" },
+        { nameKey: "op_ck_exchange", pgn: "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Bd3" }
       ]
     },
     { 
-      name: "Grunfeld Def.", 
+      nameKey: "op_grunfeld", 
       pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5",
       variations: [
-        { name: "Modern Var.", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Nf3 Bg7 5. Bf4" },
-        { name: "Exchange Var.", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4" }
+        { nameKey: "op_gr_modern", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Nf3 Bg7 5. Bf4" },
+        { nameKey: "op_gr_exchange", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4" }
       ]
     },
     { 
-      name: "French Def.", 
+      nameKey: "op_french", 
       pgn: "1. e4 e6",
       variations: [
-        { name: "Paulsen", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Nf6" },
-        { name: "Winawer", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Bb4" },
-        { name: "Tarrasch", pgn: "1. e4 e6 2. d4 d5 3. Nd2" }
+        { nameKey: "op_fr_paulsen", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Nf6" },
+        { nameKey: "op_fr_winawer", pgn: "1. e4 e6 2. d4 d5 3. Nc3 Bb4" },
+        { nameKey: "op_fr_tarrasch", pgn: "1. e4 e6 2. d4 d5 3. Nd2" }
       ]
     },
     { 
-      name: "King's Indian", 
+      nameKey: "op_kings_indian", 
       pgn: "1. d4 Nf6 2. c4 g6",
       variations: [
-        { name: "Classical", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5" },
-        { name: "Saemisch", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3" },
-        { name: "Fianchetto", pgn: "1. d4 Nf6 2. c4 g6 3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6" }
+        { nameKey: "op_ki_classical", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5" },
+        { nameKey: "op_ki_saemisch", pgn: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3" },
+        { nameKey: "op_ki_fianchetto", pgn: "1. d4 Nf6 2. c4 g6 3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6" }
       ]
     },
     { 
-      name: "Catalan Open", 
+      nameKey: "op_catalan", 
       pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5",
       variations: [
-        { name: "Open Catalan", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4" },
-        { name: "Closed Catalan", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 c6" }
+        { nameKey: "op_ca_open", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4" },
+        { nameKey: "op_ca_closed", pgn: "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 c6" }
       ]
     },
     { 
-      name: "Slav Defense", 
+      nameKey: "op_slav", 
       pgn: "1. d4 d5 2. c4 c6",
       variations: [
-        { name: "Meran Var.", pgn: "1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7 6. Bd3 dxc4 7. Bxc4 b5" }
+        { nameKey: "op_sl_meran", pgn: "1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7 6. Bd3 dxc4 7. Bxc4 b5" }
       ]
     },
     { 
-      name: "Pirc Defense", 
+      nameKey: "op_pirc", 
       pgn: "1. e4 d6",
       variations: [
-        { name: "Austrian Attack", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4" }
+        { nameKey: "op_pi_austrian", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4" }
       ]
     },
   ];
@@ -696,7 +696,7 @@ export default function AnalysisView() {
                                                         className="flex items-center gap-2 flex-1 text-left min-w-0"
                                                     >
                                                         <span className={`text-[10px] font-mono font-black w-4 flex-shrink-0 transition-colors ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)] group-hover:text-[var(--brand-primary)]'}`}>{i+1}.</span>
-                                                        <span className={`text-[11px] font-bold truncate pr-1 transition-colors ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-white'}`}>{op.name}</span>
+                                                        <span className={`text-[11px] font-bold truncate pr-1 transition-colors ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-white'}`}>{t(op.nameKey as any)}</span>
                                                     </button>
                                                     
                                                     <select 
@@ -714,7 +714,7 @@ export default function AnalysisView() {
                                                     >
                                                         <option value={op.pgn} className="bg-[var(--settings-bg)]">Main Line</option>
                                                         {op.variations.map((v, vIdx) => (
-                                                            <option key={vIdx} value={v.pgn} className="bg-[var(--settings-bg)]">{v.name}</option>
+                                                            <option key={vIdx} value={v.pgn} className="bg-[var(--settings-bg)]">{t(v.nameKey as any)}</option>
                                                         ))}
                                                     </select>
                                                 </div>
