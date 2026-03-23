@@ -147,11 +147,8 @@ export default {
       } else {
         try {
           const db = createDb(dbUrl, dbToken);
-          // Set all active games to 'finished' with reason 'abandoned'
-          await db.update(matches)
-            .set({ status: 'finished', result: '1/2-1/2', reason: 'cleanup', updatedAt: new Date() })
-            .where(eq(matches.status, 'active'))
-            .execute();
+          // Delete ALL matches for a clean start
+          await db.delete(matches).execute();
           
           // Clear Lobby challenges
           try {
