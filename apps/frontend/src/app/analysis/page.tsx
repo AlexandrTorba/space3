@@ -44,6 +44,8 @@ export default function AnalysisView() {
   
   const sfWorker = useRef<Worker | null>(null);
   const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("pgn");
+  const [activeOpeningIndex, setActiveOpeningIndex] = useState<number | null>(null);
+  const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
 
   const TOP_OPENINGS = [
     { name: "Ruy Lopez", pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5" },
@@ -148,18 +150,29 @@ export default function AnalysisView() {
       const newHistory = gameRef.current.history();
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
+
+      // Handle last move squares for highlighting
+      const verboseHistory = gameRef.current.history({ verbose: true });
+      const lastM = verboseHistory[verboseHistory.length - 1];
+      if (lastM) {
+          setLastMoveSquares({ [lastM.from]: true, [lastM.to]: true });
+      } else {
+          setLastMoveSquares({});
+      }
       
       // Auto-trigger pre-moves
       if (settings.enablePremove && preMove) {
           const turn = gameRef.current.turn();
-          const targetColor = preMove.from ? (gameRef.current.get(preMove.from as Square)?.color) : null;
+          const pCode = gameRef.current.get(preMove.from as Square)?.color;
           
-          if (targetColor === turn) {
+          if (pCode === turn) {
               try {
                   const move = gameRef.current.move({ from: preMove.from as Square, to: preMove.to as Square, promotion: 'q' });
                   if (move) {
                       setPreMove(null);
                       setTimeout(() => updateGameState(), 200);
+                  } else {
+                      setPreMove(null);
                   }
               } catch(e) {
                   setPreMove(null); 
@@ -169,11 +182,13 @@ export default function AnalysisView() {
   };
 
   const loadPgn = () => {
+      setActiveOpeningIndex(null);
       loadPgnInternal(pastePgn);
   };
 
-  const loadOpening = (pgn: string) => {
-      loadPgnInternal(pgn);
+  const loadOpening = (index: number) => {
+      setActiveOpeningIndex(index);
+      loadPgnInternal(TOP_OPENINGS[index].pgn);
   };
 
   const loadPgnInternal = (pgnString: string) => {
@@ -272,6 +287,7 @@ export default function AnalysisView() {
         }
     
         gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
+        setActiveOpeningIndex(null);
         updateGameState();
         return true;
     } catch (e) {
@@ -298,12 +314,22 @@ export default function AnalysisView() {
       setCurrentMoveIndex(index);
       setFen(engine.fen());
       setPreMove(null);
+
+      // Update highlight for past moves
+      const verboseHistory = engine.history({ verbose: true });
+      const lastM = verboseHistory[verboseHistory.length - 1];
+      if (lastM) {
+          setLastMoveSquares({ [lastM.from]: true, [lastM.to]: true });
+      } else {
+          setLastMoveSquares({});
+      }
   };
 
    const resetBoard = () => {
       gameRef.current = new Chess();
       setPastePgn("");
       setPreMove(null);
+      setActiveOpeningIndex(null);
       updateGameState();
   };
 
@@ -360,21 +386,27 @@ export default function AnalysisView() {
                             allowDragging: true,
                             showNotation: settings.showCoordinates,
                             pieces: pieces as any,
-                            squareStyles: {
-                                ...(preMove ? {
-                                    [preMove.from]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' },
-                                    [preMove.to]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' }
-                                } : {})
-                            },
-                            arrows: preMove ? [
-                                {
-                                    startSquare: preMove.from,
-                                    endSquare: preMove.to,
-                                    color: 'rgba(219, 165, 33, 0.9)'
-                                }
-                            ] : []
-                        }}
-                    />
+                             squareStyles: {
+                                 // Last Move highlight
+                                 ...Object.keys(lastMoveSquares).reduce((acc, sq) => ({
+                                     ...acc,
+                                     [sq]: { backgroundColor: 'rgba(255, 255, 0, 0.25)' }
+                                 }), {}),
+                                 // Premove indicator
+                                 ...(preMove ? {
+                                     [preMove.from]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' },
+                                     [preMove.to]: { backgroundColor: 'rgba(219, 165, 33, 0.4)', borderRadius: '50%' }
+                                 } : {})
+                             },
+                             arrows: preMove ? [
+                                 {
+                                     startSquare: (preMove.from as Square),
+                                     endSquare: (preMove.to as Square),
+                                     color: 'rgba(219, 165, 33, 0.9)'
+                                 }
+                             ] : []
+                         }}
+                     />
 
                     {pendingPromotion && (
                         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8">
@@ -526,11 +558,15 @@ export default function AnalysisView() {
                              {TOP_OPENINGS.map((op, i) => (
                                  <button 
                                     key={i}
-                                    onClick={() => loadOpening(op.pgn)}
-                                    className="flex items-center gap-3 bg-[var(--button-bg)] hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30 border border-transparent p-2 rounded-xl transition-all group text-left"
+                                    onClick={() => loadOpening(i)}
+                                    className={`flex items-center gap-3 border p-2 rounded-xl transition-all group text-left ${
+                                        activeOpeningIndex === i 
+                                        ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] shadow-lg shadow-[var(--brand-primary)]/20' 
+                                        : 'bg-[var(--button-bg)] border-transparent hover:bg-[var(--brand-primary)]/10 hover:border-[var(--brand-primary)]/30'
+                                    }`}
                                  >
-                                     <span className="text-[10px] font-mono font-black text-[var(--brand-primary)] w-4 opacity-40">{i+1}.</span>
-                                     <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-primary)] truncate">{op.name}</span>
+                                     <span className={`text-[10px] font-mono font-black w-4 opacity-40 ${activeOpeningIndex === i ? 'text-white/80' : 'text-[var(--brand-primary)]'}`}>{i+1}.</span>
+                                     <span className={`text-[11px] font-bold truncate ${activeOpeningIndex === i ? 'text-white' : 'text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]'}`}>{op.name}</span>
                                  </button>
                              ))}
                         </div>
