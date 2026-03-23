@@ -35,7 +35,7 @@ export function useSettings() {
     showCoordinates: true,
     highlightMoves: true,
     enablePremove: false,
-    botElo: 1100,
+    botElo: 1500,
     alwaysPromoteToQueen: true,
   });
 

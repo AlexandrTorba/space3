@@ -197,7 +197,7 @@ export default function SettingsPanel() {
                                      onChange={(e) => updateSettings({ botElo: parseInt(e.target.value) })}
                                      className="bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg py-1 px-2 text-[12px] font-black text-[var(--brand-primary)] focus:outline-none focus:border-[var(--brand-primary)] cursor-pointer"
                                  >
-                                     {Array.from({ length: 15 }, (_, i) => 1100 + i * 100).map(elo => (
+                                     {Array.from({ length: 11 }, (_, i) => 1500 + i * 100).map(elo => (
                                          <option key={elo} value={elo} className="bg-[var(--settings-bg)]">{elo}</option>
                                      ))}
                                  </select>
