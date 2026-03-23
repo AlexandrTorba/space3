@@ -37,7 +37,7 @@ export default function AnalysisView() {
   const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
   
   const [isBotActive, setIsBotActive] = useState(false);
-  const [botColor, setBotColor] = useState<"white" | "black" | "random">("black");
+  const [botColor, setBotColor] = useState<"white" | "black">("black");
   const [resolvedBotColor, setResolvedBotColor] = useState<"white" | "black" | null>(null);
   const [botThinking, setBotThinking] = useState(false);
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
@@ -45,13 +45,9 @@ export default function AnalysisView() {
   const sfWorker = useRef<Worker | null>(null);
 
   useEffect(() => {
-     if (isBotActive && botColor === "random") {
-        if (!resolvedBotColor) {
-           setResolvedBotColor(Math.random() > 0.5 ? "white" : "black");
-        }
-     } else if (botColor !== "random") {
+     if (isBotActive) {
         setResolvedBotColor(botColor);
-     } else if (!isBotActive) {
+     } else {
         setResolvedBotColor(null);
      }
   }, [isBotActive, botColor]);
@@ -436,7 +432,6 @@ export default function AnalysisView() {
                              >
                                 <option value="black" className="bg-[var(--settings-bg)]">⚫ {t("black") || "Black"}</option>
                                 <option value="white" className="bg-[var(--settings-bg)]">⚪ {t("white") || "White"}</option>
-                                <option value="random" className="bg-[var(--settings-bg)]">🎲 {t("color_random") || "Random"}</option>
                              </select>
                         </div>
                     </div>
