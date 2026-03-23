@@ -351,13 +351,13 @@ export class ChessMatch {
   async alarm() {
     console.log(`[MTCH] Alarm triggered for ${this.matchId}. Checking for inactivity...`);
     
-    // 1. Absolute Sanity Limit: Matches shouldn't live more than 12 hours in DO memory/status
+    // 1. Absolute Sanity Limit: Matches shouldn't live more than 240 hours in DO memory/status
     const matchData: any = await this.state.storage.get("createdAt");
     const createdTime = matchData ? new Date(matchData).getTime() : Date.now();
     const ageMs = Date.now() - createdTime;
 
-    if (ageMs > 12 * 60 * 60 * 1000) {
-        console.log(`[MTCH] Force-closing match ${this.matchId} due to absolute age limit (12h)`);
+    if (ageMs > 240 * 60 * 60 * 1000) {
+        console.log(`[MTCH] Force-closing match ${this.matchId} due to absolute age limit (240h)`);
         this.endGame(this.matchId, "0-0", "stale");
         return;
     }
