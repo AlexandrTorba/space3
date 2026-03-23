@@ -163,20 +163,30 @@ export default function AnalysisView() {
       // Auto-trigger pre-moves
       if (settings.enablePremove && preMove) {
           const turn = gameRef.current.turn();
-          const pCode = gameRef.current.get(preMove.from as Square)?.color;
+          const piece = gameRef.current.get(preMove.from as Square);
           
-          if (pCode === turn) {
+          if (piece && piece.color === turn) {
               try {
-                  const move = gameRef.current.move({ from: preMove.from as Square, to: preMove.to as Square, promotion: 'q' });
+                  const move = gameRef.current.move({ 
+                      from: preMove.from as Square, 
+                      to: preMove.to as Square, 
+                      promotion: 'q' 
+                  });
                   if (move) {
                       setPreMove(null);
-                      setTimeout(() => updateGameState(), 200);
+                      // Update again for the new state
+                      requestAnimationFrame(() => updateGameState());
                   } else {
                       setPreMove(null);
                   }
               } catch(e) {
                   setPreMove(null); 
               }
+          } else if (piece && piece.color !== turn) {
+              // Still not our turn, keep it
+          } else {
+              // Piece gone or invalid
+              setPreMove(null);
           }
       }
   };
