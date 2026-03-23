@@ -157,7 +157,7 @@ export default {
              await stub.fetch("http://internal/clear", { method: "POST" });
           } catch(e) {}
 
-          response = new Response(JSON.stringify({ success: true, message: "All active matches cleared" }), { 
+          response = new Response(JSON.stringify({ success: true, message: "All matches cleared from database" }), { 
             headers: { "Content-Type": "application/json" } 
           });
         } catch (e) {
