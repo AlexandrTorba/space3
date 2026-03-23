@@ -131,7 +131,8 @@ export default function AnalysisView() {
   }, [fen]);
   
   const updateGameState = () => {
-      setFen(gameRef.current.fen());
+      const currentFen = gameRef.current.fen();
+      setFen(currentFen);
       const newHistory = gameRef.current.history();
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
@@ -216,10 +217,12 @@ export default function AnalysisView() {
     }
 
     if (currentMoveIndex !== history.length - 1) {
-       const engine = new Chess();
-       for(let i = 0; i <= currentMoveIndex; i++) {
-          engine.move(history[i]);
-       }
+       // We are in the past, so we trim the history to the current point
+       // and continue from there.
+       const newHistory = history.slice(0, currentMoveIndex + 1);
+       // Instead of re-parsing, we just use the current board FEN
+       // which is already at the currentMoveIndex.
+       const engine = new Chess(fen);
        gameRef.current = engine;
     }
     
@@ -312,11 +315,16 @@ export default function AnalysisView() {
             <div className="lg:col-span-2 flex flex-col items-center">
                 
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] flex justify-between items-end mb-2 px-2">
-                    <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-1.5 rounded-xl text-sm font-mono border border-slate-700/50 shadow-inner">
-                        <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
-                        <span className={`font-bold tracking-wider ${evaluation.startsWith('+') || evaluation.startsWith('M') && !evaluation.startsWith('M-') ? 'text-white' : 'text-slate-400'}`}>
-                            EVAL: {evaluation}
-                        </span>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-1.5 rounded-xl text-sm font-mono border border-slate-700/50 shadow-inner">
+                            <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
+                            <span className={`font-bold tracking-wider ${evaluation.startsWith('+') || evaluation.startsWith('M') && !evaluation.startsWith('M-') ? 'text-white' : 'text-slate-400'}`}>
+                                EVAL: {evaluation}
+                            </span>
+                        </div>
+                        <div className="px-2 text-[10px] uppercase font-black tracking-[0.2em] text-[var(--brand-primary)] animate-pulse">
+                            {new Chess(fen).turn() === 'w' ? t("white") : t("black")} {t("to_move") || "to move"}
+                        </div>
                     </div>
                     <button onClick={resetBoard} className="text-xs bg-red-900/30 text-red-400 hover:bg-red-900/60 px-3 py-1 rounded-full border border-red-500/20 font-bold transition-all">{t("clear_board")}</button>
                 </div>
@@ -393,7 +401,9 @@ export default function AnalysisView() {
                 <div className="flex items-center gap-3 mt-4 bg-[var(--surface-glass)] border border-[var(--surface-border)] px-4 py-2 rounded-full w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] justify-center shadow-xl backdrop-blur-md">
                     <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipBack className="w-5 h-5 text-[var(--text-primary)]"/></button>
                     <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronLeft className="w-6 h-6 text-[var(--text-primary)]"/></button>
-                    <span className="font-mono text-xs font-bold w-16 text-center text-[var(--brand-primary)]">{currentMoveIndex + 1} / {history.length}</span>
+                    <span className="font-mono text-xs font-bold w-20 text-center text-[var(--brand-primary)]">
+                        {currentMoveIndex === -1 ? "Start" : `${Math.floor(currentMoveIndex / 2) + 1}${currentMoveIndex % 2 === 0 ? '.' : '...'}`}
+                    </span>
                     <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronRight className="w-6 h-6 text-[var(--text-primary)]"/></button>
                     <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipForward className="w-5 h-5 text-[var(--text-primary)]"/></button>
                 </div>
