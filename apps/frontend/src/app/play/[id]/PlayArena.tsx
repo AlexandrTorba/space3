@@ -90,11 +90,15 @@ function PlayArenaContent() {
       setLogs(prev => [...prev.slice(-49), msg]);
   };
 
-  const updateGameState = () => {
+  const updateGameState = (forceIndexUpdate = false) => {
+      const isAtEnd = currentMoveIndex === history.length - 1;
       setFen(gameRef.current.fen());
       const newHistory = gameRef.current.history();
       setHistory(newHistory);
-      setCurrentMoveIndex(newHistory.length - 1);
+      
+      if (forceIndexUpdate || isAtEnd || currentMoveIndex === -1) {
+          setCurrentMoveIndex(newHistory.length - 1);
+      }
       setTurn(gameRef.current.turn());
       
       if (gameRef.current.isGameOver()) {
@@ -148,7 +152,7 @@ function PlayArenaContent() {
           if (update.event.case === "status") {
               const state = update.event.value;
               gameRef.current.load(state.fen);
-              updateGameState();
+              updateGameState(true);
               setClocks({
                   white: Number(state.whiteTimeMs),
                   black: Number(state.blackTimeMs)
@@ -166,7 +170,7 @@ function PlayArenaContent() {
               const move = update.event.value;
               try {
                   gameRef.current.move(move.uci);
-                  updateGameState();
+                  updateGameState(true);
               } catch(e) {}
           }
           else if (update.event.case === "action") {
@@ -222,7 +226,7 @@ function PlayArenaContent() {
          try {
              const move = gameRef.current.move(moveData);
              setPreMove(null);
-             updateGameState();
+             updateGameState(true);
              logMessage(`Pre-move Played: ${move.san}`);
              
              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -311,7 +315,7 @@ function PlayArenaContent() {
         }
     
         const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
-        updateGameState();
+        updateGameState(true);
         logMessage(`Played: ${move.san}`);
 
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -661,10 +665,16 @@ function PlayArenaContent() {
                                     return (
                                         <div key={i} className="grid grid-cols-8 text-[11px] font-mono rounded-xl overflow-hidden border border-white/5 bg-white/[0.015] hover:bg-white/[0.04] transition-colors">
                                             <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2.5 font-bold border-r border-white/5 text-[9px]">{i + 1}</div>
-                                            <div className="col-span-3 flex items-center px-4 py-2 text-slate-100 font-bold hover:text-blue-400 transition-colors cursor-default border-r border-white/5">
+                                            <div 
+                                               onClick={() => goToMove(wIndex)}
+                                               className={`col-span-3 flex items-center px-4 py-2 font-bold transition-colors cursor-pointer border-r border-white/5 ${currentMoveIndex === wIndex ? 'bg-blue-500/20 text-blue-400' : 'text-slate-100 hover:text-blue-400'}`}
+                                            >
                                                 {wMove}
                                             </div>
-                                            <div className="col-span-4 flex items-center px-4 py-2 text-slate-400 hover:text-blue-400 transition-colors cursor-default">
+                                            <div 
+                                               onClick={() => goToMove(bIndex)}
+                                               className={`col-span-4 flex items-center px-4 py-2 transition-colors cursor-pointer ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-500/20 text-blue-400 font-bold' : 'text-slate-400 hover:text-blue-400'}`}
+                                            >
                                                 {bMove || ""}
                                             </div>
                                         </div>
