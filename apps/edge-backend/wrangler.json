@@ -11,6 +11,10 @@
       {
         "name": "LOBBY",
         "class_name": "Lobby"
+      },
+      {
+        "name": "BUGHOUSE_MATCH",
+        "class_name": "BughouseMatch"
       }
     ]
   },
@@ -22,6 +26,10 @@
     {
       "tag": "v2",
       "new_sqlite_classes": ["Lobby"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["BughouseMatch"]
     }
   ]
 }

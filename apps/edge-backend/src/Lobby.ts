@@ -6,6 +6,8 @@ type Challenge = {
   playerName: string;
   tc: string;
   colorPref: string;
+  mode: "standard" | "bughouse";
+  players: { name: string; socket: WebSocket; role: string }[];
 };
 
 export class Lobby {
@@ -56,62 +58,79 @@ export class Lobby {
           const tc = data.timeControl || "3";
           const pName = data.playerName || "Гравець";
           const colorPref = data.colorPref || "random";
+          const mode = data.mode || "standard";
           const id = crypto.randomUUID();
           
           this.removeUserChallenges(server);
-          this.challenges.set(id, { id, socket: server, playerName: pName, tc, colorPref });
+          this.challenges.set(id, { 
+             id, socket: server, playerName: pName, tc, colorPref, mode,
+             players: [{ name: pName, socket: server, role: mode === "bughouse" ? "w0" : "" }]
+          });
           this.broadcastChallenges();
           server.send(JSON.stringify({ type: "waiting_created", id }));
         }
         else if (data.type === "accept") {
           const challenge = this.challenges.get(data.challengeId);
           if (challenge && challenge.socket !== server) {
-             const matchId = crypto.randomUUID();
              const pName = data.playerName || "Гравець";
-             
-             let creatorColor = "white";
-             let acceptorColor = "black";
-             if (challenge.colorPref === "black") {
-                creatorColor = "black";
-                acceptorColor = "white";
-             } else if (challenge.colorPref === "random") {
-                if (Math.random() > 0.5) {
+
+             if (challenge.mode === "bughouse") {
+                // Team assignment
+                const roles = ["w0", "b0", "w1", "b1"];
+                const nextRole = roles[challenge.players.length];
+                challenge.players.push({ name: pName, socket: server, role: nextRole });
+                
+                if (challenge.players.length < 4) {
+                   this.broadcastChallenges();
+                   server.send(JSON.stringify({ type: "waiting_created", id: challenge.id })); 
+                   return;
+                }
+                
+                // All 4 joined!
+                const matchId = crypto.randomUUID();
+                challenge.players.forEach(p => {
+                    p.socket.send(JSON.stringify({
+                        type: "MATCH_FOUND", matchId, mode: "bughouse", role: p.role,
+                        tc: challenge.tc, opponent: "Team Match"
+                    }));
+                });
+             } else {
+                const matchId = crypto.randomUUID();
+                let creatorColor = "white";
+                let acceptorColor = "black";
+                if (challenge.colorPref === "black") {
                    creatorColor = "black";
                    acceptorColor = "white";
+                } else if (challenge.colorPref === "random") {
+                   if (Math.random() > 0.5) {
+                      creatorColor = "black";
+                      acceptorColor = "white";
+                   }
                 }
-             }
-             
-             // Acceptor message
-             server.send(JSON.stringify({ 
-                type: "MATCH_FOUND", matchId, color: acceptorColor, 
-                tc: challenge.tc, opponent: challenge.playerName, myName: pName
-             }));
-             // Creator message
-             try {
+                
+                server.send(JSON.stringify({ 
+                   type: "MATCH_FOUND", matchId, color: acceptorColor, 
+                   tc: challenge.tc, opponent: challenge.playerName, myName: pName
+                }));
                 challenge.socket.send(JSON.stringify({ 
                    type: "MATCH_FOUND", matchId, color: creatorColor, 
                    tc: challenge.tc, opponent: pName, myName: challenge.playerName
                 }));
-             } catch(e) {}
-             
-             if (this.db) {
-                const whiteName = creatorColor === "white" ? challenge.playerName : pName;
-                const blackName = creatorColor === "black" ? challenge.playerName : pName;
-                
-                const p = this.db.insert(matches).values({
-                   id: matchId,
-                   whiteName,
-                   blackName,
-                   timeControl: challenge.tc + (challenge.tc === "Unlimited" ? "" : "m"),
-                   status: 'active',
-                   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-                   createdAt: new Date(),
-                   updatedAt: new Date()
-                }).onConflictDoNothing().execute().catch(console.error);
-                
-                this.state.waitUntil(p);
+
+                if (this.db) {
+                   const whiteName = creatorColor === "white" ? challenge.playerName : pName;
+                   const blackName = creatorColor === "black" ? challenge.playerName : pName;
+                   const p = this.db.insert(matches).values({
+                      id: matchId, whiteName, blackName,
+                      timeControl: challenge.tc + (challenge.tc === "Unlimited" ? "" : "m"),
+                      status: 'active',
+                      fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                      createdAt: new Date(), updatedAt: new Date()
+                   }).onConflictDoNothing().execute().catch(console.error);
+                   this.state.waitUntil(p);
+                }
              }
-             
+
              this.removeUserChallenges(server);
              this.removeUserChallenges(challenge.socket);
              this.broadcastChallenges();
@@ -162,14 +181,14 @@ export class Lobby {
   
   sendChallenges(server: WebSocket) {
      const list = Array.from(this.challenges.values()).map(c => ({
-         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref
+         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length
      }));
      server.send(JSON.stringify({ type: "challenges_list", challenges: list }));
   }
   
   broadcastChallenges() {
      const list = Array.from(this.challenges.values()).map(c => ({
-         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref
+         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length
      }));
      const msg = JSON.stringify({ type: "challenges_list", challenges: list });
      this.sessions.forEach(s => {
