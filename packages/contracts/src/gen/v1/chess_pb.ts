@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/chess.proto.
  */
 export const file_v1_chess: GenFile = /*@__PURE__*/
-  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSKIAQoLTWF0Y2hVcGRhdGUSHgoEbW92ZRgBIAEoCzIOLmNoZXNzLnYxLk1vdmVIABInCgZzdGF0dXMYAiABKAsyFS5jaGVzcy52MS5NYXRjaFN0YXR1c0gAEicKBmFjdGlvbhgDIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSABCBwoFZXZlbnRiBnByb3RvMw");
+  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSKeAQoOQnVnaG91c2VTdGF0dXMSJQoGYm9hcmQwGAEgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSJQoGYm9hcmQxGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSDgoGYmFuazB3GAMgAygJEg4KBmJhbmswYhgEIAMoCRIOCgZiYW5rMXcYBSADKAkSDgoGYmFuazFiGAYgAygJIqABCg5CdWdob3VzZVVwZGF0ZRIQCghtYXRjaF9pZBgBIAEoCRIeCgRtb3ZlGAIgASgLMg4uY2hlc3MudjEuTW92ZUgAEioKBnN0YXR1cxgDIAEoCzIYLmNoZXNzLnYxLkJ1Z2hvdXNlU3RhdHVzSAASJwoGYWN0aW9uGAQgASgLMhUuY2hlc3MudjEuTWF0Y2hBY3Rpb25IAEIHCgVldmVudCK2AQoLTWF0Y2hVcGRhdGUSHgoEbW92ZRgBIAEoCzIOLmNoZXNzLnYxLk1vdmVIABInCgZzdGF0dXMYAiABKAsyFS5jaGVzcy52MS5NYXRjaFN0YXR1c0gAEicKBmFjdGlvbhgDIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSAASLAoIYnVnaG91c2UYBCABKAsyGC5jaGVzcy52MS5CdWdob3VzZVVwZGF0ZUgAQgcKBWV2ZW50YgZwcm90bzM");
 
 /**
  * @generated from message chess.v1.Move
@@ -140,6 +140,90 @@ export const MatchActionSchema: GenMessage<MatchAction> = /*@__PURE__*/
   messageDesc(file_v1_chess, 2);
 
 /**
+ * @generated from message chess.v1.BughouseStatus
+ */
+export type BughouseStatus = Message<"chess.v1.BughouseStatus"> & {
+  /**
+   * @generated from field: chess.v1.MatchStatus board0 = 1;
+   */
+  board0?: MatchStatus;
+
+  /**
+   * @generated from field: chess.v1.MatchStatus board1 = 2;
+   */
+  board1?: MatchStatus;
+
+  /**
+   * @generated from field: repeated string bank0w = 3;
+   */
+  bank0w: string[];
+
+  /**
+   * @generated from field: repeated string bank0b = 4;
+   */
+  bank0b: string[];
+
+  /**
+   * @generated from field: repeated string bank1w = 5;
+   */
+  bank1w: string[];
+
+  /**
+   * @generated from field: repeated string bank1b = 6;
+   */
+  bank1b: string[];
+};
+
+/**
+ * Describes the message chess.v1.BughouseStatus.
+ * Use `create(BughouseStatusSchema)` to create a new message.
+ */
+export const BughouseStatusSchema: GenMessage<BughouseStatus> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 3);
+
+/**
+ * @generated from message chess.v1.BughouseUpdate
+ */
+export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
+  /**
+   * @generated from field: string match_id = 1;
+   */
+  matchId: string;
+
+  /**
+   * @generated from oneof chess.v1.BughouseUpdate.event
+   */
+  event: {
+    /**
+     * contains board index or uci like "P@e4"
+     *
+     * @generated from field: chess.v1.Move move = 2;
+     */
+    value: Move;
+    case: "move";
+  } | {
+    /**
+     * @generated from field: chess.v1.BughouseStatus status = 3;
+     */
+    value: BughouseStatus;
+    case: "status";
+  } | {
+    /**
+     * @generated from field: chess.v1.MatchAction action = 4;
+     */
+    value: MatchAction;
+    case: "action";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message chess.v1.BughouseUpdate.
+ * Use `create(BughouseUpdateSchema)` to create a new message.
+ */
+export const BughouseUpdateSchema: GenMessage<BughouseUpdate> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 4);
+
+/**
  * @generated from message chess.v1.MatchUpdate
  */
 export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
@@ -164,6 +248,14 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
      */
     value: MatchAction;
     case: "action";
+  } | {
+    /**
+     * Extension for Bughouse
+     *
+     * @generated from field: chess.v1.BughouseUpdate bughouse = 4;
+     */
+    value: BughouseUpdate;
+    case: "bughouse";
   } | { case: undefined; value?: undefined };
 };
 
@@ -172,5 +264,5 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
  * Use `create(MatchUpdateSchema)` to create a new message.
  */
 export const MatchUpdateSchema: GenMessage<MatchUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 3);
+  messageDesc(file_v1_chess, 5);
 

@@ -1,12 +1,14 @@
 import { ChessMatch } from "./ChessMatch";
+import { BughouseMatch } from "./BughouseMatch";
 import { Lobby } from "./Lobby";
 import { createDb, matches } from "@antigravity/database";
 import { eq, desc } from "drizzle-orm";
 
-export { ChessMatch, Lobby };
+export { ChessMatch, BughouseMatch, Lobby };
 
 export interface Env {
   CHESS_MATCH: DurableObjectNamespace;
+  BUGHOUSE_MATCH: DurableObjectNamespace;
   LOBBY: DurableObjectNamespace;
   TURSO_URL?: string;
   TURSO_AUTH_TOKEN?: string;
@@ -59,6 +61,17 @@ export default {
       if (matchId) {
         const id = env.CHESS_MATCH.idFromName(matchId);
         const stub = env.CHESS_MATCH.get(id);
+        response = await stub.fetch(request);
+      } else {
+        response = new Response("Match ID missing", { status: 400 });
+      }
+    }
+    // Bughouse Match Routing
+    else if (path.startsWith("/bughouse/")) {
+      const matchId = path.split("/")[2];
+      if (matchId) {
+        const id = env.BUGHOUSE_MATCH.idFromName(matchId);
+        const stub = env.BUGHOUSE_MATCH.get(id);
         response = await stub.fetch(request);
       } else {
         response = new Response("Match ID missing", { status: 400 });
