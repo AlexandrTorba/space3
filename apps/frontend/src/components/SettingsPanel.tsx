@@ -2,7 +2,7 @@
 
 import { useTranslation, Language, translations } from "../i18n";
 import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
-import { Settings, X, Palette, Globe, Layers, Eye, Cpu } from "lucide-react";
+import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
@@ -201,9 +201,17 @@ export default function SettingsPanel() {
                                          <option key={elo} value={elo} className="bg-[var(--settings-bg)]">{elo}</option>
                                      ))}
                                  </select>
-                                 <label className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
-                                     <Cpu className="w-3 h-3" /> {t("bot_elo") || "Bot Strength (ELO)"}
-                                 </label>
+                                 <div className="flex items-center gap-2 group/advanced">
+                                     <button 
+                                        className="p-1.5 rounded-md bg-[var(--button-bg)] border border-[var(--surface-border)] text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)]/50 transition-all active:scale-95"
+                                        title={t("advanced_settings" as any)}
+                                     >
+                                         <Sliders className="w-3 h-3" />
+                                     </button>
+                                     <label className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
+                                         <Cpu className="w-3 h-3" /> {t("bot_elo" as any) || "Bot Strength (ELO)"}
+                                     </label>
+                                 </div>
                              </div>
                          </div>
                      </div>
