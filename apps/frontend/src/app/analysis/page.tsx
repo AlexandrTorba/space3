@@ -5,6 +5,7 @@ import React from "react";
 import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer, Globe } from "lucide-react";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
+import JSZip from "jszip";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
@@ -47,6 +48,8 @@ export default function AnalysisView() {
   const [activeOpeningIndex, setActiveOpeningIndex] = useState<number | null>(null);
   const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
   const [openingPage, setOpeningPage] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
 
   // Refs for Stockfish worker to avoid restarts while keeping fresh state access
   const isBotActiveRef = useRef(isBotActive);
@@ -332,10 +335,18 @@ export default function AnalysisView() {
           const cleanPgn = pgnString.trim().replace(/\r\n/g, '\n');
           
           let success = false;
+          
           try {
-              engine.loadPgn(cleanPgn); 
-              success = true;
-          } catch(err) {}
+             engine.load(cleanPgn);
+             success = true;
+          } catch(e) {}
+
+          if (!success) {
+              try {
+                  engine.loadPgn(cleanPgn); 
+                  success = true;
+              } catch(err) {}
+          }
 
           if (!success) {
              const strippedMoves = cleanPgn.split('\n\n').pop()?.trim() || cleanPgn;
@@ -346,13 +357,6 @@ export default function AnalysisView() {
           }
 
           if (!success) {
-               try {
-                   engine.load(cleanPgn);
-                   success = true;
-               } catch(e) {}
-          }
-
-          if (!success) {
              alert("Failed to load PGN/FEN. Please check formatting.");
              return;
           }
@@ -360,8 +364,52 @@ export default function AnalysisView() {
           setPreMove(null); 
           gameRef.current = engine;
           updateGameState();
+          setLastMoveSquares({}); // Clear highlight on fresh load
       } catch (e) {
-          alert("Error parsing PGN string");
+          alert("Error parsing string");
+      }
+  };
+
+  const startFreshFromCurrent = () => {
+      try {
+          const content = gameRef.current.fen();
+          const engine = new Chess(content);
+          gameRef.current = engine;
+          setHistory([]);
+          setCurrentMoveIndex(-1);
+          setFen(content);
+          setLastMoveSquares({});
+          setPreMove(null);
+          setActiveOpeningIndex(null);
+          triggerAnalysis();
+      } catch(e) {}
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      setLoading(true);
+      try {
+          if (file.name.toLowerCase().endsWith(".zip")) {
+              const zip = new JSZip();
+              const content = await zip.loadAsync(file);
+              const pgnFile = Object.values(content.files).find(f => f.name.toLowerCase().endsWith(".pgn") || f.name.toLowerCase().endsWith(".fen"));
+              if (pgnFile) {
+                  const data = await pgnFile.async("string");
+                  loadPgnInternal(data);
+              } else {
+                  alert("No PGN or FEN found in archive");
+              }
+          } else {
+              const text = await file.text();
+              loadPgnInternal(text);
+          }
+      } catch (e) {
+          alert("Error loading file");
+      } finally {
+          setLoading(false);
+          if (fileInputRef.current) fileInputRef.current.value = "";
       }
   };
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
@@ -583,7 +631,7 @@ export default function AnalysisView() {
                 </div>
                 
                 {/* Playback Controls */}
-                <div className="flex items-center gap-3 mt-4 bg-[var(--surface-glass)] border border-[var(--surface-border)] px-4 py-2 rounded-full w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] justify-center shadow-xl backdrop-blur-md">
+                <div className="flex items-center gap-3 mt-4 bg-[var(--surface-glass)] border border-[var(--surface-border)] px-4 py-2 rounded-full w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] justify-center shadow-xl backdrop-blur-md relative">
                     <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipBack className="w-5 h-5 text-[var(--text-primary)]"/></button>
                     <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronLeft className="w-6 h-6 text-[var(--text-primary)]"/></button>
                     <span className="font-mono text-[11px] font-black w-28 text-center text-[var(--brand-primary)] truncate px-1">
@@ -591,6 +639,14 @@ export default function AnalysisView() {
                     </span>
                     <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronRight className="w-6 h-6 text-[var(--text-primary)]"/></button>
                     <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipForward className="w-5 h-5 text-[var(--text-primary)]"/></button>
+                    
+                    <button 
+                        onClick={startFreshFromCurrent} 
+                        title={t("start_fresh_from_here") as string}
+                        className="ml-2 p-2 bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20 rounded-full border border-[var(--brand-primary)]/20 text-[var(--brand-primary)] transition-all"
+                    >
+                        <Timer className="w-4 h-4"/>
+                    </button>
                 </div>
             </div>
 
@@ -670,16 +726,34 @@ export default function AnalysisView() {
 
                     <div className="h-[200px] flex flex-col overflow-hidden">
                         {activeSidebarTab === "pgn" ? (
-                            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full">
+                            <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full">
                                 <textarea 
                                    value={pastePgn} 
                                    onChange={e => setPastePgn(e.target.value)}
-                                   placeholder={t("paste_pgn") as string} 
-                                   className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-3 text-[10px] font-mono text-[var(--text-primary)] h-[130px] focus:outline-none focus:border-[var(--brand-primary)] resize-none"
+                                   placeholder="PGN / FEN" 
+                                   className="w-full bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-xl p-3 text-[10px] font-mono text-[var(--text-primary)] h-[90px] focus:outline-none focus:border-[var(--brand-primary)] resize-none"
                                 />
-                                <button onClick={loadPgn} disabled={!pastePgn.trim()} className="w-full flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95">
-                                    <Upload className="w-3.5 h-3.5"/> {t("load_pgn")}
-                                </button>
+                                <div className="flex gap-2">
+                                     <button onClick={loadPgn} disabled={!pastePgn.trim()} className="flex-1 flex items-center justify-center gap-2 bg-[var(--brand-primary)] hover:opacity-90 disabled:opacity-30 text-white py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all shadow-lg active:scale-95">
+                                        <Activity className="w-3.5 h-3.5"/> OK
+                                    </button>
+                                    <button 
+                                        onClick={() => fileInputRef.current?.click()} 
+                                        className="flex-1 flex items-center justify-center gap-2 bg-[var(--button-bg)] border border-[var(--surface-border)] hover:bg-[var(--surface-border)] text-white py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all active:scale-95"
+                                    >
+                                        <Upload className={loading ? 'animate-spin w-3.5 h-3.5' : 'w-3.5 h-3.5'}/> {loading ? t("loading_zip") : t("load_file")}
+                                    </button>
+                                </div>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    accept=".pgn,.fen,.zip" 
+                                    onChange={handleFileUpload}
+                                />
+                                <div className="text-[9px] text-center text-[var(--text-muted)] opacity-50 font-black tracking-widest uppercase">
+                                    {t("upload_hint")}
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-2 h-full">
