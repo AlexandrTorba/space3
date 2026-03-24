@@ -15,6 +15,9 @@ export interface ChessSettings {
   enablePremove: boolean;
   botElo: number;
   alwaysPromoteToQueen: boolean;
+  engineThreads: number;
+  engineHash: number;
+  engineMultiPV: number;
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
@@ -37,6 +40,9 @@ export function useSettings() {
     enablePremove: false,
     botElo: 1500,
     alwaysPromoteToQueen: true,
+    engineThreads: 1,
+    engineHash: 16,
+    engineMultiPV: 1,
   });
 
   useEffect(() => {
