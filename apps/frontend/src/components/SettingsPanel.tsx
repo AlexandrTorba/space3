@@ -8,6 +8,7 @@ import { useState } from "react";
 
 export default function SettingsPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdvancedStockfishOpen, setIsAdvancedStockfishOpen] = useState(false);
   const { lang, changeLanguage, t } = useTranslation();
   const { settings, updateSettings } = useSettings();
 
@@ -203,6 +204,7 @@ export default function SettingsPanel() {
                                  </select>
                                  <div className="flex items-center gap-2 group/advanced">
                                      <button 
+                                        onClick={() => setIsAdvancedStockfishOpen(true)}
                                         className="p-1.5 rounded-md bg-[var(--button-bg)] border border-[var(--surface-border)] text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)]/50 transition-all active:scale-95"
                                         title={t("advanced_settings" as any)}
                                      >
@@ -222,6 +224,116 @@ export default function SettingsPanel() {
                      <p className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] leading-relaxed">Powered by Stockfish & Chess.js</p>
                  </div>
                </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {isAdvancedStockfishOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAdvancedStockfishOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[90]"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="fixed inset-0 m-auto w-[90%] sm:w-[350px] h-fit bg-[var(--settings-bg)] border border-[var(--surface-border)] rounded-3xl p-6 z-[100] shadow-2xl"
+            >
+              <header className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+                    <Sliders className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
+                    {t("engine_settings_title" as any)}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setIsAdvancedStockfishOpen(false)}
+                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--button-bg)] rounded-xl transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </header>
+
+              <div className="space-y-6">
+                {/* Threads */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      {t("engine_threads" as any)}
+                    </label>
+                    <span className="text-xs font-mono font-black text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-0.5 rounded-md">
+                      {settings.engineThreads}
+                    </span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="1"
+                    max="16"
+                    step="1"
+                    value={settings.engineThreads}
+                    onChange={(e) => updateSettings({ engineThreads: parseInt(e.target.value) })}
+                    className="w-full h-1.5 bg-[var(--button-bg)] rounded-full appearance-none cursor-pointer accent-[var(--brand-primary)]"
+                  />
+                </div>
+
+                {/* Hash */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      {t("engine_hash" as any)}
+                    </label>
+                    <span className="text-xs font-mono font-black text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-0.5 rounded-md">
+                      {settings.engineHash} MB
+                    </span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="16"
+                    max="1024"
+                    step="16"
+                    value={settings.engineHash}
+                    onChange={(e) => updateSettings({ engineHash: parseInt(e.target.value) })}
+                    className="w-full h-1.5 bg-[var(--button-bg)] rounded-full appearance-none cursor-pointer accent-[var(--brand-primary)]"
+                  />
+                </div>
+
+                {/* MultiPV */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      {t("engine_multipv" as any)}
+                    </label>
+                    <span className="text-xs font-mono font-black text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-0.5 rounded-md">
+                      {settings.engineMultiPV}
+                    </span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={settings.engineMultiPV}
+                    onChange={(e) => updateSettings({ engineMultiPV: parseInt(e.target.value) })}
+                    className="w-full h-1.5 bg-[var(--button-bg)] rounded-full appearance-none cursor-pointer accent-[var(--brand-primary)]"
+                  />
+                </div>
+
+                <button 
+                  onClick={() => setIsAdvancedStockfishOpen(false)}
+                  className="w-full py-3 bg-[var(--brand-primary)] text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-[var(--brand-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4"
+                >
+                  {t("save_settings" as any)}
+                </button>
+              </div>
             </motion.div>
           </>
         )}
