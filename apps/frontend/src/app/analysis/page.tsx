@@ -48,6 +48,14 @@ export default function AnalysisView() {
   const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
   const [openingPage, setOpeningPage] = useState(0);
 
+  // Refs for Stockfish worker to avoid restarts while keeping fresh state access
+  const isBotActiveRef = useRef(isBotActive);
+  const resolvedBotColorRef = useRef(resolvedBotColor);
+  const botThinkingRef = useRef(botThinking);
+  useEffect(() => { isBotActiveRef.current = isBotActive; }, [isBotActive]);
+  useEffect(() => { resolvedBotColorRef.current = resolvedBotColor; }, [resolvedBotColor]);
+  useEffect(() => { botThinkingRef.current = botThinking; }, [botThinking]);
+
   const TOP_OPENINGS = [
     { 
       nameKey: "op_sicilian", 
@@ -183,7 +191,7 @@ export default function AnalysisView() {
        sfWorker.current.onmessage = (e) => {
           const line = e.data;
           
-          if (line.startsWith("bestmove ") && isBotActive) {
+          if (line.startsWith("bestmove ") && isBotActiveRef.current) {
              const moveUci = line.split(" ")[1];
              if (moveUci !== "(none)" && isBotMoving.current) {
                 const from = moveUci.substring(0, 2);
@@ -192,7 +200,7 @@ export default function AnalysisView() {
                 
                 try {
                   // Only apply if it's actually the bot's turn to avoid race conditions
-                  if (resolvedBotColor && gameRef.current.turn() === resolvedBotColor[0]) {
+                  if (resolvedBotColorRef.current && gameRef.current.turn() === resolvedBotColorRef.current[0]) {
                      gameRef.current.move({ from, to, promotion });
                      updateGameState();
                   }
@@ -220,21 +228,33 @@ export default function AnalysisView() {
           }
        };
        sfWorker.current.postMessage("uci");
+    }
+    return () => sfWorker.current?.terminate();
+  }, []);
+
+  // Update Stockfish options without restarting the worker
+  useEffect(() => {
+    if (sfWorker.current) {
+       sfWorker.current.postMessage(`setoption name Threads value ${settings.engineThreads}`);
+       sfWorker.current.postMessage(`setoption name Hash value ${settings.engineHash}`);
+       sfWorker.current.postMessage(`setoption name MultiPV value ${settings.engineMultiPV}`);
        sfWorker.current.postMessage("setoption name UCI_LimitStrength value true");
        sfWorker.current.postMessage(`setoption name UCI_Elo value ${settings.botElo}`);
     }
-    return () => sfWorker.current?.terminate();
-  }, [isBotActive, settings.botElo, resolvedBotColor]);
+  }, [settings.botElo, settings.engineThreads, settings.engineHash, settings.engineMultiPV]);
 
    useEffect(() => {
     if (isBotActive && resolvedBotColor && !botThinking && gameRef.current.turn() === resolvedBotColor[0]) {
        setBotThinking(true);
        isBotMoving.current = true;
-       sfWorker.current?.postMessage("stop"); // Ensure any ongoing analysis stops
+       sfWorker.current?.postMessage("stop"); 
        sfWorker.current?.postMessage(`position fen ${gameRef.current.fen()}`);
-       sfWorker.current?.postMessage("go movetime 1000");
+       
+       // Dynamic think time: 1500 ELO -> 1000ms, 2500 ELO -> 3000ms
+       const movetime = 1000 + Math.max(0, (settings.botElo - 1500) * 2);
+       sfWorker.current?.postMessage(`go movetime ${movetime}`);
     }
-  }, [isBotActive, fen, resolvedBotColor, botThinking]);
+  }, [isBotActive, fen, resolvedBotColor, botThinking, settings.botElo]);
 
   const triggerAnalysis = () => {
       if (sfWorker.current) {
