@@ -1,0 +1,19 @@
+{
+  "name": "load_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@bufbuild/protoc-gen-es": "^2.11.0",
+    "protobufjs": "^8.0.0",
+    "ws": "^8.20.0"
+  }
+}
