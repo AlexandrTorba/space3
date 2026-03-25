@@ -431,8 +431,9 @@ function PlayArenaContent() {
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
                 <Zap className="w-6 h-6 text-blue-400 animate-pulse" />
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">{t("arena_title")}</h1>
-                    <span className="text-xs font-mono text-gray-500">ID: {id.substring(0, 8)}</span>
+                    <div className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none mb-1">AntigravityChess</div>
+                    <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none">{t("arena_title")}</h1>
+                    <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest mt-0.5 block">ID: {id.substring(0, 8)}</span>
                 </div>
               </div>
             </div>

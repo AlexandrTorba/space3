@@ -2,6 +2,7 @@
   "name": "@antigravity/contracts",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "src/gen/v1/chess_pb.ts",
   "types": "src/gen/v1/chess_pb.ts",
   "scripts": {

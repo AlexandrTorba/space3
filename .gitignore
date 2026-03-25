@@ -2,6 +2,12 @@ node_modules/
 .DS_Store
 dist/
 .next/
-.env*.png
+.env*
+*.png
 *.webp
-fail_*.png
+*.log
+.wrangler/
+.turbo/
+build/
+.gen/
+package-lock.json
