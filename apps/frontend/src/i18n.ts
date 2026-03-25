@@ -159,7 +159,8 @@ export const translations = {
       op_slav: "Slav Defense",
       op_sl_meran: "Meran Variation",
       op_pirc: "Pirc Defense",
-      op_pi_austrian: "Austrian Attack"
+      op_pi_austrian: "Austrian Attack",
+      bughouse: "Bughouse"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -317,7 +318,8 @@ export const translations = {
       op_slav: "Слов'янський захист",
       op_sl_meran: "Меран",
       op_pirc: "Захист Пірца-Уфімцева",
-      op_pi_austrian: "Австрійська атака"
+      op_pi_austrian: "Австрійська атака",
+      bughouse: "Багхауз"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -475,7 +477,8 @@ export const translations = {
       op_slav: "Defensa Eslava",
       op_sl_meran: "Variante Merano",
       op_pirc: "Defensa Pirc",
-      op_pi_austrian: "Ataque Austríaco"
+      op_pi_austrian: "Ataque Austríaco",
+      bughouse: "Bughouse"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -633,7 +636,8 @@ export const translations = {
       op_slav: "Slav Savunması",
       op_sl_meran: "Meran Varyantı",
       op_pirc: "Pirc Savunması",
-      op_pi_austrian: "Avusturya Atak"
+      op_pi_austrian: "Avusturya Atak",
+      bughouse: "Bughouse"
     }
 };
 

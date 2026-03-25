@@ -35,6 +35,8 @@ interface SettingsContextType {
   changeLanguage: (newLang: Language) => void;
   t: (key: keyof typeof translations['en']) => string;
   getPieceUrl: (piece: string) => string;
+  isPanelOpen: boolean;
+  setIsPanelOpen: (open: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -51,6 +53,7 @@ const DEFAULT_SETTINGS: ChessSettings = {
 };
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [settings, setSettings] = useState<ChessSettings>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ag_settings");
@@ -105,7 +108,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, lang, changeLanguage, t, getPieceUrl }}>
+    <SettingsContext.Provider value={{ 
+      settings, updateSettings, lang, changeLanguage, t, getPieceUrl,
+      isPanelOpen, setIsPanelOpen
+    }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -13,8 +13,14 @@ const { chromium } = require('playwright');
 
   const testFen = '1r6/P7/k7/8/8/8/8/K7 w - - 0 1'; 
   console.log("Loading FEN...");
+  
+  // Click PGN tab to make textarea visible
+  const pgnTab = page.locator('button:has-text("PGN")');
+  await pgnTab.click();
+  await page.waitForTimeout(500);
+
   await page.fill('textarea', testFen);
-  await page.click('button.rounded-xl.font-black');
+  await page.click('button:has-text("OK")');
   await page.waitForTimeout(2000);
   
   console.log("Analyzing squares...");

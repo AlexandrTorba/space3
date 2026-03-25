@@ -2,59 +2,52 @@
 
 import { useTranslation, Language, translations } from "../i18n";
 import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
+import { useSettingsContext } from "../providers/SettingsProvider";
 import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 export default function SettingsPanel() {
-  const [isOpen, setIsOpen] = useState(false);
   const [isAdvancedStockfishOpen, setIsAdvancedStockfishOpen] = useState(false);
   const { lang, changeLanguage, t } = useTranslation();
   const { settings, updateSettings } = useSettings();
+  const { isPanelOpen, setIsPanelOpen } = useSettingsContext();
 
-  const toggleOpen = () => setIsOpen(!isOpen);
+  const toggleOpen = () => setIsPanelOpen(!isPanelOpen);
 
   return (
     <>
-      <button 
-        onClick={toggleOpen}
-        className="fixed top-4 right-4 z-[60] p-3 rounded-full bg-[var(--surface-color)] border border-[var(--surface-border)] text-[var(--brand-primary)] hover:scale-110 active:scale-95 transition-all shadow-xl backdrop-blur-xl"
-        title="Settings"
-      >
-        <Settings className="w-5 h-5" />
-      </button>
-
       <AnimatePresence>
-        {isOpen && (
+        {isPanelOpen && (
           <>
             <motion.div 
                initial={{ opacity: 0 }} 
                animate={{ opacity: 1 }} 
                exit={{ opacity: 0 }}
-               onClick={toggleOpen}
-               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70]"
+               onClick={() => setIsPanelOpen(false)}
+               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[70]"
             />
             <motion.div 
                initial={{ x: "100%" }} 
                animate={{ x: 0 }} 
                exit={{ x: "100%" }}
-               transition={{ type: "spring", damping: 28, stiffness: 220 }}
-               className="fixed right-0 top-0 bottom-0 w-80 sm:w-85 bg-[var(--settings-bg)] border-l border-[var(--surface-border)] z-[80] shadow-2xl overflow-y-auto"
+               transition={{ type: "spring", damping: 30, stiffness: 200 }}
+               className="fixed right-0 top-0 bottom-0 w-85 bg-[#0A0D14]/95 border-l border-white/5 z-[80] shadow-2xl overflow-y-auto backdrop-blur-2xl"
             >
-               <div className="p-5 h-full flex flex-col">
-                 <header className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-2">
-                       <div className="p-1.5 rounded-lg bg-[var(--button-bg)]">
-                          <Settings className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
+               <div className="p-8 h-full flex flex-col">
+                 <header className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                       <div className="p-2 rounded-xl bg-blue-600/10 text-blue-400">
+                          <Settings className="w-5 h-5" />
                        </div>
-                       <h2 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-[0.1em] leading-none">{t("settings_title") || "Settings"}</h2>
+                       <h2 className="text-xl font-black text-white uppercase tracking-widest leading-none">{t("settings_title") || "Settings"}</h2>
                     </div>
-                    <button onClick={toggleOpen} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--button-bg)] rounded-xl transition-all">
-                       <X className="w-4 h-4" />
+                    <button onClick={() => setIsPanelOpen(false)} className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all">
+                       <X className="w-6 h-6" />
                     </button>
                  </header>
 
-                 <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+                 <div className="space-y-6 flex-1 pr-1">
                      {/* Language Section */}
                      <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
