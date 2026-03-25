@@ -62,6 +62,35 @@ export default function AnalysisView() {
   const [openingPage, setOpeningPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Persistence: Load from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("ag_analysis_versions");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setVersions(parsed);
+          setActiveVersionId(parsed[0].id);
+          const initialV = parsed[0];
+          const engine = new Chess();
+          for(const m of initialV.history) engine.move(m);
+          gameRef.current = engine;
+          setFen(engine.fen());
+          setHistory(engine.history());
+        }
+      } catch (e) {}
+    }
+    setHasHydrated(true);
+  }, []);
+
+  // Persistence: Save to localStorage
+  useEffect(() => {
+    if (hasHydrated) {
+      localStorage.setItem("ag_analysis_versions", JSON.stringify(versions));
+    }
+  }, [versions, hasHydrated]);
 
   // Refs for Stockfish worker to avoid restarts while keeping fresh state access
   const isBotActiveRef = useRef(isBotActive);
@@ -289,6 +318,7 @@ export default function AnalysisView() {
       setFen(currentFen);
       const newHistory = gameRef.current.history();
       setHistory(newHistory);
+      setPastePgn(gameRef.current.pgn());
       setCurrentMoveIndex(newHistory.length - 1);
 
       // Sync specific version
@@ -353,6 +383,7 @@ export default function AnalysisView() {
     
     setFen(gameRef.current.fen());
     setHistory(gameRef.current.history());
+    setPastePgn(gameRef.current.pgn());
     setCurrentMoveIndex(gameRef.current.history().length - 1);
     setLastMoveSquares({});
     setPreMove(null);
@@ -825,13 +856,20 @@ export default function AnalysisView() {
                                                 : 'bg-white/5 border-transparent hover:border-white/10'
                                             }`}
                                         >
-                                            <button 
-                                                onClick={() => switchVersion(v.id)}
-                                                className="flex-1 text-left min-w-0 mr-2"
-                                            >
-                                                <div className={`text-[11px] font-bold truncate ${activeVersionId === v.id ? 'text-[var(--brand-primary)]' : 'text-slate-300'}`}>{v.name}</div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-0.5">{v.history.length || 0} moves</div>
-                                            </button>
+                                              <button 
+                                                  onClick={() => switchVersion(v.id)}
+                                                  className="flex-1 text-left min-w-0 mr-2"
+                                              >
+                                                  <div className={`text-[11px] font-bold truncate ${activeVersionId === v.id ? 'text-[var(--brand-primary)]' : 'text-slate-300'}`}>{v.name}</div>
+                                                  <div className="flex items-center gap-2 mt-0.5">
+                                                      <div className="text-[9px] text-slate-500 font-mono">{v.history.length || 0} moves</div>
+                                                      {v.history.length > 0 && (
+                                                          <div className="text-[8px] px-1.5 py-0.5 bg-white/10 rounded-md text-white/50 font-bold uppercase tracking-wider">
+                                                              {v.history[v.history.length - 1]}
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              </button>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => renameVersion(v.id)} className="p-1.5 hover:bg-white/10 rounded-md text-slate-400 hover:text-white"><Edit className="w-3 h-3" /></button>
                                                 <button onClick={() => deleteVersion(v.id)} disabled={versions.length <= 1} className="p-1.5 hover:bg-red-500/20 rounded-md text-slate-400 hover:text-red-400 disabled:opacity-0"><Trash2 className="w-3 h-3" /></button>
