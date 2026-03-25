@@ -523,12 +523,10 @@ export default function AnalysisView() {
     }
 
     if (currentMoveIndex !== history.length - 1) {
-       // We are in the past, so we trim the history to the current point
-       // and continue from there.
-       const newHistory = history.slice(0, currentMoveIndex + 1);
-       // Instead of re-parsing, we just use the current board FEN
-       // which is already at the currentMoveIndex.
-       const engine = new Chess(fen);
+       const engine = new Chess();
+       for(let i = 0; i <= currentMoveIndex; i++) {
+           try { engine.move(history[i]); } catch(e) {}
+       }
        gameRef.current = engine;
     }
     
