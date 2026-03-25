@@ -60,7 +60,6 @@ export default function LobbyList({
                           <div>
                              <div className="flex items-center gap-2">
                                 <span className="font-black text-sm">{c.playerName}</span>
-                                {c.isBot && <span className="text-[8px] bg-red-500/10 text-red-500/60 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">AI</span>}
                                 {c.mode === 'bughouse' && <span className="text-[8px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded font-black uppercase">BH {c.playersCount || 0}/4</span>}
                              </div>
                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{c.tc} min • {c.colorPref}</div>
@@ -79,27 +78,27 @@ export default function LobbyList({
                     </motion.div>
                   ))
              ) : (
-               liveMatches.map((m, i) => (
-                 <motion.button 
-                    key={m.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => onSpectateMatch(m.id)}
-                    className="w-full flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 p-4 rounded-2xl transition-all group"
-                 >
-                    <div className="flex items-center gap-4 flex-1">
-                       <div className="text-sm font-bold truncate max-w-[100px]">{m.whiteName}</div>
-                       <div className="text-[10px] text-slate-700 font-black">VS</div>
-                       <div className="text-sm font-bold truncate max-w-[100px]">{m.blackName}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                       <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500/50">
-                          <Activity className="w-3 h-3" /> {m.spectators || 0}
-                       </div>
-                       <ChevronRight className="w-4 h-4 text-slate-700" />
-                    </div>
-                 </motion.button>
-               ))
+                liveMatches.map((m, i) => (
+                  <motion.button 
+                     key={m.id}
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     onClick={() => onSpectateMatch(m.id)}
+                     className="w-full flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 p-4 rounded-2xl transition-all group"
+                  >
+                     <div className="flex items-center gap-4 flex-1">
+                        <div className="text-sm font-bold truncate max-w-[100px]">{m.whiteName}</div>
+                        <div className="text-[10px] text-slate-700 font-black">VS</div>
+                        <div className="text-sm font-bold truncate max-w-[100px]">{m.blackName}</div>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500/50">
+                           <Activity className="w-3 h-3" /> {m.spectators || 0}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-700" />
+                     </div>
+                  </motion.button>
+                ))
              )}
              </AnimatePresence>
 

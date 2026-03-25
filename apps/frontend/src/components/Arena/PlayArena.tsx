@@ -129,9 +129,7 @@ function PlayArenaContent() {
       }
     } catch (e) {}
 
-    const isBot = searchParams?.get("isBot");
-    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}${isBot ? `&isBot=${isBot}` : ""}`;
-    logMessage(`Connecting to: ${wsUrl}`);
+    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`;
     
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
@@ -139,13 +137,6 @@ function PlayArenaContent() {
 
     ws.onopen = () => {
       setStatus("Connected");
-      logMessage("Successfully connected to game server.");
-    };
-
-    ws.onerror = (e) => {
-      console.error("WS ERROR:", e);
-      setStatus("Error Connecting");
-      logMessage(`WebSocket error occurred.`);
     };
 
     ws.onmessage = async (event) => {
@@ -185,7 +176,6 @@ function PlayArenaContent() {
              } else if (action.actionType === "rematch_accept") {
                 const newId = action.matchId;
                 const newColor = isSpectator ? "spectator" : (color === "white" ? "black" : "white");
-                // Swap names for the next match: the old black player becomes the new white player
                 router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}`);
              }
           }
@@ -194,10 +184,8 @@ function PlayArenaContent() {
       }
     };
 
-    ws.onclose = (e) => {
+    ws.onclose = () => {
       setStatus("Disconnected");
-      const reason = e.reason || (e.wasClean ? "Normal Closure" : "Abnormal Termination");
-      logMessage(`WebSocket closed: ${reason} (Code: ${e.code})`);
     };
 
     return () => { 
@@ -256,23 +244,18 @@ function PlayArenaContent() {
      return () => clearInterval(interval);
   }, [gameOver, fen, clocks.white < 0, preMove]);
 
-  // Final neutral guard for SSR and hydration. 
-  // No variable dependencies in JSX to avoid premature crashes.
   if (!mounted || !id) return <div key="skeleton" className="min-h-screen bg-[#07090E]" />;
 
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare || gameOver) return false;
     
-    // Disallow moves if user is previewing history
     if (currentMoveIndex !== history.length - 1) {
-       logMessage("Skip to the current move to play!");
        return false;
     }
 
     const isMyTurn = gameRef.current.turn() === color[0];
 
     if (!isMyTurn) {
-        // Record Pre-move only if enabled
         if (settings.enablePremove) {
             setPreMove({ from: sourceSquare, to: targetSquare });
         }
@@ -285,7 +268,6 @@ function PlayArenaContent() {
         const isBlackPawn = pieceCode === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1';
         const isPromotion = isWhitePawn || isBlackPawn;
 
-        // Clone the game to validate the move BEFORE showing modal or applying
         const tempGame = new Chess(gameRef.current.fen());
         try {
             const moveData = isPromotion 
@@ -303,7 +285,6 @@ function PlayArenaContent() {
                 try {
                     const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
                     setTimeout(() => updateGameState(), 0);
-                    logMessage(`Played: ${move.san}`);
                     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                         const uci = sourceSquare + targetSquare + 'q';
                         const update = create(MatchUpdateSchema, {
@@ -320,7 +301,6 @@ function PlayArenaContent() {
     
         const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
         updateGameState(true);
-        logMessage(`Played: ${move.san}`);
 
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             const uci = sourceSquare + targetSquare;
@@ -341,7 +321,6 @@ function PlayArenaContent() {
       try {
           const move = gameRef.current.move({ from, to, promotion: promotionPiece });
           setTimeout(() => updateGameState(), 0);
-          logMessage(`Played (Prom): ${move.san}`);
           
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
               const uci = from + to + promotionPiece;
@@ -360,7 +339,6 @@ function PlayArenaContent() {
               event: { case: "action", value: { matchId: id, actionType: actionType, playerColor: color[0] } }
           });
           wsRef.current.send(toBinary(MatchUpdateSchema, update));
-          logMessage(`Sent ${actionType}`);
       }
   }
   
@@ -368,8 +346,6 @@ function PlayArenaContent() {
       sendAction("rematch");
       setRematchState("waiting");
   }
-
-
 
   const formatTime = (ms: number) => {
       const s = Math.ceil(ms / 1000);
@@ -419,8 +395,6 @@ function PlayArenaContent() {
       setFen(engine.fen());
   };
 
-
-
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 relative overscroll-none">
 
@@ -461,7 +435,6 @@ function PlayArenaContent() {
             
             <div className="lg:col-span-2 flex flex-col p-2 relative">
                 
-                {/* Result Announcement Strip */}
                 {gameOver && (
                         <div 
                           className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-4 flex justify-between items-center shadow-xl backdrop-blur-xl"
@@ -476,7 +449,6 @@ function PlayArenaContent() {
                         </div>
                 )}
 
-                {/* Opponent Info Banner */}
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-4 py-2 rounded-t-2xl">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400">
@@ -523,7 +495,6 @@ function PlayArenaContent() {
                         }}
                     />
 
-                    {/* Promotion Selection Dialog */}
                     {pendingPromotion && (
                             <div 
                                 className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-8"
@@ -555,7 +526,6 @@ function PlayArenaContent() {
                             </div>
                     )}
 
-                    {/* Pre-move Indicator */}
                     {preMove && (
                         <button 
                             onClick={() => setPreMove(null)}
@@ -566,7 +536,6 @@ function PlayArenaContent() {
                     )}
                 </div>
                 
-                {/* Bottom Player (You) Info Banner */}
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-t-0 px-4 py-2 rounded-b-2xl">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400">
@@ -585,7 +554,6 @@ function PlayArenaContent() {
                     </div>
                 </div>
                 
-                {/* Board Controls */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto w-full">
                     <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/80 px-2 py-1 rounded-full flex-shrink-0">
                         <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-4 h-4"/></button>
@@ -634,26 +602,13 @@ function PlayArenaContent() {
                 </div>
             </div>
 
-            {/* Sidebar with Stats & Chat */}
             <div className="flex flex-col gap-6">
                 
-                {/* Notation Panel */}
                 <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[400px] shadow-2xl backdrop-blur-xl group">
                     <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
                            <Activity className="w-4 h-4 text-blue-500"/> Notation
                         </div>
-                        {history.length > 0 && (
-                            <button 
-                                onClick={() => {
-                                    navigator.clipboard.writeText(gameRef.current.pgn());
-                                    logMessage("PGN Copied to clipboard!");
-                                }}
-                                className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold transition-all flex items-center gap-1.5 active:scale-95"
-                            >
-                                <Copy className="w-3 h-3" /> PGN
-                            </button>
-                        )}
                     </div>
                     
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1.5 scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-blue-500/30 transition-all">
@@ -693,13 +648,10 @@ function PlayArenaContent() {
                     </div>
                 </div>
 
-
-
                 <div className="bg-blue-900/5 border border-blue-500/10 rounded-2xl p-4 flex flex-col gap-2">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500/60">Match Info</h4>
                     <p className="text-xs text-slate-500 leading-relaxed">
                         Match is running on <b>Antigravity Edge</b>. 
-                        In case of connection failure, the game will attempt to reconnect automatically.
                     </p>
                 </div>
             </div>
