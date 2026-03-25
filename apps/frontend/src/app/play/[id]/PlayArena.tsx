@@ -19,8 +19,10 @@ import {
   Zap, 
   AlertCircle,
   Trophy,
-  CheckCircle
+  CheckCircle,
+  Settings
 } from "lucide-react";
+import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
 import { useTranslation } from "@/i18n";
@@ -61,6 +63,7 @@ function PlayArenaContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
+  const { setIsPanelOpen } = useSettingsContext();
   getPieceUrlRef.current = getPieceUrl;
 
   const isSpectator = color === "spectator";
@@ -446,6 +449,9 @@ function PlayArenaContent() {
                    <Activity className="w-4 h-4" />
                    <span>{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
                </div>
+               <button onClick={() => setIsPanelOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
+                   <Settings className="w-5 h-5" />
+               </button>
             </div>
         </header>
 

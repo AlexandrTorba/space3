@@ -10,11 +10,13 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "@/i18n";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
+import { useSettingsContext } from "@/providers/SettingsProvider";
 
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const { settings } = useSettings();
+  const { setIsPanelOpen } = useSettingsContext();
   
   const [status, setStatus] = useState("Connecting...");
   const wsRef = useRef<WebSocket | null>(null);
@@ -156,7 +158,7 @@ export default function Home() {
              <button onClick={() => router.push("/analysis")} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10">
                 <Activity className="w-5 h-5 text-slate-400" />
              </button>
-             <button className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10">
+             <button onClick={() => setIsPanelOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10">
                 <SettingsIcon className="w-5 h-5 text-slate-400" />
              </button>
           </div>

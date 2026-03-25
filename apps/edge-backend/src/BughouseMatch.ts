@@ -104,6 +104,7 @@ export class BughouseMatch {
 
     // Check if it's a drop (e.g. "P@e4")
     if (uci.includes("@")) {
+       console.log(`[BUGHOUSE] Piece drop requested: ${uci} on Board ${boardIdx} by ${player}`);
        const [pieceChar, target] = uci.split("@");
        const pieceType = pieceChar.toLowerCase();
        
@@ -141,6 +142,7 @@ export class BughouseMatch {
          const targetPiece = engine.get(to as any);
          
          const move = engine.move({ from, to, promotion });
+         console.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
          
          if (targetPiece) {
             // Captured piece goes to PARTNER'S bank on OTHER board
@@ -154,24 +156,17 @@ export class BughouseMatch {
   }
 
   transferCapture(pieceType: string, boardIdx: number, playerColor: string) {
-    // Capture on Board 0 by White -> Black partner on Board 1 gets it? 
-    // Wait. Partners are: (White0, White1) vs (Black0, Black1)?
-    // Usually: Board 0 (White A vs Black B), Board 1 (White B vs Black A).
-    // Partners are White A and Black A? No.
-    // Teams: Team 1 (White0, Black1) vs Team 2 (Black0, White1)?
-    // Let's stick to: Partners are White0 & White1.
-    
-    // Capture by player on Board X -> Partner on Board (1-X) gets the piece.
-    // Partner of White0 is White1.
-    // Partner of Black0 is Black1.
-    
     const partnerBoardIdx = 1 - boardIdx;
+    const pieceChar = pieceType.toUpperCase();
+    
     if (playerColor === "w") {
-       if (partnerBoardIdx === 0) this.bank0w.push(pieceType.toUpperCase());
-       else this.bank1w.push(pieceType.toUpperCase());
+       // White captured a piece, give it to Black partner on the other board
+       if (partnerBoardIdx === 0) this.bank0b.push(pieceChar);
+       else this.bank1b.push(pieceChar);
     } else {
-       if (partnerBoardIdx === 0) this.bank0b.push(pieceType.toUpperCase());
-       else this.bank1b.push(pieceType.toUpperCase());
+       // Black captured a piece, give it to White partner on the other board
+       if (partnerBoardIdx === 0) this.bank0w.push(pieceChar);
+       else this.bank1w.push(pieceChar);
     }
   }
 
