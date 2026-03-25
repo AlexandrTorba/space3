@@ -28,8 +28,6 @@ export default function Home() {
   const [liveMatches, setLiveMatches] = useState<{id: string, whiteName: string, blackName: string, timeControl: string, spectators?: number}[]>([]);
   const [myChallengeId, setMyChallengeId] = useState<string | null>(null);
   const [isMatching, setIsMatching] = useState(false);
-  const [isBotsMatch, setIsBotsMatch] = useState(false);
-  const [isBughouse, setIsBughouse] = useState(false);
   const [activeTab, setActiveTab] = useState<"lobby" | "bughouse" | "live">("lobby");
 
   useEffect(() => {
@@ -75,18 +73,18 @@ export default function Home() {
         else if (data.type === "MATCH_FOUND") {
             setIsMatching(true);
             setTimeout(() => {
-                const wName = data.color === "black" ? (data.opponent || "Bot") : (data.myName || playerName);
-                const bName = data.color === "black" ? (data.myName || playerName) : (data.opponent || "Bot");
                 if (data.mode === "bughouse") {
-                   router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${data.fillBots || isBotsMatch ? '&fillBots=1' : ''}`);
+                   router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${data.fillBots ? '&fillBots=1' : ''}`);
                 } else {
-                   router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}${data.isBot ? '&isBot=true' : ''}`);
+                   const wParam = data.color === "white" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
+                   const bParam = data.color === "black" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
+                   router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${wParam}&b=${bParam}${data.isBot ? '&isBot=true' : ''}`);
                 }
             }, 800);
         }
      };
      return () => ws.close();
-  }, [router]);
+  }, [playerName, router]);
 
   const getNameOrDefault = () => {
       let finalName = playerName.trim();
@@ -99,13 +97,12 @@ export default function Home() {
   };
 
   const handleCreateChallenge = (bughouse: boolean, vsBots?: boolean) => {
-      setIsBughouse(bughouse);
-      setIsBotsMatch(!!vsBots);
       const finalName = getNameOrDefault();
       if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ 
              type: "create", playerName: finalName, timeControl, colorPref,
-             mode: bughouse ? "bughouse" : "standard"
+             mode: bughouse ? "bughouse" : "standard",
+             vsBots: !!vsBots
           }));
       }
   };
@@ -142,7 +139,6 @@ export default function Home() {
       <div className="max-w-[1400px] w-full mx-auto mt-24 z-10 grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-3">
               <ModeSelection 
-                isBughouse={isBughouse}
                 myChallengeId={myChallengeId}
                 onCreateChallenge={handleCreateChallenge}
                 t={t}
