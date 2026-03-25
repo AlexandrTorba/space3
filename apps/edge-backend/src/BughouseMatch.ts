@@ -11,6 +11,8 @@ export class BughouseMatch {
   // Two engines for the two boards
   engine0 = new Chess();
   engine1 = new Chess();
+  promotedSquares0: Set<string> = new Set();
+  promotedSquares1: Set<string> = new Set();
   
   // Piece Banks for each player
   // Board 0
@@ -119,6 +121,12 @@ export class BughouseMatch {
        // Verify square is empty
        if (engine.get(target as any)) return;
 
+       // Pawns cannot be dropped on the 1st or 8th rank
+       if (pieceType === "p") {
+          const rank = target[1];
+          if (rank === "1" || rank === "8") return;
+       }
+
        // Execute drop
        try {
          engine.put({ type: pieceType as any, color: player as any }, target as any);
@@ -138,15 +146,27 @@ export class BughouseMatch {
          const to = uci.substring(2, 4);
          const promotion = uci.length > 4 ? uci[4] : undefined;
          
-         // Capture check
          const targetPiece = engine.get(to as any);
+         const promotedSquares = boardIdx === 0 ? this.promotedSquares0 : this.promotedSquares1;
+         const isOriginallyPromoted = promotedSquares.has(from);
          
          const move = engine.move({ from, to, promotion });
          console.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
          
+         // Update promoted squares set
+         promotedSquares.delete(from);
+         if (promotion) {
+            promotedSquares.add(to);
+         } else if (isOriginallyPromoted) {
+            promotedSquares.add(to);
+         }
+
          if (targetPiece) {
             // Captured piece goes to PARTNER'S bank on OTHER board
-            this.transferCapture(targetPiece.type, boardIdx, player);
+            // IF it was a promoted piece, it reverts to PAWN
+            const actualPieceType = promotedSquares.has(to) ? "p" : targetPiece.type;
+            promotedSquares.delete(to); // It was captured
+            this.transferCapture(actualPieceType, boardIdx, player);
          }
        } catch(e) { return; }
     }

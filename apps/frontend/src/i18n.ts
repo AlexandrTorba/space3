@@ -160,7 +160,10 @@ export const translations = {
       op_sl_meran: "Meran Variation",
       op_pirc: "Pirc Defense",
       op_pi_austrian: "Austrian Attack",
-      bughouse: "Bughouse"
+      bughouse: "Bughouse",
+      versions: "Versions",
+      saved_versions: "Branches",
+      new_version: "New Branch"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -319,7 +322,10 @@ export const translations = {
       op_sl_meran: "Меран",
       op_pirc: "Захист Пірца-Уфімцева",
       op_pi_austrian: "Австрійська атака",
-      bughouse: "Багхауз"
+      bughouse: "Багхауз",
+      versions: "Версії",
+      saved_versions: "Гілки аналізу",
+      new_version: "Створити гілку"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -478,7 +484,10 @@ export const translations = {
       op_sl_meran: "Variante Merano",
       op_pirc: "Defensa Pirc",
       op_pi_austrian: "Ataque Austríaco",
-      bughouse: "Bughouse"
+      bughouse: "Bughouse",
+      versions: "Versiones",
+      saved_versions: "Ramas",
+      new_version: "Nueva Rama"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -637,7 +646,10 @@ export const translations = {
       op_sl_meran: "Meran Varyantı",
       op_pirc: "Pirc Savunması",
       op_pi_austrian: "Avusturya Atak",
-      bughouse: "Bughouse"
+      bughouse: "Bughouse",
+      versions: "Versiyonlar",
+      saved_versions: "Dallar",
+      new_version: "Yeni Dal"
     }
 };
 
