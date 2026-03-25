@@ -38,10 +38,10 @@ export class BughouseMatch {
 
   lobby = {
     slots: {
-      w0: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
-      b0: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
-      w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
-      b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
+      w0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+      b0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+      w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+      b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
     },
     isAllReady: false
   };
@@ -84,7 +84,7 @@ export class BughouseMatch {
 
     this.broadcastStatus();
 
-    server.addEventListener("message", (event) => {
+      server.addEventListener("message", (event) => {
       if (!(event.data instanceof ArrayBuffer)) return;
       const buffer = new Uint8Array(event.data);
       try {
@@ -100,6 +100,11 @@ export class BughouseMatch {
         console.error("Protobuf decode error:", e);
       }
     });
+
+    // Start bot loop periodically just in case
+    if (!this.botTimer) {
+      this.botTimer = setInterval(() => this.tickBots(), 2000);
+    }
 
     server.addEventListener("close", () => {
       console.log(`[BUGHOUSE] Session Closed - Role mapping check...`);
@@ -151,6 +156,15 @@ export class BughouseMatch {
             this.lobby.slots[r].isReady = !this.lobby.slots[r].isReady;
          }
        }
+    } else if (type === "bot_add") {
+       if (!["w0", "b0", "w1", "b1"].includes(role)) return;
+       const targetSlot = (this.lobby.slots as any)[role];
+       if (targetSlot && !targetSlot.isClaimed) {
+          targetSlot.isClaimed = true;
+          targetSlot.playerName = "Bot Engine";
+          targetSlot.isReady = true;
+          targetSlot.isBot = true;
+       }
     }
 
     // Check all ready
@@ -162,15 +176,20 @@ export class BughouseMatch {
     this.broadcastStatus();
   }
 
-  handleMove(uci: string, server: WebSocket) {
+  handleMove(uci: string, server: WebSocket | null, botRole?: string) {
     if (!this.isActive || !this.isStarted) return;
     // Determine which player moved
     let boardIdx = -1;
     let player = "";
-    if (server === this.sockets.w0) { boardIdx = 0; player = "w"; }
-    else if (server === this.sockets.b0) { boardIdx = 0; player = "b"; }
-    else if (server === this.sockets.w1) { boardIdx = 1; player = "w"; }
-    else if (server === this.sockets.b1) { boardIdx = 1; player = "b"; }
+    if (server) {
+      if (server === this.sockets.w0) { boardIdx = 0; player = "w"; }
+      else if (server === this.sockets.b0) { boardIdx = 0; player = "b"; }
+      else if (server === this.sockets.w1) { boardIdx = 1; player = "w"; }
+      else if (server === this.sockets.b1) { boardIdx = 1; player = "b"; }
+    } else if (botRole) {
+      boardIdx = botRole.endsWith('0') ? 0 : 1;
+      player = botRole.startsWith('w') ? 'w' : 'b';
+    }
 
     if (boardIdx === -1) return; // Spectator cannot move
 
@@ -321,5 +340,62 @@ export class BughouseMatch {
          this.sessions.delete(s);
        }
      });
+  }
+
+  botTimer: any = null;
+
+  tickBots() {
+    if (!this.isActive || !this.isStarted) return;
+    const roles = ["w0", "b0", "w1", "b1"] as const;
+    for (const role of roles) {
+      const slot = this.lobby.slots[role];
+      if (slot.isBot) {
+        this.handleBotTurn(role);
+      }
+    }
+  }
+
+  handleBotTurn(role: "w0" | "b0" | "w1" | "b1") {
+    const boardIdx = role.endsWith('0') ? 0 : 1;
+    const player = role.startsWith('w') ? 'w' : 'b';
+    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+
+    if (engine.turn() !== player) return;
+
+    // Pick a random legal move or drop
+    const moves = engine.moves({ verbose: true });
+    
+    // Check bank
+    let bank: string[];
+    if (boardIdx === 0) bank = (player === "w" ? this.bank0w : this.bank0b);
+    else bank = (player === "w" ? this.bank1w : this.bank1b);
+
+    const canDrop = bank.length > 0;
+    
+    // 30% chance to drop if possible
+    if (canDrop && Math.random() < 0.3) {
+       const pieceChar = bank[Math.floor(Math.random() * bank.length)];
+       const emptySquares: string[] = [];
+       // Find empty squares
+       for (let i = 0; i < 8; i++) {
+         for (let j = 0; j < 8; j++) {
+           const square = String.fromCharCode(97 + i) + (j + 1);
+           if (!engine.get(square as any)) {
+             if (pieceChar.toLowerCase() === 'p' && (j === 0 || j === 7)) continue;
+             emptySquares.push(square);
+           }
+         }
+       }
+       if (emptySquares.length > 0) {
+         const target = emptySquares[Math.floor(Math.random() * emptySquares.length)];
+         this.handleMove(`${pieceChar}@${target}`, null, role);
+         return;
+       }
+    }
+
+    if (moves.length > 0) {
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      this.handleMove(move.lan || move.from + move.to, null, role);
+    }
   }
 }

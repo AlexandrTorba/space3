@@ -1,5 +1,5 @@
 import React from "react";
-import PlayArena from "./PlayArena";
+import PlayArena from "@/components/Arena/PlayArena";
 
 export default function Page() {
     return (

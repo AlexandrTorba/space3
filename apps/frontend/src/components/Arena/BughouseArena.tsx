@@ -90,6 +90,24 @@ export default function BughouseArena() {
     wsRef.current.send(toBinary(MatchUpdateSchema, update));
   };
 
+  const addBot = (slotRole: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const update = create(MatchUpdateSchema, {
+       event: { case: "lobby", value: { type: "bot_add", role: slotRole, name: "Bot Engine" } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  };
+
+  const fillBots = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !state?.lobby) return;
+    const slots = ["w0", "b0", "w1", "b1"];
+    slots.forEach(s => {
+       if (!(state.lobby as any)[s]?.isClaimed) {
+          addBot(s);
+       }
+    });
+  };
+
   useEffect(() => {
     setMounted(true);
     if (!id) return;
@@ -126,14 +144,32 @@ export default function BughouseArena() {
             if (bg.event.case === "status") {
                setState(bg.event.value);
             } else if (bg.event.case === "lobbyInfo") {
-              setLobby(bg.event.value);
-           }
+               setLobby(bg.event.value);
+            }
         }
       } catch (e) {}
     };
 
     return () => ws.close();
   }, [id, role]);
+
+  // Handle auto-fill bots from query string
+  useEffect(() => {
+    if (searchParams?.get("fillBots") === "1" && state?.lobby && !state.lobby.isAllReady) {
+        // Delay slightly to ensure socket is ready for multiple messages
+        const timer = setTimeout(() => {
+            fillBots();
+            // Also ready up myself
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                const update = create(MatchUpdateSchema, {
+                   event: { case: "lobby", value: { type: "ready", role: "", name: "" } }
+                });
+                wsRef.current.send(toBinary(MatchUpdateSchema, update));
+            }
+        }, 1500);
+        return () => clearTimeout(timer);
+    }
+  }, [state?.lobby, searchParams]);
 
   const isTeam2 = role.endsWith('1');
   const myBoardIdx = isTeam2 ? 1 : 0;
@@ -154,7 +190,8 @@ export default function BughouseArena() {
         <div className="flex items-center gap-2 md:gap-3 bg-white/5 border border-white/10 px-3 md:px-6 py-1.5 md:py-2 rounded-2xl backdrop-blur-xl">
           <Swords className="w-5 h-5 md:w-8 md:h-8 text-blue-400" />
           <div>
-            <h1 className="text-sm md:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none uppercase">{t("bughouse")}</h1>
+            <h1 className="text-[10px] md:text-xs font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none mb-1">AntigravityChess</h1>
+            <h2 className="text-sm md:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none uppercase">{t("bughouse")}</h2>
             <span className="text-[8px] md:text-[10px] font-mono text-slate-500 uppercase tracking-widest">{id.substring(0,8)}</span>
           </div>
         </div>
@@ -184,7 +221,7 @@ export default function BughouseArena() {
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl relative landscape:max-h-[60vh] landscape:w-auto mx-auto">
                 <Chessboard 
                    options={{
-                      id: "board0",
+                      id: `board${myBoardIdx}`,
                       position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                       boardOrientation: role.startsWith('b') ? "black" : "white",
                       darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
@@ -225,7 +262,7 @@ export default function BughouseArena() {
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl opacity-80 hover:opacity-100 transition-opacity landscape:max-h-[60vh] landscape:w-auto mx-auto relative">
                 <Chessboard 
                    options={{
-                      id: "board1",
+                      id: `board${partnerBoardIdx}`,
                       position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                       boardOrientation: role.startsWith('b') ? "white" : "black",
                       darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
@@ -288,10 +325,21 @@ export default function BughouseArena() {
                                     {roleKey.toUpperCase()}
                                 </div>
                                 <div className="flex flex-col items-start min-w-0">
-                                    <span className="text-xs font-black truncate w-full">{slot?.isClaimed ? slot.playerName : "VACANT"}</span>
+                                    <span className={`text-xs font-black truncate w-full ${slot?.isBot ? 'text-indigo-400' : ''}`}>
+                                        {slot?.isClaimed ? slot.playerName : "VACANT"}
+                                    </span>
                                     {slot?.isReady && <span className="text-[8px] font-black text-green-500 uppercase tracking-widest animate-pulse">READY</span>}
+                                    {slot?.isBot && <span className="text-[7px] font-black text-indigo-500/50 uppercase tracking-[0.2em] leading-none">AI ENGINE</span>}
                                 </div>
-                                {!slot?.isClaimed && <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity" />}
+                                {!slot?.isClaimed && (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); addBot(roleKey); }}
+                                        className="ml-auto bg-white/5 hover:bg-blue-500/20 text-[8px] font-black px-2 py-1.5 rounded-lg border border-white/5 hover:border-blue-500/30 transition-all active:scale-90"
+                                    >
+                                        + BOT
+                                    </button>
+                                )}
+                                {!slot?.isClaimed && <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />}
                             </button>
                         </div>
                     );
@@ -311,6 +359,12 @@ export default function BughouseArena() {
                           <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${(state?.lobby as any)?.[r]?.isReady ? 'bg-green-500' : 'bg-white/10 shadow-inner'}`} />
                       ))}
                   </div>
+                  <button 
+                      onClick={fillBots}
+                      className="w-full mt-2 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-2xl text-slate-500 transition-all"
+                  >
+                      Fill vacant with bots
+                  </button>
               </div>
            </div>
         </div>

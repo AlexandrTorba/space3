@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import BughouseArena from "./BughouseArena";
+import BughouseArena from "@/components/Arena/BughouseArena";
 
 export default function BughousePage() {
   return (

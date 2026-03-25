@@ -28,7 +28,7 @@ message MatchAction {
 }
 
 message LobbyAction {
-  string type = 1; // "claim", "ready", "leave"
+  string type = 1; // "claim", "ready", "leave", "bot_add"
   string role = 2; // "w0", "b0", "w1", "b1"
   string name = 3;
 }
@@ -49,6 +49,7 @@ message BughouseLobby {
     string player_name = 2;
     bool is_ready = 3;
     string session_id = 4;
+    bool is_bot = 5;
   }
   PlayerSlot w0 = 1;
   PlayerSlot b0 = 2;
