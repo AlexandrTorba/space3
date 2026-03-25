@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import React from "react";
-import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer, Globe, Plus, Trash2, Edit, Layers } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Globe, Plus, Trash2, Edit, Layers } from "lucide-react";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import JSZip from "jszip";
@@ -473,20 +473,7 @@ export default function AnalysisView() {
       }
   };
 
-  const startFreshFromCurrent = () => {
-      try {
-          const content = gameRef.current.fen();
-          const engine = new Chess(content);
-          gameRef.current = engine;
-          setHistory([]);
-          setCurrentMoveIndex(-1);
-          setFen(content);
-          setLastMoveSquares({});
-          setPreMove(null);
-          setActiveOpeningIndex(null);
-          triggerAnalysis();
-      } catch(e) {}
-  };
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -743,13 +730,7 @@ export default function AnalysisView() {
                     <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><ChevronRight className="w-6 h-6 text-[var(--text-primary)]"/></button>
                     <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-[var(--surface-color)] rounded-full disabled:opacity-30"><SkipForward className="w-5 h-5 text-[var(--text-primary)]"/></button>
                     
-                    <button 
-                        onClick={startFreshFromCurrent} 
-                        title={t("start_fresh_from_here") as string}
-                        className="ml-2 p-2 bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20 rounded-full border border-[var(--brand-primary)]/20 text-[var(--brand-primary)] transition-all"
-                    >
-                        <Timer className="w-4 h-4"/>
-                    </button>
+
                 </div>
             </div>
 
