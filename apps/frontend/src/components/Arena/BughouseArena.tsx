@@ -7,6 +7,7 @@ import { Swords, Settings } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
+import { Chess, Square } from "chess.js";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 
@@ -41,6 +42,7 @@ export default function BughouseArena() {
   const [lobby, setLobby] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [selectedPiece, setSelectedPiece] = useState<{char: string, board: number} | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{boardIdx: number, source: string, target: string} | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const logMessage = (msg: string) => {
@@ -51,12 +53,37 @@ export default function BughouseArena() {
      console.log(`[BUGHOUSE] onDrop ${boardIdx}: ${source} -> ${target}`);
      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
      
+     // Local validation for promotion
+     const fen = boardIdx === 0 ? state?.board0?.fen : state?.board1?.fen;
+     if (fen) {
+        const game = new Chess(fen);
+        const piece = game.get(source as Square);
+        if (piece?.type === 'p') {
+           const isPromotion = (piece.color === 'w' && target[1] === '8') || (piece.color === 'b' && target[1] === '1');
+           if (isPromotion) {
+              setPendingPromotion({ boardIdx, source, target });
+              return true;
+           }
+        }
+     }
+
      const uci = source + target;
      const update = create(MatchUpdateSchema, {
         event: { case: "move", value: { uci, matchId: id, timestamp: BigInt(Date.now()) } }
      });
      wsRef.current.send(toBinary(MatchUpdateSchema, update));
      return true;
+  };
+
+  const completePromotion = (piece: string) => {
+     if (!pendingPromotion || !wsRef.current) return;
+     const { boardIdx, source, target } = pendingPromotion;
+     const uci = source + target + piece.toLowerCase();
+     const update = create(MatchUpdateSchema, {
+         event: { case: "move", value: { uci, matchId: id, timestamp: BigInt(Date.now()) } }
+     });
+     wsRef.current.send(toBinary(MatchUpdateSchema, update));
+     setPendingPromotion(null);
   };
 
   const onSquareClick = (boardIdx: number, square: any) => {
@@ -232,6 +259,25 @@ export default function BughouseArena() {
                       allowDragging: (role !== "spectator") && !selectedPiece
                    } as any}
                 />
+                
+                {pendingPromotion && pendingPromotion.boardIdx === myBoardIdx && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
+                        <div className="bg-[#151821] border border-white/10 p-4 md:p-6 rounded-[2rem] shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                             <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t("choose_promotion" as any)}</h3>
+                             <div className="flex gap-2">
+                                 {['q', 'r', 'b', 'n'].map(p => (
+                                     <button 
+                                         key={p}
+                                         onClick={() => completePromotion(p)}
+                                         className="w-10 h-10 md:w-16 md:h-16 bg-white/5 hover:bg-blue-500/20 border border-white/5 hover:border-blue-500/40 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                                     >
+                                         <img src={getPieceUrl((role.startsWith('w') ? 'w' : 'b') + p.toUpperCase())} className="w-8 h-8 md:w-12 md:h-12" alt={p}/>
+                                     </button>
+                                 ))}
+                             </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="h-6 md:h-10 bg-white/5 rounded-lg flex items-center px-4 gap-2 overflow-x-auto min-h-0">
