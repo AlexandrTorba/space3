@@ -46,6 +46,16 @@ export class BughouseMatch {
     isAllReady: false
   };
 
+  // Clocks
+  time0w = 3 * 60 * 1000;
+  time0b = 3 * 60 * 1000;
+  time1w = 3 * 60 * 1000;
+  time1b = 3 * 60 * 1000;
+  lastMove0 = 0;
+  lastMove1 = 0;
+  moveCount0 = 0;
+  moveCount1 = 0;
+
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
     this.env = env;
@@ -169,11 +179,53 @@ export class BughouseMatch {
 
     // Check all ready
     this.lobby.isAllReady = this.lobby.slots.w0.isReady && this.lobby.slots.b0.isReady && this.lobby.slots.w1.isReady && this.lobby.slots.b1.isReady;
-    if (this.lobby.isAllReady) {
+    if (this.lobby.isAllReady && !this.isStarted) {
       this.isStarted = true;
     }
 
     this.broadcastStatus();
+  }
+
+  deductTime(boardIdx: number) {
+    if (!this.isActive || !this.isStarted) return false;
+    const count = boardIdx === 0 ? this.moveCount0 : this.moveCount1;
+    if (count === 0) return false;
+
+    const now = Date.now();
+    const last = boardIdx === 0 ? this.lastMove0 : this.lastMove1;
+    const elapsed = now - last;
+    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+    const turn = engine.turn();
+
+    if (boardIdx === 0) {
+      if (turn === 'w') {
+        this.time0w -= elapsed;
+        if (this.time0w <= 0) { this.time0w = 0; this.endGame("0-1", "timeout_board0"); return true; }
+      } else {
+        this.time0b -= elapsed;
+        if (this.time0b <= 0) { this.time0b = 0; this.endGame("1-0", "timeout_board0"); return true; }
+      }
+      this.lastMove0 = now;
+    } else {
+      if (turn === 'w') {
+        this.time1w -= elapsed;
+        if (this.time1w <= 0) { this.time1w = 0; this.endGame("1-0", "timeout_board1"); return true; } // Board 1 White loss is Board 0 White loss? 
+        // Partnership: Board 0 White + Board 1 Black. 
+        // If Board 1 White loses, Board 1 Black (partner of Board 0 White) wins? No.
+        // Team A (w0, b1), Team B (b0, w1).
+        // If w1 (Team B) loses on time, Team A (w0, b1) wins. Result 1-0.
+      } else {
+        this.time1b -= elapsed;
+        if (this.time1b <= 0) { this.time1b = 0; this.endGame("0-1", "timeout_board1"); return true; }
+      }
+      this.lastMove1 = now;
+    }
+    return false;
+  }
+
+  endGame(result: string, reason: string) {
+    this.isActive = false;
+    // Broadcast status will handle sending the result
   }
 
   handleMove(uci: string, server: WebSocket | null, botRole?: string) {
@@ -221,19 +273,40 @@ export class BughouseMatch {
 
        // Execute drop
        try {
+         if (this.deductTime(boardIdx)) return;
+
+         // Try the drop
          engine.put({ type: pieceType as any, color: player as any }, target as any);
+         
+         // Illegal: if the player who just dropped is STILL in check (standard chess rules)
+         if (engine.isCheck()) {
+            engine.remove(target as any);
+            return;
+         }
+
+         // Success: apply move counts and toggle turn
+         if (boardIdx === 0) {
+            this.moveCount0++;
+            if (this.moveCount0 === 1) this.lastMove0 = Date.now();
+         } else {
+            this.moveCount1++;
+            if (this.moveCount1 === 1) this.lastMove1 = Date.now();
+         }
+
          // Toggle turn manually since put doesn't do it
          const fen = engine.fen();
          const parts = fen.split(" ");
          parts[1] = parts[1] === "w" ? "b" : "w";
-         // Move counter etc could be updated too if needed
          engine.load(parts.join(" "));
          
          bank.splice(pieceIdx, 1);
-       } catch(e) { return; }
+       } catch (e) { return; }
     } else {
        // Normal move
        try {
+         // Deduct time BEFORE move to use correct turn
+         if (this.deductTime(boardIdx)) return;
+
          const from = uci.substring(0, 2);
          const to = uci.substring(2, 4);
          const promotion = uci.length > 4 ? uci[4] : undefined;
@@ -246,6 +319,14 @@ export class BughouseMatch {
          const move = engine.move({ from, to, promotion });
          console.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
          
+         if (boardIdx === 0) {
+           this.moveCount0++;
+           if (this.moveCount0 === 1) this.lastMove0 = Date.now();
+         } else {
+           this.moveCount1++;
+           if (this.moveCount1 === 1) this.lastMove1 = Date.now();
+         }
+
          // Update promoted squares set
          promotedSquares.delete(from);
          if (promotion) {
@@ -296,13 +377,17 @@ export class BughouseMatch {
        fen: this.engine0.fen(),
        isActive: this.isActive,
        whiteName: "Board 0 White",
-       blackName: "Board 0 Black"
+       blackName: "Board 0 Black",
+       whiteTimeMs: Math.max(0, this.time0w),
+       blackTimeMs: Math.max(0, this.time0b)
     });
     const status1 = create(MatchStatusSchema, {
        fen: this.engine1.fen(),
        isActive: this.isActive,
        whiteName: "Board 1 White",
-       blackName: "Board 1 Black"
+       blackName: "Board 1 Black",
+       whiteTimeMs: Math.max(0, this.time1w),
+       blackTimeMs: Math.max(0, this.time1b)
     });
 
      const bughouseStatus = create(BughouseStatusSchema, {
