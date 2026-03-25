@@ -43,6 +43,10 @@ export default function BughouseArena() {
   const [logs, setLogs] = useState<string[]>([]);
   const [selectedPiece, setSelectedPiece] = useState<{char: string, board: number} | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<{boardIdx: number, source: string, target: string} | null>(null);
+  const [clocks, setClocks] = useState({
+    w0: 180000, b0: 180000,
+    w1: 180000, b1: 180000
+  });
   const wsRef = useRef<WebSocket | null>(null);
 
   const logMessage = (msg: string) => {
@@ -169,7 +173,14 @@ export default function BughouseArena() {
         if (update.event.case === "bughouse") {
            const bg = update.event.value;
             if (bg.event.case === "status") {
-               setState(bg.event.value);
+               const val = bg.event.value;
+               setState(val);
+               setClocks({
+                  w0: val.board0?.whiteTimeMs || 180000,
+                  b0: val.board0?.blackTimeMs || 180000,
+                  w1: val.board1?.whiteTimeMs || 180000,
+                  b1: val.board1?.blackTimeMs || 180000
+               });
             } else if (bg.event.case === "lobbyInfo") {
                setLobby(bg.event.value);
             }
@@ -197,6 +208,32 @@ export default function BughouseArena() {
         return () => clearTimeout(timer);
     }
   }, [state?.lobby, searchParams]);
+
+  useEffect(() => {
+    if (!state || !state.board0?.isActive) return;
+    
+    const interval = setInterval(() => {
+       const turn0 = new Chess(state.board0.fen).turn();
+       const turn1 = new Chess(state.board1.fen).turn();
+       
+       setClocks(prev => ({
+          w0: turn0 === 'w' ? Math.max(0, prev.w0 - 100) : prev.w0,
+          b0: turn0 === 'b' ? Math.max(0, prev.b0 - 100) : prev.b0,
+          w1: turn1 === 'w' ? Math.max(0, prev.w1 - 100) : prev.w1,
+          b1: turn1 === 'b' ? Math.max(0, prev.b1 - 100) : prev.b1,
+       }));
+    }, 100);
+    return () => clearInterval(interval);
+  }, [state?.board0?.fen, state?.board1?.fen, state?.isActive]);
+
+  const formatTime = (ms: number) => {
+     const totalSec = Math.floor(ms / 1000);
+     const min = Math.floor(totalSec / 60);
+     const sec = totalSec % 60;
+     const mil = Math.floor((ms % 1000) / 100);
+     if (min === 0 && totalSec < 10) return `${sec}.${mil}`;
+     return `${min}:${sec.toString().padStart(2, '0')}`;
+  };
 
   const isTeam2 = role.endsWith('1');
   const myBoardIdx = isTeam2 ? 1 : 0;
@@ -236,7 +273,9 @@ export default function BughouseArena() {
         <div className="flex flex-col gap-1 md:gap-4 w-full">
             <div className="flex justify-between items-end px-2">
                 <div className="text-[9px] md:text-xs uppercase font-black text-slate-500">Board {myBoardIdx} (You)</div>
-                <div className="text-xs md:text-lg font-mono font-bold text-white/80">3:00</div>
+                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(myBoard?.fen).turn() === 'w' ? (clocks as any)[('w' + myBoardIdx)] : (clocks as any)[('b' + myBoardIdx)]) < 10000 ? 'text-red-500' : 'text-white/80'}`}>
+                    {formatTime(myBoardIdx === 0 ? (new Chess(myBoard?.fen).turn() === 'w' ? clocks.w0 : clocks.b0) : (new Chess(myBoard?.fen).turn() === 'w' ? clocks.w1 : clocks.b1))}
+                </div>
             </div>
             
             <div className="h-6 md:h-10 bg-white/5 rounded-lg flex items-center px-4 gap-2 overflow-x-auto min-h-0">
@@ -296,7 +335,9 @@ export default function BughouseArena() {
         <div className="flex flex-col gap-1 md:gap-4 w-full">
             <div className="flex justify-between items-end px-2">
                 <div className="text-[9px] md:text-xs uppercase font-black text-slate-500">Board {partnerBoardIdx} (Partner)</div>
-                <div className="text-xs md:text-lg font-mono font-bold text-white/80">3:00</div>
+                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(partnerBoard?.fen).turn() === 'w' ? (clocks as any)[('w' + partnerBoardIdx)] : (clocks as any)[('b' + partnerBoardIdx)]) < 10000 ? 'text-red-500' : 'text-white/80'}`}>
+                    {formatTime(partnerBoardIdx === 0 ? (new Chess(partnerBoard?.fen).turn() === 'w' ? clocks.w0 : clocks.b0) : (new Chess(partnerBoard?.fen).turn() === 'w' ? clocks.w1 : clocks.b1))}
+                </div>
             </div>
 
             <div className="h-6 md:h-10 bg-white/5 rounded-lg flex items-center px-4 gap-2 overflow-x-auto min-h-0">
