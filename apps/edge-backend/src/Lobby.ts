@@ -16,6 +16,8 @@ export class Lobby {
   db: any;
   sessions: Set<WebSocket>;
   challenges: Map<string, Challenge> = new Map();
+  virtualChallenges: Map<string, any> = new Map();
+  botNames = ["Max Bot", "Alina Chess", "GM Alpha", "Petrovich", "Maria Bot", "Junior", "Stockfish Lite", "Agent 007", "Master Bot", "Noob Hunter"];
 
   constructor(state: DurableObjectState, env: any) {
     this.state = state;
@@ -70,6 +72,26 @@ export class Lobby {
           server.send(JSON.stringify({ type: "waiting_created", id }));
         }
         else if (data.type === "accept") {
+           const vChallenge = this.virtualChallenges.get(data.challengeId);
+           if (vChallenge) {
+              const pName = data.playerName || "Гравець";
+              const matchId = crypto.randomUUID();
+              if (vChallenge.mode === "bughouse") {
+                 server.send(JSON.stringify({ 
+                    type: "MATCH_FOUND", matchId, mode: "bughouse", role: "w0", 
+                    tc: vChallenge.tc, fillBots: true, opponent: vChallenge.playerName 
+                 }));
+              } else {
+                 let myColor = Math.random() < 0.5 ? "white" : "black";
+                 server.send(JSON.stringify({ 
+                    type: "MATCH_FOUND", matchId, color: myColor, 
+                    tc: vChallenge.tc, opponent: vChallenge.playerName, myName: pName, isBot: true
+                 }));
+              }
+              this.virtualChallenges.delete(data.challengeId);
+              this.broadcastChallenges();
+              return;
+           }
           const challenge = this.challenges.get(data.challengeId);
           if (challenge && challenge.socket !== server) {
              const pName = data.playerName || "Гравець";
@@ -179,17 +201,44 @@ export class Lobby {
      return removed;
   }
   
+  async alarm() {
+     // Maintain 10 bots
+     if (this.virtualChallenges.size < 10) {
+        const id = "bot_" + crypto.randomUUID();
+        const name = this.botNames[Math.floor(Math.random() * this.botNames.length)];
+        const tc = ["1", "3", "3+2", "5", "10", "Unlimited"][Math.floor(Math.random() * 6)];
+        const mode = Math.random() < 0.3 ? "bughouse" : "standard";
+        
+        this.virtualChallenges.set(id, {
+           id, playerName: name, tc, colorPref: "random", mode, isBot: true
+        });
+        this.broadcastChallenges();
+     }
+     
+     // Occasionally remove a bot and add a new one to simulate rotation
+     if (this.virtualChallenges.size >= 10 && Math.random() < 0.2) {
+        const keys = Array.from(this.virtualChallenges.keys());
+        const victim = keys[Math.floor(Math.random() * keys.length)];
+        this.virtualChallenges.delete(victim);
+        this.broadcastChallenges();
+     }
+
+     await this.state.storage.setAlarm(Date.now() + 15000); // Check every 15s
+  }
+
   sendChallenges(server: WebSocket) {
+     const bots = Array.from(this.virtualChallenges.values());
      const list = Array.from(this.challenges.values()).map(c => ({
-         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length
-     }));
+         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length, isBot: false
+     })).concat(bots);
      server.send(JSON.stringify({ type: "challenges_list", challenges: list }));
   }
   
   broadcastChallenges() {
+     const bots = Array.from(this.virtualChallenges.values());
      const list = Array.from(this.challenges.values()).map(c => ({
-         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length
-     }));
+         id: c.id, playerName: c.playerName, tc: c.tc, colorPref: c.colorPref, mode: c.mode, playersCount: c.players.length, isBot: false
+     })).concat(bots);
      const msg = JSON.stringify({ type: "challenges_list", challenges: list });
      this.sessions.forEach(s => {
          try { s.send(msg); } catch(e) {}
