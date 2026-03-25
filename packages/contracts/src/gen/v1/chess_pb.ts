@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/chess.proto.
  */
 export const file_v1_chess: GenFile = /*@__PURE__*/
-  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSKeAQoOQnVnaG91c2VTdGF0dXMSJQoGYm9hcmQwGAEgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSJQoGYm9hcmQxGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSDgoGYmFuazB3GAMgAygJEg4KBmJhbmswYhgEIAMoCRIOCgZiYW5rMXcYBSADKAkSDgoGYmFuazFiGAYgAygJIqABCg5CdWdob3VzZVVwZGF0ZRIQCghtYXRjaF9pZBgBIAEoCRIeCgRtb3ZlGAIgASgLMg4uY2hlc3MudjEuTW92ZUgAEioKBnN0YXR1cxgDIAEoCzIYLmNoZXNzLnYxLkJ1Z2hvdXNlU3RhdHVzSAASJwoGYWN0aW9uGAQgASgLMhUuY2hlc3MudjEuTWF0Y2hBY3Rpb25IAEIHCgVldmVudCK2AQoLTWF0Y2hVcGRhdGUSHgoEbW92ZRgBIAEoCzIOLmNoZXNzLnYxLk1vdmVIABInCgZzdGF0dXMYAiABKAsyFS5jaGVzcy52MS5NYXRjaFN0YXR1c0gAEicKBmFjdGlvbhgDIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSAASLAoIYnVnaG91c2UYBCABKAsyGC5jaGVzcy52MS5CdWdob3VzZVVwZGF0ZUgAQgcKBWV2ZW50YgZwcm90bzM");
+  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSI3CgtMb2JieUFjdGlvbhIMCgR0eXBlGAEgASgJEgwKBHJvbGUYAiABKAkSDAoEbmFtZRgDIAEoCSLGAQoOQnVnaG91c2VTdGF0dXMSJQoGYm9hcmQwGAEgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSJQoGYm9hcmQxGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSDgoGYmFuazB3GAMgAygJEg4KBmJhbmswYhgEIAMoCRIOCgZiYW5rMXcYBSADKAkSDgoGYmFuazFiGAYgAygJEiYKBWxvYmJ5GAcgASgLMhcuY2hlc3MudjEuQnVnaG91c2VMb2JieSLCAgoNQnVnaG91c2VMb2JieRIuCgJ3MBgBIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMBgCIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJ3MRgDIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMRgEIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIUCgxpc19hbGxfcmVhZHkYBSABKAgaWwoKUGxheWVyU2xvdBISCgppc19jbGFpbWVkGAEgASgIEhMKC3BsYXllcl9uYW1lGAIgASgJEhAKCGlzX3JlYWR5GAMgASgIEhIKCnNlc3Npb25faWQYBCABKAkizwEKDkJ1Z2hvdXNlVXBkYXRlEhAKCG1hdGNoX2lkGAEgASgJEh4KBG1vdmUYAiABKAsyDi5jaGVzcy52MS5Nb3ZlSAASKgoGc3RhdHVzGAMgASgLMhguY2hlc3MudjEuQnVnaG91c2VTdGF0dXNIABInCgZhY3Rpb24YBCABKAsyFS5jaGVzcy52MS5NYXRjaEFjdGlvbkgAEi0KCmxvYmJ5X2luZm8YBSABKAsyFy5jaGVzcy52MS5CdWdob3VzZUxvYmJ5SABCBwoFZXZlbnQi3gEKC01hdGNoVXBkYXRlEh4KBG1vdmUYASABKAsyDi5jaGVzcy52MS5Nb3ZlSAASJwoGc3RhdHVzGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXNIABInCgZhY3Rpb24YAyABKAsyFS5jaGVzcy52MS5NYXRjaEFjdGlvbkgAEiwKCGJ1Z2hvdXNlGAQgASgLMhguY2hlc3MudjEuQnVnaG91c2VVcGRhdGVIABImCgVsb2JieRgFIAEoCzIVLmNoZXNzLnYxLkxvYmJ5QWN0aW9uSABCBwoFZXZlbnRiBnByb3RvMw");
 
 /**
  * @generated from message chess.v1.Move
@@ -140,6 +140,37 @@ export const MatchActionSchema: GenMessage<MatchAction> = /*@__PURE__*/
   messageDesc(file_v1_chess, 2);
 
 /**
+ * @generated from message chess.v1.LobbyAction
+ */
+export type LobbyAction = Message<"chess.v1.LobbyAction"> & {
+  /**
+   * "claim", "ready", "leave"
+   *
+   * @generated from field: string type = 1;
+   */
+  type: string;
+
+  /**
+   * "w0", "b0", "w1", "b1"
+   *
+   * @generated from field: string role = 2;
+   */
+  role: string;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message chess.v1.LobbyAction.
+ * Use `create(LobbyActionSchema)` to create a new message.
+ */
+export const LobbyActionSchema: GenMessage<LobbyAction> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 3);
+
+/**
  * @generated from message chess.v1.BughouseStatus
  */
 export type BughouseStatus = Message<"chess.v1.BughouseStatus"> & {
@@ -172,6 +203,11 @@ export type BughouseStatus = Message<"chess.v1.BughouseStatus"> & {
    * @generated from field: repeated string bank1b = 6;
    */
   bank1b: string[];
+
+  /**
+   * @generated from field: chess.v1.BughouseLobby lobby = 7;
+   */
+  lobby?: BughouseLobby;
 };
 
 /**
@@ -179,7 +215,76 @@ export type BughouseStatus = Message<"chess.v1.BughouseStatus"> & {
  * Use `create(BughouseStatusSchema)` to create a new message.
  */
 export const BughouseStatusSchema: GenMessage<BughouseStatus> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 3);
+  messageDesc(file_v1_chess, 4);
+
+/**
+ * @generated from message chess.v1.BughouseLobby
+ */
+export type BughouseLobby = Message<"chess.v1.BughouseLobby"> & {
+  /**
+   * @generated from field: chess.v1.BughouseLobby.PlayerSlot w0 = 1;
+   */
+  w0?: BughouseLobby_PlayerSlot;
+
+  /**
+   * @generated from field: chess.v1.BughouseLobby.PlayerSlot b0 = 2;
+   */
+  b0?: BughouseLobby_PlayerSlot;
+
+  /**
+   * @generated from field: chess.v1.BughouseLobby.PlayerSlot w1 = 3;
+   */
+  w1?: BughouseLobby_PlayerSlot;
+
+  /**
+   * @generated from field: chess.v1.BughouseLobby.PlayerSlot b1 = 4;
+   */
+  b1?: BughouseLobby_PlayerSlot;
+
+  /**
+   * @generated from field: bool is_all_ready = 5;
+   */
+  isAllReady: boolean;
+};
+
+/**
+ * Describes the message chess.v1.BughouseLobby.
+ * Use `create(BughouseLobbySchema)` to create a new message.
+ */
+export const BughouseLobbySchema: GenMessage<BughouseLobby> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 5);
+
+/**
+ * @generated from message chess.v1.BughouseLobby.PlayerSlot
+ */
+export type BughouseLobby_PlayerSlot = Message<"chess.v1.BughouseLobby.PlayerSlot"> & {
+  /**
+   * @generated from field: bool is_claimed = 1;
+   */
+  isClaimed: boolean;
+
+  /**
+   * @generated from field: string player_name = 2;
+   */
+  playerName: string;
+
+  /**
+   * @generated from field: bool is_ready = 3;
+   */
+  isReady: boolean;
+
+  /**
+   * @generated from field: string session_id = 4;
+   */
+  sessionId: string;
+};
+
+/**
+ * Describes the message chess.v1.BughouseLobby.PlayerSlot.
+ * Use `create(BughouseLobby_PlayerSlotSchema)` to create a new message.
+ */
+export const BughouseLobby_PlayerSlotSchema: GenMessage<BughouseLobby_PlayerSlot> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 5, 0);
 
 /**
  * @generated from message chess.v1.BughouseUpdate
@@ -195,8 +300,6 @@ export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
    */
   event: {
     /**
-     * contains board index or uci like "P@e4"
-     *
      * @generated from field: chess.v1.Move move = 2;
      */
     value: Move;
@@ -213,6 +316,12 @@ export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
      */
     value: MatchAction;
     case: "action";
+  } | {
+    /**
+     * @generated from field: chess.v1.BughouseLobby lobby_info = 5;
+     */
+    value: BughouseLobby;
+    case: "lobbyInfo";
   } | { case: undefined; value?: undefined };
 };
 
@@ -221,7 +330,7 @@ export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
  * Use `create(BughouseUpdateSchema)` to create a new message.
  */
 export const BughouseUpdateSchema: GenMessage<BughouseUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 4);
+  messageDesc(file_v1_chess, 6);
 
 /**
  * @generated from message chess.v1.MatchUpdate
@@ -256,6 +365,12 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
      */
     value: BughouseUpdate;
     case: "bughouse";
+  } | {
+    /**
+     * @generated from field: chess.v1.LobbyAction lobby = 5;
+     */
+    value: LobbyAction;
+    case: "lobby";
   } | { case: undefined; value?: undefined };
 };
 
@@ -264,5 +379,5 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
  * Use `create(MatchUpdateSchema)` to create a new message.
  */
 export const MatchUpdateSchema: GenMessage<MatchUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 5);
+  messageDesc(file_v1_chess, 7);
 

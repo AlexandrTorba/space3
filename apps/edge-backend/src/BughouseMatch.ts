@@ -3,6 +3,8 @@ import { fromBinary, toBinary, create } from "@bufbuild/protobuf";
 import { Chess } from "chess.js";
 import type { Env } from "./index";
 
+console.log("BUGHOUSE_VERSION_LOBBY_V1");
+
 export class BughouseMatch {
   state: DurableObjectState;
   env: Env;
@@ -31,7 +33,18 @@ export class BughouseMatch {
   } = { w0: null, b0: null, w1: null, b1: null };
 
   isActive = true;
+  isStarted = false;
   matchId = "unknown";
+
+  lobby = {
+    slots: {
+      w0: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
+      b0: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
+      w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
+      b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "" },
+    },
+    isAllReady: false
+  };
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -58,11 +71,16 @@ export class BughouseMatch {
     server.accept();
     this.sessions.add(server);
 
-    // Initial assignment
-    if (role === "w0") this.sockets.w0 = server;
-    else if (role === "b0") this.sockets.b0 = server;
-    else if (role === "w1") this.sockets.w1 = server;
-    else if (role === "b1") this.sockets.b1 = server;
+    // Initial assignment from URL params
+    if (["w0", "b0", "w1", "b1"].includes(role)) {
+       (this.sockets as any)[role] = server;
+       const slot = (this.lobby.slots as any)[role];
+       if (slot) {
+         slot.isClaimed = true;
+         if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
+       }
+       console.log(`[BUGHOUSE] Assigned ${role} to session`);
+    }
 
     this.broadcastStatus();
 
@@ -71,8 +89,10 @@ export class BughouseMatch {
       const buffer = new Uint8Array(event.data);
       try {
         const update = fromBinary(MatchUpdateSchema, buffer);
-        if (update.event.case === "move" && this.isActive) {
+        if (update.event.case === "move" && this.isActive && this.isStarted) {
            this.handleMove(update.event.value.uci, server);
+        } else if (update.event.case === "lobby") {
+           this.handleLobbyAction(update.event.value, server);
         } else if (update.event.case === "action") {
            // Handle actions if needed
         }
@@ -82,15 +102,68 @@ export class BughouseMatch {
     });
 
     server.addEventListener("close", () => {
+      console.log(`[BUGHOUSE] Session Closed - Role mapping check...`);
       this.sessions.delete(server);
-      if (server === this.sockets.w0) this.sockets.w0 = null;
-      if (server === this.sockets.b0) this.sockets.b0 = null;
-      if (server === this.sockets.w1) this.sockets.w1 = null;
-      if (server === this.sockets.b1) this.sockets.b1 = null;
+      // If a player leaves, unclaim their slot
+      for (const role of ["w0", "b0", "w1", "b1"] as const) {
+        if ((this.sockets as any)[role] === server) {
+          console.log(`[BUGHOUSE] Player ${role} disconnected.`);
+          (this.sockets as any)[role] = null;
+          (this.lobby.slots as any)[role].isClaimed = false;
+          (this.lobby.slots as any)[role].isReady = false;
+        }
+      }
+      this.broadcastStatus();
+    });
+
+    server.addEventListener("error", (e) => {
+       console.error("[BUGHOUSE] WS Error:", e);
     });
   }
 
+  handleLobbyAction(action: any, server: WebSocket) {
+    const { type, role, name } = action;
+    console.log(`[BUGHOUSE] Lobby Action from server: ${type} ${role} ${name}`);
+    if (this.isStarted) return;
+
+    if (type === "claim") {
+       // Check if role is valid
+       if (!["w0", "b0", "w1", "b1"].includes(role)) return;
+       // Unclaim previous role if any
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+         if ((this.sockets as any)[r] === server) {
+            (this.sockets as any)[r] = null;
+            this.lobby.slots[r].isClaimed = false;
+            this.lobby.slots[r].isReady = false;
+         }
+       }
+       // Claim new role
+       const targetSlot = (this.lobby.slots as any)[role];
+       if (targetSlot && !targetSlot.isClaimed) {
+          (this.sockets as any)[role] = server;
+          targetSlot.isClaimed = true;
+          targetSlot.playerName = name || "Player";
+          targetSlot.isReady = false;
+       }
+    } else if (type === "ready") {
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+         if ((this.sockets as any)[r] === server) {
+            this.lobby.slots[r].isReady = !this.lobby.slots[r].isReady;
+         }
+       }
+    }
+
+    // Check all ready
+    this.lobby.isAllReady = this.lobby.slots.w0.isReady && this.lobby.slots.b0.isReady && this.lobby.slots.w1.isReady && this.lobby.slots.b1.isReady;
+    if (this.lobby.isAllReady) {
+      this.isStarted = true;
+    }
+
+    this.broadcastStatus();
+  }
+
   handleMove(uci: string, server: WebSocket) {
+    if (!this.isActive || !this.isStarted) return;
     // Determine which player moved
     let boardIdx = -1;
     let player = "";
@@ -211,20 +284,42 @@ export class BughouseMatch {
        blackName: "Board 1 Black"
     });
 
-    const bughouseStatus = create(BughouseStatusSchema, {
-       board0: status0,
-       board1: status1,
-       bank0w: this.bank0w,
-       bank0b: this.bank0b,
-       bank1w: this.bank1w,
-       bank1b: this.bank1b
-    });
+     const bughouseStatus = create(BughouseStatusSchema, {
+        board0: status0,
+        board1: status1,
+        bank0w: this.bank0w,
+        bank0b: this.bank0b,
+        bank1w: this.bank1w,
+        bank1b: this.bank1b,
+        lobby: {
+          w0: this.lobby.slots.w0,
+          b0: this.lobby.slots.b0,
+          w1: this.lobby.slots.w1,
+          b1: this.lobby.slots.b1,
+          isAllReady: this.lobby.isAllReady
+        }
+     } as any);
 
-    const update = create(MatchUpdateSchema, {
-       event: { case: "bughouse", value: { matchId: this.matchId, event: { case: "status", value: bughouseStatus } } }
-    });
+     const update = create(MatchUpdateSchema, {
+        event: { 
+          case: "bughouse", 
+          value: { 
+            matchId: this.matchId, 
+            event: { 
+              case: "status", 
+              value: bughouseStatus
+            } 
+          } 
+        }
+     });
 
-    const binary = toBinary(MatchUpdateSchema, update);
-    this.sessions.forEach(s => s.send(binary));
+     const binary = toBinary(MatchUpdateSchema, update);
+     this.sessions.forEach(s => {
+       try {
+         s.send(binary);
+       } catch (e: any) {
+         this.sessions.delete(s);
+       }
+     });
   }
 }

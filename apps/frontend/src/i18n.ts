@@ -163,7 +163,10 @@ export const translations = {
       bughouse: "Bughouse",
       versions: "Versions",
       saved_versions: "Branches",
-      new_version: "New Branch"
+      new_version: "New Branch",
+      setup_teams: "Team Setup",
+      bughouse_lobby_hint: "Choose your seat & partner",
+      ready_to_play: "READY TO PLAY"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -325,7 +328,10 @@ export const translations = {
       bughouse: "Багхауз",
       versions: "Версії",
       saved_versions: "Гілки аналізу",
-      new_version: "Створити гілку"
+      new_version: "Створити гілку",
+      setup_teams: "Налаштування команд",
+      bughouse_lobby_hint: "Оберіть місце та напарника",
+      ready_to_play: "ГОТОВИЙ ДО ГРИ"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -487,7 +493,10 @@ export const translations = {
       bughouse: "Bughouse",
       versions: "Versiones",
       saved_versions: "Ramas",
-      new_version: "Nueva Rama"
+      new_version: "Nueva Rama",
+      setup_teams: "Configuración de Equipos",
+      bughouse_lobby_hint: "Elige tu asiento y compañero",
+      ready_to_play: "LISTO PARA JUGAR"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -649,7 +658,10 @@ export const translations = {
       bughouse: "Bughouse",
       versions: "Versiyonlar",
       saved_versions: "Dallar",
-      new_version: "Yeni Dal"
+      new_version: "Yeni Dal",
+      setup_teams: "Takım Kurulumu",
+      bughouse_lobby_hint: "Koltuğunuzu ve partnerinizi seçin",
+      ready_to_play: "OYUNA HAZIR"
     }
 };
 

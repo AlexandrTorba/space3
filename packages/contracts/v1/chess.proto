@@ -27,6 +27,12 @@ message MatchAction {
   string player_color = 3; // "w" or "b"
 }
 
+message LobbyAction {
+  string type = 1; // "claim", "ready", "leave"
+  string role = 2; // "w0", "b0", "w1", "b1"
+  string name = 3;
+}
+
 message BughouseStatus {
   MatchStatus board0 = 1;
   MatchStatus board1 = 2;
@@ -34,14 +40,30 @@ message BughouseStatus {
   repeated string bank0b = 4;
   repeated string bank1w = 5;
   repeated string bank1b = 6;
+  BughouseLobby lobby = 7;
+}
+
+message BughouseLobby {
+  message PlayerSlot {
+    bool is_claimed = 1;
+    string player_name = 2;
+    bool is_ready = 3;
+    string session_id = 4;
+  }
+  PlayerSlot w0 = 1;
+  PlayerSlot b0 = 2;
+  PlayerSlot w1 = 3;
+  PlayerSlot b1 = 4;
+  bool is_all_ready = 5;
 }
 
 message BughouseUpdate {
   string match_id = 1;
   oneof event {
-    Move move = 2; // contains board index or uci like "P@e4"
+    Move move = 2; 
     BughouseStatus status = 3;
     MatchAction action = 4;
+    BughouseLobby lobby_info = 5;
   }
 }
 
@@ -51,5 +73,6 @@ message MatchUpdate {
     MatchStatus status = 2;
     MatchAction action = 3;
     BughouseUpdate bughouse = 4; // Extension for Bughouse
+    LobbyAction lobby = 5;
   }
 }

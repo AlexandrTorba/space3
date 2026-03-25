@@ -38,6 +38,7 @@ export default function BughouseArena() {
   getPieceUrlRef.current = getPieceUrl;
 
   const [state, setState] = useState<any>(null);
+  const [lobby, setLobby] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [selectedPiece, setSelectedPiece] = useState<{char: string, board: number} | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -72,6 +73,23 @@ export default function BughouseArena() {
      }
   }
 
+  const claimSlot = (slotRole: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const name = (typeof window !== "undefined" ? localStorage.getItem("ag_username") : "") || "Player";
+    const update = create(MatchUpdateSchema, {
+       event: { case: "lobby", value: { type: "claim", role: slotRole, name } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  };
+
+  const toggleReady = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const update = create(MatchUpdateSchema, {
+       event: { case: "lobby", value: { type: "ready", role: "", name: "" } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  };
+
   useEffect(() => {
     setMounted(true);
     if (!id) return;
@@ -86,6 +104,7 @@ export default function BughouseArena() {
     } catch(e) {}
     
     const wsUrl = `${protocol}//${host}/bughouse/${id}?role=${role}`;
+    console.log(`[BUGHOUSE] Connecting to ${wsUrl} as ${role}`);
     
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
@@ -94,16 +113,20 @@ export default function BughouseArena() {
     ws.onopen = () => {
         console.log("[BUGHOUSE] WS Connected");
         logMessage("Connected to Bughouse Match!");
+        if (role) {
+           claimSlot(role as string);
+        }
     };
     ws.onmessage = (event) => {
       if (!(event.data instanceof ArrayBuffer)) return;
       try {
         const update = fromBinary(MatchUpdateSchema, new Uint8Array(event.data));
-        console.log("[BUGHOUSE] WS Update:", update.event.case);
         if (update.event.case === "bughouse") {
            const bg = update.event.value;
-           if (bg.event.case === "status") {
-              setState(bg.event.value);
+            if (bg.event.case === "status") {
+               setState(bg.event.value);
+            } else if (bg.event.case === "lobbyInfo") {
+              setLobby(bg.event.value);
            }
         }
       } catch (e) {}
@@ -118,7 +141,6 @@ export default function BughouseArena() {
 
   const myBoard = myBoardIdx === 0 ? state?.board0 : state?.board1;
   const partnerBoard = partnerBoardIdx === 0 ? state?.board0 : state?.board1;
-
   const myBankW = myBoardIdx === 0 ? state?.bank0w : state?.bank1w;
   const myBankB = myBoardIdx === 0 ? state?.bank0b : state?.bank1b;
   const partnerBankW = partnerBoardIdx === 0 ? state?.bank0w : state?.bank1w;
@@ -228,6 +250,71 @@ export default function BughouseArena() {
             </div>
         </div>
       </div>
+
+      {/* Lobby Overlay */}
+      {(!state?.lobby || !state.lobby.isAllReady) && (
+        <div className="fixed inset-0 z-[100] bg-[#05060B]/90 backdrop-blur-2xl flex items-center justify-center p-4">
+           <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-[3rem] max-w-2xl w-full shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse" />
+              
+              <div className="flex flex-col items-center mb-10 text-center">
+                  <div className="bg-blue-500/10 p-4 rounded-3xl mb-4">
+                      <Swords className="w-10 h-10 text-blue-400" />
+                  </div>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">{t("setup_teams" as any)}</h2>
+                  <p className="text-slate-400 text-sm font-bold uppercase tracking-widest opacity-60">{t("bughouse_lobby_hint" as any)}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 md:gap-8 mb-10">
+                 {["w0", "b0", "w1", "b1"].map((roleKey) => {
+                    const slot = (state?.lobby as any)?.[roleKey];
+                    // Since session_id isn't fully implemented yet, we trust the backend to block invalid claims
+                    return (
+                        <div key={roleKey} className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center px-1">
+                                <span className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-widest">
+                                    {roleKey.startsWith('w') ? '⚪ WHITE' : '⚫ BLACK'} {roleKey.endsWith('0') ? 'Board 1' : 'Board 2'}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => claimSlot(roleKey)}
+                                className={`h-16 rounded-2xl border-2 transition-all flex items-center gap-3 px-4 group relative overflow-hidden ${
+                                    slot?.isClaimed 
+                                        ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
+                                        : 'bg-white/5 border-white/5 hover:border-white/20 text-slate-500'
+                                }`}
+                            >
+                                <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-xs ${slot?.isClaimed ? 'bg-blue-500 border-white/20 text-white' : 'bg-white/10 border-white/10'}`}>
+                                    {roleKey.toUpperCase()}
+                                </div>
+                                <div className="flex flex-col items-start min-w-0">
+                                    <span className="text-xs font-black truncate w-full">{slot?.isClaimed ? slot.playerName : "VACANT"}</span>
+                                    {slot?.isReady && <span className="text-[8px] font-black text-green-500 uppercase tracking-widest animate-pulse">READY</span>}
+                                </div>
+                                {!slot?.isClaimed && <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity" />}
+                            </button>
+                        </div>
+                    );
+                 })}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                  <button 
+                      id="ready-button"
+                      onClick={toggleReady}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-500/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-30"
+                  >
+                      {t("ready_to_play" as any)}
+                  </button>
+                  <div className="flex items-center justify-center gap-2">
+                      {["w0", "b0", "w1", "b1"].map((r, i) => (
+                          <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${(state?.lobby as any)?.[r]?.isReady ? 'bg-green-500' : 'bg-white/10 shadow-inner'}`} />
+                      ))}
+                  </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Logs */}
       <div className="mt-8 bg-black/40 border border-white/5 p-4 rounded-xl h-32 overflow-y-auto font-mono text-[10px] text-slate-500">
