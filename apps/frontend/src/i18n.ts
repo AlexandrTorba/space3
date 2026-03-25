@@ -100,7 +100,7 @@ export const translations = {
       engine_hash: "Hash (MB)",
       engine_multipv: "MultiPV",
       save_settings: "Save",
-      start_fresh_from_here: "Start from this move",
+
       load_file: "Load File",
       upload_hint: "Supports PGN, FEN or ZIP",
       loading_zip: "Unpacking archive...",
@@ -265,7 +265,7 @@ export const translations = {
       engine_hash: "Пам'ять (Hash MB)",
       engine_multipv: "Лінії (MultiPV)",
       save_settings: "Зберегти",
-      start_fresh_from_here: "Новий аналіз звідси",
+
       load_file: "Завантажити файл",
       upload_hint: "PGN, FEN або ZIP",
       loading_zip: "Розпакування архіву...",
@@ -430,7 +430,7 @@ export const translations = {
       engine_hash: "Memoria (Hash MB)",
       engine_multipv: "Líneas (MultiPV)",
       save_settings: "Guardar",
-      start_fresh_from_here: "Comenzar desde aquí",
+
       load_file: "Cargar archivo",
       upload_hint: "Supports PGN, FEN or ZIP",
       loading_zip: "Descomprimiendo...",
@@ -595,7 +595,7 @@ export const translations = {
       engine_hash: "Hafıza (Hash MB)",
       engine_multipv: "Çoklu PV (MultiPV)",
       save_settings: "Kaydet",
-      start_fresh_from_here: "Buradan başla",
+
       load_file: "Dosya Yükle",
       upload_hint: "PGN, FEN veya ZIP",
       loading_zip: "Arşiv açılıyor...",
