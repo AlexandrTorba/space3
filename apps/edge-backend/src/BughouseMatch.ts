@@ -35,6 +35,8 @@ export class BughouseMatch {
   isActive = true;
   isStarted = false;
   matchId = "unknown";
+  result = "";
+  reason = "";
 
   lobby = {
     slots: {
@@ -225,7 +227,9 @@ export class BughouseMatch {
 
   endGame(result: string, reason: string) {
     this.isActive = false;
-    // Broadcast status will handle sending the result
+    this.result = result;
+    this.reason = reason;
+    this.broadcastStatus();
   }
 
   handleMove(uci: string, server: WebSocket | null, botRole?: string) {
@@ -376,6 +380,8 @@ export class BughouseMatch {
     const status0 = create(MatchStatusSchema, {
        fen: this.engine0.fen(),
        isActive: this.isActive,
+       result: this.result,
+       reason: this.reason,
        whiteName: "Board 0 White",
        blackName: "Board 0 Black",
        whiteTimeMs: Math.max(0, this.time0w),
@@ -384,6 +390,8 @@ export class BughouseMatch {
     const status1 = create(MatchStatusSchema, {
        fen: this.engine1.fen(),
        isActive: this.isActive,
+       result: this.result,
+       reason: this.reason,
        whiteName: "Board 1 White",
        blackName: "Board 1 Black",
        whiteTimeMs: Math.max(0, this.time1w),
