@@ -129,7 +129,8 @@ function PlayArenaContent() {
       }
     } catch (e) {}
 
-    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`;
+    const isBot = searchParams?.get("isBot");
+    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}${isBot ? `&isBot=${isBot}` : ""}`;
     logMessage(`Connecting to: ${wsUrl}`);
     
     const ws = new WebSocket(wsUrl);

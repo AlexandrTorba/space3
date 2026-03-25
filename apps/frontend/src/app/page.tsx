@@ -75,12 +75,12 @@ export default function Home() {
         else if (data.type === "MATCH_FOUND") {
             setIsMatching(true);
             setTimeout(() => {
-                const wName = data.color === "black" ? data.opponent : data.myName;
-                const bName = data.color === "black" ? data.myName : data.opponent;
+                const wName = data.color === "black" ? (data.opponent || "Bot") : (data.myName || playerName);
+                const bName = data.color === "black" ? (data.myName || playerName) : (data.opponent || "Bot");
                 if (data.mode === "bughouse") {
-                   router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${isBotsMatch ? '&fillBots=1' : ''}`);
+                   router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${data.fillBots || isBotsMatch ? '&fillBots=1' : ''}`);
                 } else {
-                   router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`);
+                   router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}${data.isBot ? '&isBot=true' : ''}`);
                 }
             }, 800);
         }

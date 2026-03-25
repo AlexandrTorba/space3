@@ -60,6 +60,7 @@ export default function LobbyList({
                           <div>
                              <div className="flex items-center gap-2">
                                 <span className="font-black text-sm">{c.playerName}</span>
+                                {c.isBot && <span className="text-[8px] bg-red-500/10 text-red-500/60 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">AI</span>}
                                 {c.mode === 'bughouse' && <span className="text-[8px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded font-black uppercase">BH {c.playersCount || 0}/4</span>}
                              </div>
                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{c.tc} min • {c.colorPref}</div>

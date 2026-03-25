@@ -28,6 +28,9 @@ export class ChessMatch {
   blackSocket: WebSocket | null = null;
   
   rematchOffers: Set<string> = new Set();
+  isBotMatch: boolean = false;
+  botColor: string = "b";
+  botTimer: any = null;
   
   db: any;
 
@@ -90,6 +93,11 @@ export class ChessMatch {
            }).onConflictDoNothing().execute().catch((err: any) => console.error("[DB ERROR]", err));
            this.state.waitUntil(p);
        }
+        if (url.searchParams.get("isBot") === "true") {
+           this.isBotMatch = true;
+           this.botColor = url.searchParams.get("color") === "white" ? "b" : "w";
+           console.log(`[MTCH] Bot enabled for match ${this.matchId} as ${this.botColor}`);
+        }
     }
 
     // Ensure an alarm is set to check for abandonment even if no moves are made
@@ -146,6 +154,10 @@ export class ChessMatch {
     console.log(`[MTCH] Session added to match ${this.matchId}. Total: ${this.sessions.size}`);
 
     this.broadcastStatus();
+
+    if (this.isBotMatch && !this.botTimer) {
+       this.botTimer = setInterval(() => this.handleBotTurn(), 2000);
+    }
 
     server.addEventListener("message", (event) => {
       try {
@@ -375,5 +387,25 @@ export class ChessMatch {
         // If still active but not abandoned yet, reschedule check
         await this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000);
     }
+  }
+  handleBotTurn() {
+    if (!this.isActive || this.engine.turn() !== this.botColor || (this.moveCount === 0 && this.botColor === "b")) return;
+    
+    const moves = this.engine.moves();
+    if (moves.length === 0) return;
+    
+    // Pick a random move
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    this.engine.move(move);
+    this.moveCount++;
+    this.drawOffer = null;
+    
+    if (this.moveCount === 1 && !this.isUnlimited) {
+       this.lastMoveTimestamp = Date.now();
+    } else {
+       this.deductTime();
+    }
+    
+    this.broadcastStatus();
   }
 }
