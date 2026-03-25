@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import React from "react";
-import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer, Globe } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity, SkipBack, SkipForward, ArrowLeft, Upload, Cpu, Timer, Globe, Plus, Trash2, Edit, Layers } from "lucide-react";
 import { Chess, Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import JSZip from "jszip";
@@ -19,6 +19,13 @@ function makePieceComponent(pieceCode: string, getPieceUrl: (p: string) => strin
 }
 const PIECE_LABELS = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
+interface AnalysisVersion {
+  id: string;
+  name: string;
+  fen: string;
+  history: string[];
+}
+
 export default function AnalysisView() {
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
@@ -32,6 +39,11 @@ export default function AnalysisView() {
   const [fen, setFen] = useState(gameRef.current.fen());
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
+  
+  const [versions, setVersions] = useState<AnalysisVersion[]>([
+    { id: 'v1', name: 'Analysis 1', fen: new Chess().fen(), history: [] }
+  ]);
+  const [activeVersionId, setActiveVersionId] = useState('v1');
   const [evaluation, setEvaluation] = useState<string>("0.0");
   const [pastePgn, setPastePgn] = useState("");
   
@@ -44,7 +56,7 @@ export default function AnalysisView() {
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
   
   const sfWorker = useRef<Worker | null>(null);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings">("openings");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"pgn" | "openings" | "versions">("versions");
   const [activeOpeningIndex, setActiveOpeningIndex] = useState<number | null>(null);
   const [lastMoveSquares, setLastMoveSquares] = useState<{[sq: string]: boolean}>({});
   const [openingPage, setOpeningPage] = useState(0);
@@ -279,6 +291,11 @@ export default function AnalysisView() {
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
 
+      // Sync specific version
+      setVersions(prev => prev.map(v => 
+        v.id === activeVersionId ? { ...v, fen: currentFen, history: newHistory } : v
+      ));
+
       // Handle last move squares for highlighting
       const verboseHistory = gameRef.current.history({ verbose: true });
       const lastM = verboseHistory[verboseHistory.length - 1];
@@ -317,6 +334,61 @@ export default function AnalysisView() {
               setPreMove(null);
           }
       }
+  };
+
+  const switchVersion = (id: string) => {
+    const v = versions.find(v => v.id === id);
+    if (!v) return;
+    setActiveVersionId(id);
+    const engine = new Chess(v.fen);
+    // history in version might be shorter than moves needed to reach fen if it's a branch
+    // but we use actual history from version
+    try {
+        const fullEngine = new Chess();
+        for(const m of v.history) fullEngine.move(m);
+        gameRef.current = fullEngine;
+    } catch(e) {
+        gameRef.current = engine;
+    }
+    
+    setFen(gameRef.current.fen());
+    setHistory(gameRef.current.history());
+    setCurrentMoveIndex(gameRef.current.history().length - 1);
+    setLastMoveSquares({});
+    setPreMove(null);
+    setActiveOpeningIndex(null);
+    triggerAnalysis();
+  };
+
+  const createNewVersion = () => {
+    const newId = `v-${Date.now()}`;
+    const newVersion: AnalysisVersion = {
+      id: newId,
+      name: `Analysis ${versions.length + 1}`,
+      fen: gameRef.current.fen(),
+      history: [...gameRef.current.history()]
+    };
+    setVersions(prev => [...prev, newVersion]);
+    setActiveVersionId(newId);
+  };
+
+  const deleteVersion = (id: string) => {
+    if (versions.length <= 1) return;
+    setVersions(prev => {
+        const remaining = prev.filter(v => v.id !== id);
+        if (id === activeVersionId) {
+            setTimeout(() => switchVersion(remaining[0].id), 0);
+        }
+        return remaining;
+    });
+  };
+
+  const renameVersion = (id: string) => {
+    const v = versions.find(v => v.id === id);
+    const newName = prompt("Enter version name", v?.name);
+    if (newName) {
+        setVersions(prev => prev.map(v => v.id === id ? { ...v, name: newName } : v));
+    }
   };
 
   const loadPgn = () => {
@@ -711,6 +783,12 @@ export default function AnalysisView() {
                 <div className="mt-auto border-t border-[var(--surface-border)] pt-4 flex flex-col gap-3">
                     <div className="flex bg-[var(--button-bg)] p-1 rounded-xl mb-1 border border-[var(--surface-border)]">
                         <button 
+                            onClick={() => setActiveSidebarTab("versions")}
+                            className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "versions" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
+                        >
+                           <Layers className="w-3 h-3 inline-block mr-1 mb-0.5" /> {t("versions") || "VERSIONS"}
+                        </button>
+                        <button 
                             onClick={() => setActiveSidebarTab("openings")}
                             className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeSidebarTab === "openings" ? 'bg-[var(--brand-primary)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-white'}`}
                         >
@@ -725,7 +803,44 @@ export default function AnalysisView() {
                     </div>
 
                     <div className="h-[200px] flex flex-col overflow-hidden">
-                        {activeSidebarTab === "pgn" ? (
+                        {activeSidebarTab === "versions" ? (
+                             <div className="flex flex-col gap-2 h-full animate-in fade-in slide-in-from-left-2 duration-300">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{versions.length} {t("saved_versions") || "Branches"}</span>
+                                    <button 
+                                        onClick={createNewVersion}
+                                        className="p-1.5 bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)] text-[var(--brand-primary)] hover:text-white rounded-lg transition-all border border-[var(--brand-primary)]/20 shadow-sm"
+                                        title={t("new_version") || "New Branch"}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
+                                    {versions.map((v) => (
+                                        <div 
+                                            key={v.id} 
+                                            className={`group flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                                                activeVersionId === v.id 
+                                                ? 'bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/50' 
+                                                : 'bg-white/5 border-transparent hover:border-white/10'
+                                            }`}
+                                        >
+                                            <button 
+                                                onClick={() => switchVersion(v.id)}
+                                                className="flex-1 text-left min-w-0 mr-2"
+                                            >
+                                                <div className={`text-[11px] font-bold truncate ${activeVersionId === v.id ? 'text-[var(--brand-primary)]' : 'text-slate-300'}`}>{v.name}</div>
+                                                <div className="text-[9px] text-slate-500 font-mono mt-0.5">{v.history.length || 0} moves</div>
+                                            </button>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => renameVersion(v.id)} className="p-1.5 hover:bg-white/10 rounded-md text-slate-400 hover:text-white"><Edit className="w-3 h-3" /></button>
+                                                <button onClick={() => deleteVersion(v.id)} disabled={versions.length <= 1} className="p-1.5 hover:bg-red-500/20 rounded-md text-slate-400 hover:text-red-400 disabled:opacity-0"><Trash2 className="w-3 h-3" /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                             </div>
+                        ) : activeSidebarTab === "pgn" ? (
                             <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full">
                                 <textarea 
                                    value={pastePgn} 
