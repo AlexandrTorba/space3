@@ -38,6 +38,7 @@ export class BughouseMatch {
   private matchId: string = "unknown";
   result = "";
   reason = "";
+  private disconnectTimer: any = null;
 
   lobby = {
     slots: {
@@ -107,7 +108,11 @@ export class BughouseMatch {
     server.accept();
     this.sessions.add(server);
 
-    // Send current video state on connect
+    if (this.disconnectTimer) {
+       console.log("[BUGHOUSE] Human returned. Clearing disconnect timer.");
+       clearTimeout(this.disconnectTimer);
+       this.disconnectTimer = null;
+    }
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
     // Initial assignment from URL params
@@ -156,18 +161,38 @@ export class BughouseMatch {
     }
 
     server.addEventListener("close", () => {
-      console.log(`[BUGHOUSE] Session Closed - Role mapping check...`);
+      console.log(`[BUGHOUSE] Session Closed`);
       this.sessions.delete(server);
       // If a player leaves, unclaim their slot
+      let roleRemoved: string | null = null;
       for (const role of ["w0", "b0", "w1", "b1"] as const) {
         if ((this.sockets as any)[role] === server) {
           console.log(`[BUGHOUSE] Player ${role} disconnected.`);
           (this.sockets as any)[role] = null;
           (this.lobby.slots as any)[role].isClaimed = false;
           (this.lobby.slots as any)[role].isReady = false;
+          roleRemoved = role;
         }
       }
-      this.broadcastStatus();
+
+      // Check if any human players are left
+      let humanPlayersCount = 0;
+      for (const r of ["w0", "b0", "w1", "b1"] as const) {
+         if ((this.sockets as any)[r]) humanPlayersCount++;
+      }
+
+      if (this.isActive && this.isStarted && humanPlayersCount === 0) {
+         console.log("[BUGHOUSE] No human players left. Starting 15s grace period before ending match.");
+         if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
+         this.disconnectTimer = setTimeout(() => {
+            if (this.isActive && this.isStarted) {
+               console.log("[BUGHOUSE] Grace period expired. Ending match.");
+               this.endGame("Aborted", "user_disconnected_timeout");
+            }
+         }, 15000); 
+      } else {
+         this.broadcastStatus();
+      }
     });
 
     server.addEventListener("error", (e) => {
