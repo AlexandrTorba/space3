@@ -34,7 +34,8 @@ export class BughouseMatch {
 
   isActive = true;
   isStarted = false;
-  matchId = "unknown";
+  private videoEnabled: boolean = true;
+  private matchId: string = "unknown";
   result = "";
   reason = "";
 
@@ -60,6 +61,7 @@ export class BughouseMatch {
 
   rematchOffers: Set<string> = new Set();
   botTimer: any = null;
+  messageCounts: WeakMap<WebSocket, { count: number; lastReset: number }> = new WeakMap();
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -69,6 +71,14 @@ export class BughouseMatch {
   async fetch(request: Request) {
     const url = new URL(request.url);
     this.matchId = url.pathname.split("/")[2] || "unknown";
+
+    if (url.pathname.includes("/api/admin/match/video")) {
+       const enabled = url.searchParams.get("enabled") === "true";
+       this.videoEnabled = enabled;
+       const msg = JSON.stringify({ type: "video_enabled", enabled });
+       this.sessions.forEach(s => s.send(msg));
+       return new Response("OK");
+    }
 
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected Upgrade: websocket", { status: 426 });
@@ -97,6 +107,9 @@ export class BughouseMatch {
     server.accept();
     this.sessions.add(server);
 
+    // Send current video state on connect
+    server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
+
     // Initial assignment from URL params
     if (["w0", "b0", "w1", "b1"].includes(role)) {
        (this.sockets as any)[role] = server;
@@ -110,7 +123,17 @@ export class BughouseMatch {
 
     this.broadcastStatus();
 
-      server.addEventListener("message", (event) => {
+    server.addEventListener("message", (event) => {
+      // Rate Limit: 10 msg/sec
+      let ratelimit = this.messageCounts.get(server);
+      const now = Date.now();
+      if (!ratelimit || now - ratelimit.lastReset > 1000) {
+        ratelimit = { count: 0, lastReset: now };
+      }
+      ratelimit.count++;
+      this.messageCounts.set(server, ratelimit);
+      if (ratelimit.count > 10) return;
+
       if (!(event.data instanceof ArrayBuffer)) return;
       const buffer = new Uint8Array(event.data);
       try {

@@ -10,7 +10,8 @@ import { MatchUpdateSchema } from "@antigravity/contracts";
 import { Chess, Square } from "chess.js";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Video, VideoOff } from "lucide-react";
+import VideoChat from "./VideoChat";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
@@ -52,6 +53,8 @@ export default function BughouseArena() {
   const [playerName, setPlayerName] = useState("Player");
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(role.startsWith("b") ? "black" : "white");
   const [partnerOrientation, setPartnerOrientation] = useState<"white" | "black">(role.startsWith("b") ? "white" : "black");
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoAuthorized, setVideoAuthorized] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
@@ -209,6 +212,15 @@ export default function BughouseArena() {
         }
     };
     ws.onmessage = (event) => {
+      if (typeof event.data === "string") {
+          try {
+              const data = JSON.parse(event.data);
+              if (data.type === "video_enabled") {
+                  setVideoAuthorized(data.enabled);
+              }
+          } catch(e) {}
+          return;
+      }
       if (!(event.data instanceof ArrayBuffer)) return;
       try {
         const update = fromBinary(MatchUpdateSchema, new Uint8Array(event.data));
@@ -335,6 +347,15 @@ export default function BughouseArena() {
                 >
                    <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
                 </button>
+            )}
+            {videoAuthorized && (
+               <button 
+                  onClick={() => setShowVideo(!showVideo)} 
+                  className={`p-2 transition-all rounded-full border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-slate-400'}`}
+                  title="Toggle Video Chat"
+               >
+                  {showVideo ? <Video className="w-4 h-4 md:w-6 md:h-6" /> : <VideoOff className="w-4 h-4 md:w-6 md:h-6" />}
+               </button>
             )}
             <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
                <Settings className="w-4 h-4 md:w-6 md:h-6" />
@@ -540,9 +561,27 @@ export default function BughouseArena() {
         </div>
       )}
 
-      {/* Logs */}
-      <div className="mt-8 bg-black/40 border border-white/5 p-4 rounded-xl h-32 overflow-y-auto font-mono text-[10px] text-slate-500">
-         {logs.map((l, i) => <div key={i}>{l}</div>)}
+      {/* Logs and Video Section */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="bg-black/40 border border-white/5 p-4 rounded-xl h-48 overflow-y-auto font-mono text-[10px] text-slate-500 order-2 md:order-1">
+             {logs.map((l, i) => <div key={i}>{l}</div>)}
+          </div>
+          
+          {showVideo && (
+             <div className="order-1 md:order-2">
+                <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-t-2xl text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center justify-between">
+                   <span>Real-time Communication</span>
+                   <div className="flex gap-1">
+                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
+                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse delay-75" />
+                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse delay-150" />
+                   </div>
+                </div>
+                <div className="p-4 bg-white/5 border border-white/10 border-t-0 rounded-b-2xl shadow-xl">
+                   <VideoChat matchId={id} />
+                </div>
+             </div>
+          )}
       </div>
 
     </div>

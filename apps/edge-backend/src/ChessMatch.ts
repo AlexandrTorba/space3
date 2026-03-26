@@ -9,9 +9,10 @@ export class ChessMatch {
   state: DurableObjectState;
   env: Env;
   sessions: Set<WebSocket>;
-  moveCount: number;
+  private moveCount: number = 0;
   engine: Chess;
-  isActive: boolean;
+  private isActive: boolean = true;
+  private videoEnabled: boolean = true;
   drawOffer: string | null;
   matchId: string = "unknown";
   
@@ -33,12 +34,12 @@ export class ChessMatch {
   botTimer: any = null;
   
   db: any;
+  messageCounts: WeakMap<WebSocket, { count: number; lastReset: number }> = new WeakMap();
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
     this.env = env;
     this.sessions = new Set();
-    this.moveCount = 0;
     this.engine = new Chess();
     this.isActive = true;
     this.drawOffer = null;
@@ -97,6 +98,14 @@ export class ChessMatch {
        await this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000);
     }
     
+    if (url.pathname.includes("/api/admin/match/video")) {
+        const enabled = url.searchParams.get("enabled") === "true";
+        this.videoEnabled = enabled;
+        const msg = JSON.stringify({ type: "video_enabled", enabled });
+        this.sessions.forEach(s => s.send(msg));
+        return new Response("OK");
+    }
+
     if (url.pathname.endsWith("/spectators")) {
        return new Response(JSON.stringify({ count: Math.max(0, this.sessions.size - (this.whiteSocket ? 1 : 0) - (this.blackSocket ? 1 : 0)) }));
     }
@@ -138,6 +147,10 @@ export class ChessMatch {
   handleSession(server: WebSocket) {
     server.accept();
     this.sessions.add(server);
+    
+    // Send current video state on connect
+    server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
+
     this.broadcastStatus();
 
     if (this.isBotMatch && !this.botTimer) {
@@ -145,6 +158,16 @@ export class ChessMatch {
     }
 
     server.addEventListener("message", (event) => {
+      // Rate Limiting: 10 messages per second
+      let ratelimit = this.messageCounts.get(server);
+      const now = Date.now();
+      if (!ratelimit || now - ratelimit.lastReset > 1000) {
+        ratelimit = { count: 0, lastReset: now };
+      }
+      ratelimit.count++;
+      this.messageCounts.set(server, ratelimit);
+      if (ratelimit.count > 10) return;
+
       try {
         if (!(event.data instanceof ArrayBuffer)) return;
         const buffer = new Uint8Array(event.data);
@@ -155,44 +178,68 @@ export class ChessMatch {
         if (matchUpdate.event.case === "action") {
             const action = matchUpdate.event.value;
             const claimColor = action.playerColor;
-            if (claimColor === 'w') this.whiteSocket = server;
-            else if (claimColor === 'b') this.blackSocket = server;
-           
-           if (!this.isActive) {
-               if (action.actionType === "rematch") {
-                   this.rematchOffers.add(action.playerColor);
-                   this.sessions.forEach(s => { if (s !== server) s.send(event.data); });
-                   if (this.rematchOffers.has("w") && this.rematchOffers.has("b")) {
-                      const newMatchId = crypto.randomUUID();
-                      this.rematchOffers.clear();
-                      const response = create(MatchUpdateSchema, {
-                         event: { case: "action", value: { matchId: newMatchId, actionType: "rematch_accept", playerColor: "" } }
-                      });
-                      const binary = toBinary(MatchUpdateSchema, response);
-                      this.sessions.forEach(s => s.send(binary));
-                   }
-               }
-               return;
-           }
-           
-           if (action.actionType === "resign") {
+            
+            // Assign roles if not yet assigned (First connection per color)
+            if (claimColor === 'w' && !this.whiteSocket) this.whiteSocket = server;
+            else if (claimColor === 'b' && !this.blackSocket) this.blackSocket = server;
+            
+            // SECURITY: Verify that the sender is actually one of the players for this match
+            const isWhite = server === this.whiteSocket;
+            const isBlack = server === this.blackSocket;
+            if (!isWhite && !isBlack) return; // Spectators cannot perform actions
+
+            if (!this.isActive) {
+                if (action.actionType === "rematch") {
+                    this.rematchOffers.add(action.playerColor);
+                    this.sessions.forEach(s => { if (s !== server) s.send(event.data); });
+                    if (this.rematchOffers.has("w") && this.rematchOffers.has("b")) {
+                       const newMatchId = crypto.randomUUID();
+                       this.rematchOffers.clear();
+                       const response = create(MatchUpdateSchema, {
+                          event: { case: "action", value: { matchId: newMatchId, actionType: "rematch_accept", playerColor: "" } }
+                       });
+                       const binary = toBinary(MatchUpdateSchema, response);
+                       this.sessions.forEach(s => s.send(binary));
+                    }
+                }
+                return;
+            }
+            
+            // SECURITY: Only allow the correct player to resign or offer/accept draw
+            if (action.actionType === "resign") {
+              if (action.playerColor === "w" && !isWhite) return;
+              if (action.playerColor === "b" && !isBlack) return;
               this.endGame(this.matchId, action.playerColor === "w" ? "0-1" : "1-0", "resignation");
-           } else if (action.actionType === "draw_offer") {
+            } else if (action.actionType === "draw_offer") {
+              if (action.playerColor === "w" && !isWhite) return;
+              if (action.playerColor === "b" && !isBlack) return;
               this.drawOffer = action.playerColor;
               this.sessions.forEach(s => { if (s !== server) s.send(event.data); });
-           } else if (action.actionType === "draw_accept") {
+            } else if (action.actionType === "draw_accept") {
               if (this.drawOffer && this.drawOffer !== action.playerColor) {
+                 // Ensure the acceptor is the OTHER player
+                 if (action.playerColor === "w" && !isWhite) return;
+                 if (action.playerColor === "b" && !isBlack) return;
                  this.endGame(this.matchId, "1/2-1/2", "agreement");
               }
-           }
-           return;
+            }
+            return;
         }
 
         if (matchUpdate.event.case === "move" && this.isActive) {
           const move = matchUpdate.event.value;
           const turn = this.engine.turn();
-          if (turn === 'w') this.whiteSocket = server;
-          else this.blackSocket = server;
+          
+          // SECURITY: Verify that the sender is the player whose turn it is
+          if (turn === 'w' && (!this.whiteSocket || server !== this.whiteSocket)) {
+             // If whiteSocket is not set, the first person to move as white becomes whiteSocket
+             if (!this.whiteSocket) this.whiteSocket = server;
+             else return; // Someone else tried to move for white
+          }
+          if (turn === 'b' && (!this.blackSocket || server !== this.blackSocket)) {
+             if (!this.blackSocket) this.blackSocket = server;
+             else return;
+          }
           
           try {
              const from = move.uci.substring(0, 2);
@@ -225,6 +272,9 @@ export class ChessMatch {
 
     server.addEventListener("close", () => { 
         this.sessions.delete(server); 
+        if (server === this.whiteSocket) this.whiteSocket = null;
+        if (server === this.blackSocket) this.blackSocket = null;
+        
         if (this.isActive && this.moveCount === 0 && this.sessions.size === 0 && this.db) {
            const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
            this.state.waitUntil(p);
