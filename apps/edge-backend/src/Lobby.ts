@@ -54,13 +54,34 @@ export class Lobby {
     server.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data as string);
+        if (!data || typeof data !== "object") return;
+
+        // Rate limiting (simple)
+        (server as any).lastMessageTime = (server as any).lastMessageTime || 0;
+        const now = Date.now();
+        if (now - (server as any).lastMessageTime < 100) return; // 10 ops/sec max
+        (server as any).lastMessageTime = now;
         
+        if (data.type === "ping") {
+          server.send(JSON.stringify({ type: "pong" }));
+          return;
+        }
+
         if (data.type === "create") {
-          const tc = data.timeControl || "3";
-          const pName = data.playerName || "Гравець";
+          const tc = String(data.timeControl || "3").substring(0, 10);
+          let pName = String(data.playerName || "Player").trim().substring(0, 32);
+          if (!pName) pName = "Player";
+          
           const colorPref = data.colorPref || "random";
           const mode = data.mode || "standard";
-          const vsBots = !!data.vsBots;
+          
+          // Limit total challenges to prevent memory exhaustion
+          if (this.challenges.size > 100) {
+             server.send(JSON.stringify({ type: "error", message: "Lobby full, please try again later" }));
+             return;
+          }
+          const fillBots = !!data.fillBots || !!data.vsBots;
+          const vsBots = fillBots;
           const id = crypto.randomUUID();
           
           this.removeUserChallenges(server);
@@ -68,8 +89,18 @@ export class Lobby {
           if (vsBots) {
               const matchId = crypto.randomUUID();
               if (mode === "bughouse") {
+                  let initialRole = "w0";
+                  if (colorPref === "black") {
+                     initialRole = Math.random() > 0.5 ? "b0" : "b1";
+                  } else if (colorPref === "white") {
+                     initialRole = Math.random() > 0.5 ? "w0" : "w1";
+                  } else {
+                     const roles = ["w0", "b0", "w1", "b1"] as const;
+                     initialRole = roles[Math.floor(Math.random() * roles.length)];
+                  }
+
                   server.send(JSON.stringify({
-                      type: "MATCH_FOUND", matchId, mode: "bughouse", role: "w0",
+                      type: "MATCH_FOUND", matchId, mode: "bughouse", role: initialRole,
                       tc, opponent: "AI Practice", fillBots: true
                   }));
               } else {
@@ -84,13 +115,19 @@ export class Lobby {
 
           if (mode === "bughouse") {
              const matchId = crypto.randomUUID();
+             const initialRole = (colorPref === "black") 
+                ? (Math.random() > 0.5 ? "b0" : "b1") 
+                : (colorPref === "white" 
+                    ? (Math.random() > 0.5 ? "w0" : "w1") 
+                    : (["w0", "b0", "w1", "b1"] as const)[Math.floor(Math.random() * 4)]);
+             
              this.challenges.set(matchId, { 
-                id: matchId, socket: server, playerName: pName, tc, colorPref, mode,
-                players: [{ name: pName, socket: server, role: "w0" }]
+                id: matchId, socket: server, playerName: pName, tc, colorPref: colorPref || "random", mode,
+                players: [{ name: pName, socket: server, role: initialRole }]
              });
              this.broadcastChallenges();
              server.send(JSON.stringify({ 
-                type: "MATCH_FOUND", matchId, mode: "bughouse", role: "w0", tc, opponent: "Bughouse Lobby"
+                type: "MATCH_FOUND", matchId, mode: "bughouse", role: initialRole, tc, opponent: "Bughouse Arena", fillBots: fillBots
              }));
              return;
           }
@@ -103,9 +140,9 @@ export class Lobby {
           server.send(JSON.stringify({ type: "waiting_created", id }));
         }
         else if (data.type === "accept") {
-          const challenge = this.challenges.get(data.challengeId);
+          const challenge = this.challenges.get(String(data.challengeId));
           if (challenge && challenge.socket !== server) {
-             const pName = data.playerName || "Гравець";
+             const pName = String(data.playerName || "Player").trim().substring(0, 32);
 
              if (challenge.mode === "bughouse") {
                 server.send(JSON.stringify({
