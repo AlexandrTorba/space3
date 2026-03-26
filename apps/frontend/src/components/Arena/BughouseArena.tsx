@@ -299,7 +299,7 @@ export default function BughouseArena() {
                 ) : (
                    <button onClick={handleRematch} className="px-3 py-1 bg-green-500 shadow-xl shadow-green-500/20 text-white text-[10px] font-black rounded-full animate-bounce uppercase">{t("accept_draw") === "Aceptar Tablas" ? "Revancha" : "Accept Rematch"}</button>
                 )}
-                <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over</div>
+                <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over {state.result && `: ${state.result}`} {state.reason && `(${state.reason})`}</div>
               </div>
            )}
            <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">

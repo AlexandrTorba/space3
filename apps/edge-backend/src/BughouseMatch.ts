@@ -59,7 +59,6 @@ export class BughouseMatch {
   moveCount1 = 0;
 
   rematchOffers: Set<string> = new Set();
-  botTimer: any = null;
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -72,6 +71,17 @@ export class BughouseMatch {
 
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected Upgrade: websocket", { status: 426 });
+    }
+
+    const tc = url.searchParams.get("tc");
+    if (tc && !this.isStarted) {
+       const minutes = parseInt(tc, 10);
+       if (!isNaN(minutes)) {
+          this.time0w = minutes * 60 * 1000;
+          this.time0b = minutes * 60 * 1000;
+          this.time1w = minutes * 60 * 1000;
+          this.time1b = minutes * 60 * 1000;
+       }
     }
 
     const pair = new WebSocketPair();
