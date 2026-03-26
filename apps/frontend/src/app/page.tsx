@@ -25,6 +25,8 @@ export default function Home() {
   const playerName = settings.playerName;
   const [timeControl, setTimeControl] = useState("3");
   const [colorPref, setColorPref] = useState<"white" | "black" | "random">("random");
+  const [bughouseTimeControl, setBughouseTimeControl] = useState("3");
+  const [bughouseColorPref, setBughouseColorPref] = useState<"white" | "black" | "random">("random");
   
   const [challenges, setChallenges] = useState<{id: string, playerName: string, tc: string, colorPref: string, mode?: string, playersCount?: number}[]>([]);
   const [liveMatches, setLiveMatches] = useState<{id: string, whiteName: string, blackName: string, timeControl: string, spectators?: number}[]>([]);
@@ -93,7 +95,7 @@ export default function Home() {
       const finalName = getNameOrDefault();
       if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ 
-             type: "create", playerName: finalName, timeControl, colorPref,
+             type: "create", playerName: finalName, timeControl: bughouse ? bughouseTimeControl : timeControl, colorPref: bughouse ? bughouseColorPref : colorPref,
              mode: bughouse ? "bughouse" : "standard",
              vsBots: !!vsBots
           }));
@@ -141,10 +143,10 @@ export default function Home() {
 
           <div className="xl:col-span-6 flex flex-col gap-6">
               <ChallengeConfig 
-                 timeControl={timeControl}
-                 onTimeControlChange={setTimeControl}
-                 colorPref={colorPref}
-                 onColorPrefChange={setColorPref}
+                 timeControl={activeTab === "bughouse" ? bughouseTimeControl : timeControl}
+                 onTimeControlChange={activeTab === "bughouse" ? setBughouseTimeControl : setTimeControl}
+                 colorPref={activeTab === "bughouse" ? bughouseColorPref : colorPref}
+                 onColorPrefChange={activeTab === "bughouse" ? setBughouseColorPref : setColorPref}
                  myChallengeId={myChallengeId}
                  onCancelChallenge={handleCancelChallenge}
               />
