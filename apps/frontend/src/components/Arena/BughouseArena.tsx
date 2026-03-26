@@ -49,12 +49,23 @@ export default function BughouseArena() {
     w1: 180000, b1: 180000
   });
   const [rematchState, setRematchState] = useState<"default" | "offered" | "waiting">("default");
+  const [playerName, setPlayerName] = useState("Player");
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
   const logMessage = (msg: string) => {
     setLogs(prev => [...prev.slice(-19), msg]);
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let name = sessionStorage.getItem("ag_name");
+    if (!name) {
+       name = localStorage.getItem("ag_name") || "Player";
+       sessionStorage.setItem("ag_name", name);
+    }
+    setPlayerName(name);
+  }, []);
 
   const onDrop = (boardIdx: number, source: string, target: string) => {
      console.log(`[BUGHOUSE] onDrop ${boardIdx}: ${source} -> ${target}`);
@@ -109,9 +120,8 @@ export default function BughouseArena() {
 
   const claimSlot = (slotRole: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const name = (typeof window !== "undefined" ? localStorage.getItem("ag_name") : "") || "Player";
     const update = create(MatchUpdateSchema, {
-       event: { case: "lobby", value: { type: "claim", role: slotRole, name } }
+       event: { case: "lobby", value: { type: "claim", role: slotRole, name: playerName } }
     });
     wsRef.current.send(toBinary(MatchUpdateSchema, update));
   };
@@ -128,6 +138,14 @@ export default function BughouseArena() {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const update = create(MatchUpdateSchema, {
        event: { case: "lobby", value: { type: "bot_add", role: slotRole, name: "Bot Engine" } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  };
+
+  const removeBot = (slotRole: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const update = create(MatchUpdateSchema, {
+       event: { case: "lobby", value: { type: "bot_remove", role: slotRole, name: "" } }
     });
     wsRef.current.send(toBinary(MatchUpdateSchema, update));
   };
@@ -459,14 +477,24 @@ export default function BughouseArena() {
                                 </span>
                             </div>
                             
-                            {!slot?.isClaimed && (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); addBot(roleKey); }}
-                                    className="ml-auto bg-white/5 hover:bg-blue-500/20 text-[8px] font-black px-2 py-1.5 rounded-lg border border-white/10 transition-colors uppercase tracking-widest text-slate-400 hover:text-blue-400 group-hover:border-white/20"
-                                >
-                                    + BOT
-                                </button>
-                            )}
+                                {slot?.isClaimed && !slot?.isBot ? (
+                                    <div className="ml-auto w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                ) : slot?.isBot ? (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); removeBot(roleKey); }}
+                                        className="ml-auto bg-red-500/10 hover:bg-red-500/20 text-red-500 p-1.5 rounded-lg border border-red-500/20 transition-all active:scale-95"
+                                        title="Remove Bot"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); addBot(roleKey); }}
+                                        className="ml-auto bg-white/5 hover:bg-blue-500/20 text-[8px] font-black px-2 py-1.5 rounded-lg border border-white/10 transition-colors uppercase tracking-widest text-slate-400 hover:text-blue-400 group-hover:border-white/20"
+                                    >
+                                        + BOT
+                                    </button>
+                                )}
                         </div>
                     );
                  })}

@@ -169,13 +169,15 @@ export class BughouseMatch {
          }
        }
        // Claim new role
-       const targetSlot = (this.lobby.slots as any)[role];
-       if (targetSlot && !targetSlot.isClaimed) {
-          (this.sockets as any)[role] = server;
-          targetSlot.isClaimed = true;
-          targetSlot.playerName = name || "Player";
-          targetSlot.isReady = false;
-       }
+        const targetSlot = (this.lobby.slots as any)[role];
+        if (targetSlot && (!targetSlot.isClaimed || targetSlot.isBot)) {
+           // Reset bot flag if this is a human claim
+           targetSlot.isBot = false;
+           (this.sockets as any)[role] = server;
+           targetSlot.isClaimed = true;
+           targetSlot.playerName = name || "Player";
+           targetSlot.isReady = false;
+        }
     } else if (type === "ready") {
        for(const r of ["w0", "b0", "w1", "b1"] as const) {
          if ((this.sockets as any)[r] === server) {
@@ -191,6 +193,15 @@ export class BughouseMatch {
           targetSlot.isReady = true;
           targetSlot.isBot = true;
        }
+    } else if (type === "bot_remove") {
+        if (!["w0", "b0", "w1", "b1"].includes(role)) return;
+        const targetSlot = (this.lobby.slots as any)[role];
+        if (targetSlot && targetSlot.isBot) {
+           targetSlot.isClaimed = false;
+           targetSlot.isBot = false;
+           targetSlot.playerName = "";
+           targetSlot.isReady = false;
+        }
     }
 
     // Check all ready
