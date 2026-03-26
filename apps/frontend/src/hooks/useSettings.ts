@@ -7,6 +7,7 @@ export type PieceSet = "wikipedia" | "leipzig";
 export type UiMode = "dark" | "light";
 
 export interface ChessSettings {
+  playerName: string;
   boardTheme: BoardTheme;
   pieceSet: PieceSet;
   uiMode: UiMode;
@@ -32,6 +33,7 @@ const PIECE_URLS: Record<PieceSet, string> = {
 
 export function useSettings() {
   const [settings, setSettings] = useState<ChessSettings>({
+    playerName: "Player",
     boardTheme: "classic",
     pieceSet: "wikipedia",
     uiMode: "dark",
@@ -46,10 +48,18 @@ export function useSettings() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("ag_settings");
-    if (saved) {
+    // Initial load from localStorage
+    const savedName = localStorage.getItem("ag_name");
+    const savedSettings = localStorage.getItem("ag_settings");
+    
+    let initialName = savedName || `Player${Math.floor(Math.random() * 9000) + 1000}`;
+    if (!savedName) localStorage.setItem("ag_name", initialName);
+
+    if (savedSettings) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.playerName) initialName = parsed.playerName;
+        
         // Validate theme/pieces to prevent crashes if localStorage has stale values
         if (parsed.boardTheme && !boardThemes[parsed.boardTheme as BoardTheme]) {
             delete parsed.boardTheme;
@@ -57,8 +67,12 @@ export function useSettings() {
         if (parsed.pieceSet && !["wikipedia", "leipzig"].includes(parsed.pieceSet)) {
             delete parsed.pieceSet;
         }
-        setSettings(prev => ({ ...prev, ...parsed }));
-      } catch (e) {}
+        setSettings(prev => ({ ...prev, ...parsed, playerName: initialName }));
+      } catch (e) {
+        setSettings(prev => ({ ...prev, playerName: initialName }));
+      }
+    } else {
+        setSettings(prev => ({ ...prev, playerName: initialName }));
     }
   }, []);
 
@@ -69,6 +83,9 @@ export function useSettings() {
       // Defer side effects to next tick to avoid React render cycle issues
       setTimeout(() => {
         localStorage.setItem("ag_settings", JSON.stringify(newSettings));
+        if (newSettings.playerName) {
+            localStorage.setItem("ag_name", newSettings.playerName);
+        }
         window.dispatchEvent(new CustomEvent("ag_settings_update", { detail: newSettings }));
       }, 0);
       

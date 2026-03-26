@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/i18n";
 import { useSettingsContext } from "@/providers/SettingsProvider";
+import { useSettings } from "@/hooks/useSettings";
 
 import LobbyHeader from "@/components/Home/LobbyHeader";
 import ModeSelection from "@/components/Home/ModeSelection";
@@ -16,11 +17,12 @@ export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const { setIsPanelOpen } = useSettingsContext();
+  const { settings } = useSettings();
   
   const [status, setStatus] = useState("Connecting...");
   const wsRef = useRef<WebSocket | null>(null);
   
-  const [playerName, setPlayerName] = useState("");
+  const playerName = settings.playerName;
   const [timeControl, setTimeControl] = useState("3");
   const [colorPref, setColorPref] = useState<"white" | "black" | "random">("random");
   
@@ -31,13 +33,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"lobby" | "bughouse" | "live">("lobby");
 
   useEffect(() => {
-     let name = localStorage.getItem("ag_name");
-     if (!name) {
-         name = `Player${Math.floor(Math.random() * 9000) + 1000}`;
-         localStorage.setItem("ag_name", name);
-     }
-     setPlayerName(name);
-
      const fetchLive = () => {
          const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? window.location.hostname + ":8787" : "localhost:8787");
          let host = rawUrl;
@@ -87,12 +82,10 @@ export default function Home() {
   }, [playerName, router]);
 
   const getNameOrDefault = () => {
-      let finalName = playerName.trim();
+      let finalName = settings.playerName.trim();
       if (!finalName) {
           finalName = `Player${Math.floor(Math.random() * 9000) + 1000}`;
-          setPlayerName(finalName);
       }
-      localStorage.setItem("ag_name", finalName);
       return finalName;
   };
 
@@ -139,6 +132,7 @@ export default function Home() {
       <div className="max-w-[1400px] w-full mx-auto mt-24 z-10 grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-3">
               <ModeSelection 
+                isBughouse={activeTab === "bughouse"}
                 myChallengeId={myChallengeId}
                 onCreateChallenge={handleCreateChallenge}
                 t={t}
