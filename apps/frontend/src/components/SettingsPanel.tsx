@@ -3,7 +3,7 @@
 import { useTranslation, Language, translations } from "../i18n";
 import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
 import { useSettingsContext } from "../providers/SettingsProvider";
-import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders } from "lucide-react";
+import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
@@ -48,6 +48,23 @@ export default function SettingsPanel() {
                  </header>
 
                  <div className="space-y-6 flex-1 pr-1">
+                     {/* Profile Section */}
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
+                           <User className="w-2.5 h-2.5" /> {t("profile_section" as any) || "Profile"}
+                        </label>
+                        <div className="flex gap-1.5 p-1 bg-[var(--button-bg)] rounded-xl border border-[var(--surface-border)]">
+                           <input 
+                             type="text"
+                             value={settings.playerName}
+                             onChange={(e) => updateSettings({ playerName: e.target.value })}
+                             placeholder="Your Name"
+                             className="w-full bg-transparent px-3 py-2 text-sm font-bold text-white focus:outline-none placeholder:text-white/20"
+                             maxLength={20}
+                           />
+                        </div>
+                     </div>
+
                      {/* Language Section */}
                      <div className="space-y-2">
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
