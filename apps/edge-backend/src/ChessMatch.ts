@@ -32,6 +32,7 @@ export class ChessMatch {
   isBotMatch: boolean = false;
   botColor: string = "b";
   botTimer: any = null;
+  private disconnectTimer: any = null;
   
   db: any;
   messageCounts: WeakMap<WebSocket, { count: number; lastReset: number }> = new WeakMap();
@@ -147,6 +148,12 @@ export class ChessMatch {
   handleSession(server: WebSocket) {
     server.accept();
     this.sessions.add(server);
+    
+    if (this.disconnectTimer) {
+        console.log("[CHESS] Human returned. Clearing disconnect timer.");
+        clearTimeout(this.disconnectTimer);
+        this.disconnectTimer = null;
+    }
     
     // Send current video state on connect
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
@@ -275,9 +282,19 @@ export class ChessMatch {
         if (server === this.whiteSocket) this.whiteSocket = null;
         if (server === this.blackSocket) this.blackSocket = null;
         
-        if (this.isActive && this.moveCount === 0 && this.sessions.size === 0 && this.db) {
-           const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-           this.state.waitUntil(p);
+        // If no human sockets left in an active game, wait 15s then abort
+        if (this.isActive && this.sessions.size === 0 && (this.moveCount > 0 || this.isBotMatch)) {
+             console.log("[CHESS] No humans left. Starting 15s grace period.");
+             if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
+             this.disconnectTimer = setTimeout(() => {
+                if (this.isActive && !this.whiteSocket && !this.blackSocket) {
+                    console.log("[CHESS] Grace period expired. Ending match.");
+                    this.endGame(this.matchId, "Aborted", "all_players_disconnected_timeout");
+                }
+             }, 15000);
+        } else if (this.isActive && this.moveCount === 0 && this.sessions.size === 0 && this.db) {
+            const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+            this.state.waitUntil(p);
         }
     });
   }
