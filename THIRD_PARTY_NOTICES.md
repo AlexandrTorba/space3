@@ -10,14 +10,17 @@ This project utilizes several open-source components, each with its own licensin
 - **Wikipedia**: Created by Colin M.L. Burnett. Licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
 - **Leipzig**: From the [Lichess.org](https://github.com/lichess-org/lila) project. Licensed under [GNU GPLv3](https://github.com/lichess-org/lila/blob/master/COPYING.md).
 
+## 📹 Video SDK
+- **Daily.co (daily-js & @daily-co/daily-react)**: High-performance real-time video SDK. Licensed under [MIT](https://github.com/daily-co/daily-js/blob/master/LICENSE).
+
 ## 🛠 Libraries & Frameworks
 
 ### MIT License
 The following libraries are used under the terms of the MIT License:
 - **Next.js**
 - **React** & **React DOM**
+- **Hono** (Server framework)
 - **chess.js**
-- **react-chessboard**
 - **framer-motion**
 - **@vercel/speed-insights**
 
@@ -25,6 +28,7 @@ The following libraries are used under the terms of the MIT License:
 The following libraries are used under the terms of the Apache License 2.0:
 - **@bufbuild/protobuf**
 - **drizzle-orm**
+- **turso-client** (LibSQL)
 
 ### ISC License
 - **lucide-react**
