@@ -39,6 +39,8 @@ export class BughouseMatch {
   result = "";
   reason = "";
   private disconnectTimer: any = null;
+  private botDecisionAt: Record<string, number> = {};
+  private botSelectedMove: Record<string, string | null> = {};
 
   lobby = {
     slots: {
@@ -563,55 +565,140 @@ export class BughouseMatch {
   tickBots() {
     if (!this.isActive || !this.isStarted) return;
     const roles = ["w0", "b0", "w1", "b1"] as const;
+    const now = Date.now();
     for (const role of roles) {
       const slot = this.lobby.slots[role];
       if (slot.isBot) {
-        this.handleBotTurn(role);
+        const boardIdx = role.endsWith('0') ? 0 : 1;
+        const player = role.startsWith('w') ? 'w' : 'b';
+        const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+
+        if (engine.turn() === player) {
+          if (!this.botDecisionAt[role]) {
+             // Start "thinking"
+             const selected = this.calculateBestBotMove(role);
+             if (selected) {
+                this.botSelectedMove[role] = selected;
+                // Think between 1.5 and 4.5 seconds
+                this.botDecisionAt[role] = now + 1500 + Math.random() * 3000;
+             }
+          } else if (now >= this.botDecisionAt[role]) {
+             // Execute thought
+             const move = this.botSelectedMove[role];
+             if (move) this.handleMove(move, null, role);
+             delete this.botDecisionAt[role];
+             delete this.botSelectedMove[role];
+          }
+        } else {
+           // Clear it if it's no longer our turn
+           delete this.botDecisionAt[role];
+           delete this.botSelectedMove[role];
+        }
       }
     }
   }
 
-  handleBotTurn(role: "w0" | "b0" | "w1" | "b1") {
+  private calculateBestBotMove(role: "w0" | "b0" | "w1" | "b1"): string | null {
     const boardIdx = role.endsWith('0') ? 0 : 1;
     const player = role.startsWith('w') ? 'w' : 'b';
     const engine = boardIdx === 0 ? this.engine0 : this.engine1;
 
-    if (engine.turn() !== player) return;
+    const pieceValues: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+    const pst: Record<string, number[]> = {
+        p: [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10, -5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, 5, 10, 25, 25, 10, 5, 5, 10, 10, 20, 30, 30, 20, 10, 10, 50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0],
+        n: [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 5, 5, 0, -20, -40, -30, 5, 10, 15, 15, 10, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 10, 15, 15, 10, 0, -30, -40, -20, 0, 0, 0, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
+        b: [-20, -10, -10, -10, -10, -10, -10, -20, -10, 5, 0, 0, 0, 0, 5, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -10, -10, -10, -10, -20]
+    };
 
-    // Pick a random legal move or drop
     const moves = engine.moves({ verbose: true });
-    
-    // Check bank
     let bank: string[];
     if (boardIdx === 0) bank = (player === "w" ? this.bank0w : this.bank0b);
     else bank = (player === "w" ? this.bank1w : this.bank1b);
 
-    const canDrop = bank.length > 0;
-    
-    // 30% chance to drop if possible
-    if (canDrop && Math.random() < 0.3) {
-       const pieceChar = bank[Math.floor(Math.random() * bank.length)];
-       const emptySquares: string[] = [];
-       // Find empty squares
-       for (let i = 0; i < 8; i++) {
-         for (let j = 0; j < 8; j++) {
-           const square = String.fromCharCode(97 + i) + (j + 1);
-           if (!engine.get(square as any)) {
-             if (pieceChar.toLowerCase() === 'p' && (j === 0 || j === 7)) continue;
-             emptySquares.push(square);
-           }
-         }
-       }
-       if (emptySquares.length > 0) {
-         const target = emptySquares[Math.floor(Math.random() * emptySquares.length)];
-         this.handleMove(`${pieceChar}@${target}`, null, role);
-         return;
-       }
+    const scoredMoves: { uci: string; score: number }[] = [];
+
+    for (const move of moves) {
+        let score = 0;
+        
+        // Piece-Square table bonus (simple center control)
+        const type = move.piece;
+        const targetSquareIdx = (8 - parseInt(move.to[1])) * 8 + (move.to.charCodeAt(0) - 97);
+        const correctedIdx = player === 'w' ? targetSquareIdx : 63 - targetSquareIdx;
+        if (pst[type]) score += pst[type][correctedIdx];
+
+        // Material bonus
+        if (move.captured) score += pieceValues[move.captured] * 12;
+
+        // Threat simulation
+        const testEngine = new Chess(engine.fen());
+        testEngine.move(move);
+        if (testEngine.isCheckmate()) score += 10000;
+        else if (testEngine.isCheck()) score += 80;
+
+        // Mobility
+        score += testEngine.moves().length;
+
+        // Safety check (very simplified: don't move to square attacked by more enemies than friends)
+        // Since we can't easily calculate total attackers in chess.js without heavy compute, 
+        // we just rely on mobility and PST. But at 1800 we at least check if target is attacked.
+        if (testEngine.attackers(move.to, player === 'w' ? 'b' : 'w').length > 0) {
+            score -= pieceValues[type] * 5; 
+        }
+
+        scoredMoves.push({ uci: move.lan || (move.from + move.to), score });
     }
 
-    if (moves.length > 0) {
-      const move = moves[Math.floor(Math.random() * moves.length)];
-      this.handleMove(move.lan || move.from + move.to, null, role);
+    // Drops are even stronger at 1800 level
+    if (bank.length > 0) {
+        const uniquePieces = [...new Set(bank)];
+        for (const piece of uniquePieces) {
+            const pieceType = piece.toLowerCase();
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 8; j++) {
+                    const square = String.fromCharCode(97 + i) + (j + 1);
+                    if (!engine.get(square as any)) {
+                        if (pieceType === 'p' && (j === 0 || j === 7)) continue;
+                        
+                        let score = 50; // Drop is valuable
+                        const dropUci = `${piece.toUpperCase()}@${square}`;
+                        
+                        try {
+                            const enemyKingPos = this.findKing(engine, player === 'w' ? 'b' : 'w');
+                            const dx = Math.abs(i - (enemyKingPos.charCodeAt(0) - 97));
+                            const dy = Math.abs(j - (parseInt(enemyKingPos[1]) - 1));
+                            
+                            // Tactical drops near king
+                            if (dx <= 1 && dy <= 1) score += 250;
+                            else if (dx <= 2 && dy <= 2) score += 100;
+                            
+                            // Center control drops
+                            if (i >= 2 && i <= 5 && j >= 2 && j <= 5) score += 40;
+
+                            scoredMoves.push({ uci: dropUci, score });
+                        } catch (e) {}
+                    }
+                }
+            }
+        }
     }
+
+    if (scoredMoves.length === 0) return null;
+    scoredMoves.sort((a, b) => b.score - a.score);
+    return scoredMoves[0].uci; // Take the definitely best move for 1800 feel
+  }
+
+  handleBotTurn(role: "w0" | "b0" | "w1" | "b1") {
+     // No-op, integrated into tickBots for timing
+  }
+
+  private findKing(chess: Chess, color: 'w' | 'b'): string {
+    for (let i = 0; i < 8; i++) {
+        for (let j = 1; j <= 8; j++) {
+            const square = String.fromCharCode(97 + i) + j;
+            const piece = chess.get(square as any);
+            if (piece && piece.type === 'k' && piece.color === color) return square;
+        }
+    }
+    return "e1";
   }
 }
