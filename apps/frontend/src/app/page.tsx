@@ -198,6 +198,13 @@ export default function Home() {
       </div>
 
       <MatchLoadingOverlay isVisible={isMatching} />
+      
+      <footer className="mt-8 pb-8 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-700/50">
+        © 2026 ANTIGRAVITYCHESS.IO. BY USING THIS SERVICE, YOU AGREE TO OUR 
+        <a href="https://github.com/AlexandrTorba/space3/blob/main/DISCLAIMER.md" target="_blank" rel="noopener noreferrer" className="ml-1 text-slate-600 hover:text-blue-500 underline decoration-slate-800 underline-offset-4 transition-colors">
+          DISCLAIMER
+        </a>
+      </footer>
     </main>
   );
 }
