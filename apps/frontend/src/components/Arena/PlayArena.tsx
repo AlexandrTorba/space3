@@ -20,7 +20,8 @@ import {
   AlertCircle,
   Trophy,
   CheckCircle,
-  Settings
+  Settings,
+  RotateCcw
 } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
@@ -84,10 +85,15 @@ function PlayArenaContent() {
   const [rematchState, setRematchState] = useState<"idle" | "offered" | "waiting">("idle");
   const [preMove, setPreMove] = useState<{from: string; to: string} | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<{from: string; to: string; color: string} | null>(null);
+  const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(color === "black" ? "black" : "white");
 
   const gameRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const flipBoard = () => {
+      setBoardOrientation(prev => prev === "white" ? "black" : "white");
+  };
 
   const logMessage = (msg: string) => {
       setLogs(prev => [...prev.slice(-49), msg]);
@@ -413,7 +419,7 @@ function PlayArenaContent() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
                {spectatorCount > 0 && (
                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-900/20 border border-emerald-500/20 text-emerald-400 font-mono text-xs shadow-inner">
                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
@@ -425,9 +431,20 @@ function PlayArenaContent() {
                    <Activity className="w-4 h-4" />
                    <span>{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
                </div>
-               <button onClick={() => setIsPanelOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
-                   <Settings className="w-5 h-5" />
-               </button>
+               <div className="flex items-center gap-2 md:gap-4">
+                 {mounted && (
+                    <button 
+                      onClick={flipBoard} 
+                      className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400"
+                      title="Flip Board"
+                    >
+                      <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
+                    </button>
+                 )}
+                 <button onClick={() => setIsPanelOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
+                    <Settings className="w-5 h-5" />
+                 </button>
+              </div>
             </div>
         </header>
 
@@ -472,7 +489,7 @@ function PlayArenaContent() {
                         options={{
                             position: fen,
                             onPieceDrop: onDrop as any,
-                            boardOrientation: isSpectator ? "white" : color as any,
+                            boardOrientation: boardOrientation,
                             darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                             lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                             animationDurationInMs: 200,

@@ -50,6 +50,8 @@ export default function BughouseArena() {
   });
   const [rematchState, setRematchState] = useState<"default" | "offered" | "waiting">("default");
   const [playerName, setPlayerName] = useState("Player");
+  const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(role.startsWith("b") ? "black" : "white");
+  const [partnerOrientation, setPartnerOrientation] = useState<"white" | "black">(role.startsWith("b") ? "white" : "black");
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
@@ -66,6 +68,11 @@ export default function BughouseArena() {
     }
     setPlayerName(name);
   }, []);
+
+  const flipBoards = () => {
+    setBoardOrientation(prev => prev === "white" ? "black" : "white");
+    setPartnerOrientation(prev => prev === "white" ? "black" : "white");
+  };
 
   const onDrop = (boardIdx: number, source: string, target: string) => {
      console.log(`[BUGHOUSE] onDrop ${boardIdx}: ${source} -> ${target}`);
@@ -320,7 +327,16 @@ export default function BughouseArena() {
                 <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over {state.result && `: ${state.result}`} {state.reason && `(${state.reason})`}</div>
               </div>
            )}
-           <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
+            {mounted && (
+                <button 
+                   onClick={flipBoards} 
+                   className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400"
+                   title="Flip Boards"
+                >
+                   <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
+                </button>
+            )}
+            <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
                <Settings className="w-4 h-4 md:w-6 md:h-6" />
            </button>
         </div>
@@ -348,7 +364,7 @@ export default function BughouseArena() {
                    options={{
                       id: `board${myBoardIdx}`,
                       position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                      boardOrientation: role.startsWith('b') ? "black" : "white",
+                      boardOrientation: boardOrientation,
                       darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                       lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                       pieces: stableCustomPieces as any,
@@ -410,7 +426,7 @@ export default function BughouseArena() {
                    options={{
                       id: `board${partnerBoardIdx}`,
                       position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                      boardOrientation: role.startsWith('b') ? "white" : "black",
+                       boardOrientation: partnerOrientation,
                       darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                       lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                       pieces: stableCustomPieces as any,

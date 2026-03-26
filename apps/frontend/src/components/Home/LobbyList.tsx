@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Info, Activity, ChevronRight } from "lucide-react";
+import { Globe, Info, Activity, ChevronRight, Swords, Zap } from "lucide-react";
+import MagicMenu from "./MagicMenu";
 
 interface LobbyListProps {
     activeTab: "lobby" | "bughouse" | "live";
@@ -19,29 +20,22 @@ export default function LobbyList({
 }: LobbyListProps) {
   return (
     <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] flex flex-col overflow-hidden min-h-[400px]">
-         <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar">
-            <div className="flex gap-6 min-w-max">
-               <button 
-                  onClick={() => onTabChange("lobby")}
-                  className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'lobby' ? 'text-white' : 'text-slate-600'}`}
-               >
-                  Standard <span className="ml-1 text-[10px] opacity-30">{challenges.filter(c => c.mode !== 'bughouse').length}</span>
-               </button>
-               <button 
-                  onClick={() => onTabChange("bughouse")}
-                  className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'bughouse' ? 'text-indigo-400' : 'text-slate-600'}`}
-               >
-                  Bughouse <span className="ml-1 text-[10px] opacity-30">{challenges.filter(c => c.mode === 'bughouse').length}</span>
-               </button>
-               <button 
-                  onClick={() => onTabChange("live")}
-                  className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'live' ? 'text-emerald-400' : 'text-slate-600'}`}
-               >
-                  Live <span className="ml-1 text-[10px] opacity-30">{Array.isArray(liveMatches) ? liveMatches.length : 0}</span>
-               </button>
-            </div>
-            <Globe className="w-5 h-5 text-slate-700 hidden md:block" />
-         </div>
+          <div className="px-6 py-6 border-b border-white/5 flex flex-col gap-6">
+             <div className="flex justify-between items-center px-4">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Matchmaking Lobby</div>
+                <Globe className="w-4 h-4 text-slate-700" />
+             </div>
+             
+             <MagicMenu 
+                activeTab={activeTab}
+                onChange={(id) => onTabChange(id as any)}
+                tabs={[
+                  { id: "lobby", label: "Standard", icon: <Swords />, color: "blue", count: challenges.filter(c => c.mode !== 'bughouse').length },
+                  { id: "bughouse", label: "Bughouse", icon: <Zap />, color: "indigo", count: challenges.filter(c => c.mode === 'bughouse').length },
+                  { id: "live", label: "Live", icon: <Activity />, color: "emerald", count: Array.isArray(liveMatches) ? liveMatches.length : 0 },
+                ]}
+             />
+          </div>
          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-3">
              <AnimatePresence mode="popLayout">
              {activeTab === "lobby" || activeTab === "bughouse" ? (
@@ -59,7 +53,7 @@ export default function LobbyList({
                           <div className={`w-2 h-10 rounded-full ${c.mode === 'bughouse' ? 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`} />
                           <div>
                              <div className="flex items-center gap-2">
-                                <span className="font-black text-sm">{c.playerName}</span>
+                                <span className="font-black text-sm truncate max-w-[120px] md:max-w-[200px]" title={c.playerName}>{c.playerName}</span>
                                 {c.mode === 'bughouse' && <span className="text-[8px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded font-black uppercase">BH {c.playersCount || 0}/4</span>}
                              </div>
                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{c.tc} min • {c.colorPref}</div>

@@ -2,7 +2,7 @@
 
 import { Crown, Activity, MessageSquare, Info } from "lucide-react";
 
-export default function HomeSidebar() {
+export default function HomeSidebar({ latency = "12" }: { latency?: string }) {
   return (
     <div className="flex flex-col gap-6">
         <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6">
@@ -29,7 +29,7 @@ export default function HomeSidebar() {
                   <Activity className="w-4 h-4 text-blue-400" />
                   Edge Latency
                </div>
-               <div className="text-2xl font-black text-blue-400">12<span className="text-sm ml-1 opacity-50">ms</span></div>
+               <div className="text-2xl font-black text-blue-400">{latency}<span className="text-sm ml-1 opacity-50">ms</span></div>
                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">System core is healthy and responding from the closest edge node.</p>
             </div>
             <div className="absolute top-[-20px] right-[-20px] w-24 h-24 bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all" />

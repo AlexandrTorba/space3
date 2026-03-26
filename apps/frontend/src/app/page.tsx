@@ -12,6 +12,8 @@ import ChallengeConfig from "@/components/Home/ChallengeConfig";
 import LobbyList from "@/components/Home/LobbyList";
 import HomeSidebar from "@/components/Home/HomeSidebar";
 import MatchLoadingOverlay from "@/components/Home/MatchLoadingOverlay";
+import HomeAnalysisView from "@/components/Home/HomeAnalysisView";
+import HomeSettingsView from "@/components/Home/HomeSettingsView";
 
 export default function Home() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function Home() {
   const { settings } = useSettings();
   
   const [status, setStatus] = useState("Connecting...");
+  const [latency, setLatency] = useState("12");
   const wsRef = useRef<WebSocket | null>(null);
   
   const playerName = settings.playerName;
@@ -33,6 +36,7 @@ export default function Home() {
   const [myChallengeId, setMyChallengeId] = useState<string | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [activeTab, setActiveTab] = useState<"lobby" | "bughouse" | "live">("lobby");
+  const [globalTab, setGlobalTab] = useState<"play" | "analysis" | "settings">("play");
 
   useEffect(() => {
      const fetchLive = () => {
@@ -65,6 +69,11 @@ export default function Home() {
      ws.onopen = () => setStatus("Connected");
      ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        if (data.type === "pong") {
+            const l = Date.now() - (ws as any).lastPing;
+            setLatency(String(l));
+            return;
+        }
         if (data.type === "challenges_list") setChallenges(data.challenges);
         else if (data.type === "waiting_created") setMyChallengeId(data.id);
         else if (data.type === "MATCH_FOUND") {
@@ -80,7 +89,18 @@ export default function Home() {
             }, 800);
         }
      };
-     return () => ws.close();
+
+     const pingInt = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+           (ws as any).lastPing = Date.now();
+           ws.send(JSON.stringify({ type: "ping" }));
+        }
+     }, 5000);
+
+     return () => {
+        clearInterval(pingInt);
+        ws.close();
+     };
   }, [playerName, router]);
 
   const getNameOrDefault = () => {
@@ -127,42 +147,54 @@ export default function Home() {
       <LobbyHeader 
         status={status} 
         playerName={playerName} 
-        onToggleSettings={() => setIsPanelOpen(true)}
-        onAnalysisClick={() => router.push("/analysis")}
+        activeGlobalTab={globalTab}
+        setActiveGlobalTab={setGlobalTab}
       />
 
-      <div className="max-w-[1400px] w-full mx-auto mt-24 z-10 grid grid-cols-1 xl:grid-cols-12 gap-8">
-          <div className="xl:col-span-3">
-              <ModeSelection 
-                isBughouse={activeTab === "bughouse"}
-                myChallengeId={myChallengeId}
-                onCreateChallenge={handleCreateChallenge}
-                t={t}
-              />
-          </div>
+      <div className="max-w-[1400px] w-full mx-auto mt-16 md:mt-20 z-10 grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
+          {globalTab === "play" ? (
+              <>
+                <div className="xl:col-span-3">
+                    <ModeSelection 
+                        isBughouse={activeTab === "bughouse"}
+                        myChallengeId={myChallengeId}
+                        onCreateChallenge={handleCreateChallenge}
+                        t={t}
+                    />
+                </div>
 
-          <div className="xl:col-span-6 flex flex-col gap-6">
-              <ChallengeConfig 
-                 timeControl={activeTab === "bughouse" ? bughouseTimeControl : timeControl}
-                 onTimeControlChange={activeTab === "bughouse" ? setBughouseTimeControl : setTimeControl}
-                 colorPref={activeTab === "bughouse" ? bughouseColorPref : colorPref}
-                 onColorPrefChange={activeTab === "bughouse" ? setBughouseColorPref : setColorPref}
-                 myChallengeId={myChallengeId}
-                 onCancelChallenge={handleCancelChallenge}
-              />
-              <LobbyList 
-                 activeTab={activeTab}
-                 onTabChange={setActiveTab}
-                 challenges={challenges}
-                 liveMatches={liveMatches}
-                 onAcceptChallenge={handleAcceptChallenge}
-                 onSpectateMatch={(id) => router.push(`/play/${id}?color=spectator`)}
-              />
-          </div>
+                <div className="xl:col-span-6 flex flex-col gap-6">
+                    <ChallengeConfig 
+                        timeControl={activeTab === "bughouse" ? bughouseTimeControl : timeControl}
+                        onTimeControlChange={activeTab === "bughouse" ? setBughouseTimeControl : setTimeControl}
+                        colorPref={activeTab === "bughouse" ? bughouseColorPref : colorPref}
+                        onColorPrefChange={activeTab === "bughouse" ? setBughouseColorPref : setColorPref}
+                        myChallengeId={myChallengeId}
+                        onCancelChallenge={handleCancelChallenge}
+                    />
+                    <LobbyList 
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        challenges={challenges}
+                        liveMatches={liveMatches}
+                        onAcceptChallenge={handleAcceptChallenge}
+                        onSpectateMatch={(id) => router.push(`/play/${id}?color=spectator`)}
+                    />
+                </div>
 
-          <div className="xl:col-span-3">
-              <HomeSidebar />
-          </div>
+                <div className="xl:col-span-3">
+                    <HomeSidebar latency={latency} />
+                </div>
+              </>
+          ) : globalTab === "analysis" ? (
+                <div className="col-span-12">
+                    <HomeAnalysisView />
+                </div>
+          ) : (
+                <div className="col-span-12">
+                    <HomeSettingsView />
+                </div>
+          )}
       </div>
 
       <MatchLoadingOverlay isVisible={isMatching} />
