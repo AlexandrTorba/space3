@@ -14,7 +14,7 @@ export const matches = sqliteTable('matches', {
   fen: text('fen').notNull().default('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-  videoEnabled: integer('video_enabled', { mode: 'boolean' }).default(false),
+  videoEnabled: integer('video_enabled', { mode: 'boolean' }).default(true),
 });
 
 export const moves = sqliteTable('moves', {
