@@ -68,15 +68,15 @@ export default function Home() {
         if (data.type === "challenges_list") setChallenges(data.challenges);
         else if (data.type === "waiting_created") setMyChallengeId(data.id);
         else if (data.type === "MATCH_FOUND") {
+            if (data.mode === "bughouse") {
+               router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${data.fillBots ? '&fillBots=1' : ''}`);
+               return;
+            }
             setIsMatching(true);
             setTimeout(() => {
-                if (data.mode === "bughouse") {
-                   router.push(`/play/bughouse/${data.matchId}?role=${data.role}&tc=${data.tc}${data.fillBots ? '&fillBots=1' : ''}`);
-                } else {
-                   const wParam = data.color === "white" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
-                   const bParam = data.color === "black" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
-                   router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${wParam}&b=${bParam}${data.isBot ? '&isBot=true' : ''}`);
-                }
+                const wParam = data.color === "white" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
+                const bParam = data.color === "black" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
+                router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${wParam}&b=${bParam}${data.isBot ? '&isBot=true' : ''}`);
             }, 800);
         }
      };
