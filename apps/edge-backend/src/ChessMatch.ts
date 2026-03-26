@@ -83,6 +83,7 @@ export class ChessMatch {
               id: this.matchId, whiteName: this.whiteName, blackName: this.blackName,
               timeControl: this.tc + (this.isUnlimited ? "" : "m"),
               status: 'active', fen: this.engine.fen(),
+              videoEnabled: true,
               createdAt: new Date(), updatedAt: new Date()
            }).onConflictDoNothing().execute().catch(() => {});
            this.state.waitUntil(p);

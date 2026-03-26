@@ -1,6 +1,8 @@
 import { MatchUpdateSchema, BughouseStatusSchema, MatchStatusSchema } from "@antigravity/contracts";
 import { fromBinary, toBinary, create } from "@bufbuild/protobuf";
 import { Chess } from "chess.js";
+import { createDb, matches } from "@antigravity/database";
+import { eq } from "drizzle-orm";
 import type { Env } from "./index";
 
 console.log("BUGHOUSE_VERSION_LOBBY_V1");
@@ -41,6 +43,8 @@ export class BughouseMatch {
   private disconnectTimer: any = null;
   private botDecisionAt: Record<string, number> = {};
   private botSelectedMove: Record<string, string | null> = {};
+  dbInserted: boolean = false;
+  db: any;
 
   lobby = {
     slots: {
@@ -69,6 +73,12 @@ export class BughouseMatch {
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
     this.env = env;
+
+    const url = this.env.TURSO_URL || this.env.LIBSQL_URL;
+    const token = this.env.TURSO_AUTH_TOKEN || this.env.LIBSQL_AUTH_TOKEN;
+    if (url && token) {
+       this.db = createDb(url, token);
+    }
   }
 
   async fetch(request: Request) {
@@ -98,7 +108,20 @@ export class BughouseMatch {
        }
     }
 
-    const pair = new WebSocketPair();
+    if (!this.dbInserted && this.db) {
+       this.dbInserted = true;
+       const p = this.db.insert(matches).values({
+          id: this.matchId,
+          whiteName: "White Team", blackName: "Black Team",
+          timeControl: tc || "3m",
+          status: 'active',
+          videoEnabled: true,
+          createdAt: new Date(), updatedAt: new Date()
+       }).onConflictDoNothing().execute().catch(() => {});
+       this.state.waitUntil(p);
+    }
+ 
+     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
     this.handleSession(server, url.searchParams.get("role") || "spectator");
