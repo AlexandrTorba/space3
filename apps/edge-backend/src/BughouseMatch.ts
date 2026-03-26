@@ -59,6 +59,7 @@ export class BughouseMatch {
   moveCount1 = 0;
 
   rematchOffers: Set<string> = new Set();
+  botTimer: any = null;
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;

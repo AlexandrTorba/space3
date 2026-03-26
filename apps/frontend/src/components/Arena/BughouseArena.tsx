@@ -435,40 +435,38 @@ export default function BughouseArena() {
                     const slot = (state?.lobby as any)?.[roleKey];
                     // Since session_id isn't fully implemented yet, we trust the backend to block invalid claims
                     return (
-                        <div key={roleKey} className="flex flex-col gap-3">
-                            <div className="flex justify-between items-center px-1">
-                                <span className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-widest">
-                                    {roleKey.startsWith('w') ? '⚪ WHITE' : '⚫ BLACK'} {roleKey.endsWith('0') ? 'Board 1' : 'Board 2'}
+                        <div 
+                            key={roleKey}
+                            onClick={() => !slot?.isClaimed && claimSlot(roleKey)}
+                            className={`h-16 rounded-2xl border-2 transition-all flex items-center gap-3 px-4 group relative ${
+                                slot?.sessionId === wsRef.current?.url ? 'bg-blue-500/20 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.2)]' :
+                                slot?.isClaimed 
+                                    ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 opacity-80' 
+                                    : 'bg-white/5 border-white/5 hover:border-white/20 text-slate-500 cursor-pointer'
+                            }`}
+                        >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${
+                                slot?.isClaimed ? 'bg-blue-500 text-white' : 'bg-white/10'
+                            }`}>
+                                {roleKey.toUpperCase()}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className={`text-[10px] font-black uppercase tracking-tighter ${slot?.isClaimed ? 'text-blue-300' : 'text-slate-600'}`}>
+                                    {roleKey.startsWith('w') ? 'White' : 'Black'} Board {roleKey.endsWith('0') ? '1' : '2'}
+                                </span>
+                                <span className={`text-xs font-bold truncate max-w-[120px] ${slot?.isClaimed ? 'text-white' : ''}`}>
+                                    {slot?.isClaimed ? slot.playerName : 'VACANT'}
                                 </span>
                             </div>
-                            <button 
-                                onClick={() => claimSlot(roleKey)}
-                                className={`h-16 rounded-2xl border-2 transition-all flex items-center gap-3 px-4 group relative overflow-hidden ${
-                                    slot?.isClaimed 
-                                        ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
-                                        : 'bg-white/5 border-white/5 hover:border-white/20 text-slate-500'
-                                }`}
-                            >
-                                <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-xs ${slot?.isClaimed ? 'bg-blue-500 border-white/20 text-white' : 'bg-white/10 border-white/10'}`}>
-                                    {roleKey.toUpperCase()}
-                                </div>
-                                <div className="flex flex-col items-start min-w-0">
-                                    <span className={`text-xs font-black truncate w-full ${slot?.isBot ? 'text-indigo-400' : ''}`}>
-                                        {slot?.isClaimed ? slot.playerName : "VACANT"}
-                                    </span>
-                                    {slot?.isReady && <span className="text-[8px] font-black text-green-500 uppercase tracking-widest animate-pulse">READY</span>}
-                                    {slot?.isBot && <span className="text-[7px] font-black text-indigo-500/50 uppercase tracking-[0.2em] leading-none">AI ENGINE</span>}
-                                </div>
-                                {!slot?.isClaimed && (
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); addBot(roleKey); }}
-                                        className="ml-auto bg-white/5 hover:bg-blue-500/20 text-[8px] font-black px-2 py-1.5 rounded-lg border border-white/5 hover:border-blue-500/30 transition-all active:scale-90"
-                                    >
-                                        + BOT
-                                    </button>
-                                )}
-                                {!slot?.isClaimed && <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />}
-                            </button>
+                            
+                            {!slot?.isClaimed && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); addBot(roleKey); }}
+                                    className="ml-auto bg-white/5 hover:bg-blue-500/20 text-[8px] font-black px-2 py-1.5 rounded-lg border border-white/10 transition-colors uppercase tracking-widest text-slate-400 hover:text-blue-400 group-hover:border-white/20"
+                                >
+                                    + BOT
+                                </button>
+                            )}
                         </div>
                     );
                  })}

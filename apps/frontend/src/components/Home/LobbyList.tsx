@@ -37,7 +37,7 @@ export default function LobbyList({
                   onClick={() => onTabChange("live")}
                   className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'live' ? 'text-emerald-400' : 'text-slate-600'}`}
                >
-                  Live <span className="ml-1 text-[10px] opacity-30">{liveMatches.length}</span>
+                  Live <span className="ml-1 text-[10px] opacity-30">{Array.isArray(liveMatches) ? liveMatches.length : 0}</span>
                </button>
             </div>
             <Globe className="w-5 h-5 text-slate-700 hidden md:block" />
@@ -78,7 +78,7 @@ export default function LobbyList({
                     </motion.div>
                   ))
              ) : (
-                liveMatches.map((m, i) => (
+              Array.isArray(liveMatches) && liveMatches.map((m, i) => (
                   <motion.button 
                      key={m.id}
                      initial={{ opacity: 0, y: 10 }}
@@ -104,7 +104,7 @@ export default function LobbyList({
 
               {((activeTab === "lobby" && challenges.filter(c => c.mode !== 'bughouse').length === 0) || 
                 (activeTab === "bughouse" && challenges.filter(c => c.mode === 'bughouse').length === 0) || 
-                (activeTab === "live" && liveMatches.length === 0)) && (
+                (activeTab === "live" && (!Array.isArray(liveMatches) || liveMatches.length === 0))) && (
                 <div className="flex flex-col items-center justify-center py-20 text-slate-600 opacity-20">
                    <Info className="w-12 h-12 mb-4" />
                    <div className="text-sm font-black uppercase tracking-widest">No Active Sessions</div>
