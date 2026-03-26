@@ -58,6 +58,9 @@ export class BughouseMatch {
   moveCount0 = 0;
   moveCount1 = 0;
 
+  rematchOffers: Set<string> = new Set();
+  botTimer: any = null;
+
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
     this.env = env;
@@ -106,7 +109,7 @@ export class BughouseMatch {
         } else if (update.event.case === "lobby") {
            this.handleLobbyAction(update.event.value, server);
         } else if (update.event.case === "action") {
-           // Handle actions if needed
+           this.handleAction(update.event.value, server);
         }
       } catch (e) {
         console.error("Protobuf decode error:", e);
@@ -186,6 +189,55 @@ export class BughouseMatch {
     }
 
     this.broadcastStatus();
+  }
+
+  handleAction(action: any, server: WebSocket) {
+    if (!["rematch", "resign"].includes(action.actionType)) return;
+    
+    if (action.actionType === "resign") {
+       if (!this.isActive) return;
+       // Find which team resigned
+       let result = "";
+       let reason = "resignation";
+       if (server === this.sockets.w0 || server === this.sockets.b1) result = "0-1";
+       else if (server === this.sockets.b0 || server === this.sockets.w1) result = "1-0";
+       if (result) this.endGame(result, reason);
+       return;
+    }
+
+    if (action.actionType === "rematch") {
+       // Identify role of server
+       let role = "";
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+          if ((this.sockets as any)[r] === server) {
+             role = r;
+             break;
+          }
+       }
+       if (!role) return;
+       this.rematchOffers.add(role);
+       
+       // Broadcast the offer
+       const offerUpdate = create(MatchUpdateSchema, {
+          event: { case: "action", value: { matchId: this.matchId, actionType: "rematch", playerColor: role } }
+       });
+       const binary = toBinary(MatchUpdateSchema, offerUpdate);
+       this.sessions.forEach(s => { if (s !== server) s.send(binary); });
+
+       // Check if all human players have offered
+       const humanPlayers = Object.entries(this.lobby.slots).filter(([r, s]) => s.isClaimed && !s.isBot).map(([r]) => r);
+       const allOffered = humanPlayers.every(r => this.rematchOffers.has(r));
+
+       if (allOffered && humanPlayers.length > 0) {
+          const newMatchId = crypto.randomUUID();
+          this.rematchOffers.clear();
+          const response = create(MatchUpdateSchema, {
+             event: { case: "action", value: { matchId: newMatchId, actionType: "rematch_accept", playerColor: "" } }
+          });
+          const acceptBinary = toBinary(MatchUpdateSchema, response);
+          this.sessions.forEach(s => s.send(acceptBinary));
+       }
+    }
   }
 
   deductTime(boardIdx: number) {
@@ -437,7 +489,6 @@ export class BughouseMatch {
      });
   }
 
-  botTimer: any = null;
 
   tickBots() {
     if (!this.isActive || !this.isStarted) return;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Chessboard } from "react-chessboard";
 import { Swords, Settings } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
@@ -10,6 +10,7 @@ import { MatchUpdateSchema } from "@antigravity/contracts";
 import { Chess, Square } from "chess.js";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
+import { RotateCcw } from "lucide-react";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
@@ -47,7 +48,9 @@ export default function BughouseArena() {
     w0: 180000, b0: 180000,
     w1: 180000, b1: 180000
   });
+  const [rematchState, setRematchState] = useState<"default" | "offered" | "waiting">("default");
   const wsRef = useRef<WebSocket | null>(null);
+  const router = useRouter(); 
 
   const logMessage = (msg: string) => {
     setLogs(prev => [...prev.slice(-19), msg]);
@@ -139,6 +142,20 @@ export default function BughouseArena() {
     });
   };
 
+  const sendAction = (actionType: "rematch" | "resign") => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          const update = create(MatchUpdateSchema, {
+              event: { case: "action", value: { matchId: id, actionType: actionType, playerColor: role } }
+          });
+          wsRef.current.send(toBinary(MatchUpdateSchema, update));
+      }
+  };
+
+  const handleRematch = () => {
+      sendAction("rematch");
+      setRematchState("waiting");
+  };
+
   useEffect(() => {
     setMounted(true);
     if (!id) return;
@@ -184,8 +201,19 @@ export default function BughouseArena() {
             } else if (bg.event.case === "lobbyInfo") {
                setLobby(bg.event.value);
             }
+        } else if (update.event.case === "action") {
+           const action = update.event.value;
+           if (action.actionType === "rematch") {
+               setRematchState("offered");
+               logMessage(`Rematch offered by ${action.playerColor}!`);
+           } else if (action.actionType === "rematch_accept") {
+               const newId = action.matchId;
+               const fillBotsParam = searchParams?.get("fillBots") === "1" ? "&fillBots=1" : "";
+               router.push(`/play/bughouse/${newId}?role=${role}${fillBotsParam}`);
+           }
         }
       } catch (e) {}
+
     };
 
     return () => ws.close();
@@ -260,7 +288,20 @@ export default function BughouseArena() {
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
-           {state && !myBoard?.isActive && <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over</div>}
+           {state && !myBoard?.isActive && (
+              <div className="flex gap-2 items-center">
+                {rematchState === "default" ? (
+                   <button onClick={handleRematch} className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-400 text-[10px] font-bold rounded-full transition-all uppercase flex items-center gap-1.5 shadow-lg shadow-blue-500/10 active:scale-95">
+                      <RotateCcw className="w-3 h-3" /> {t("rematch")}
+                   </button>
+                ) : rematchState === "waiting" ? (
+                   <div className="px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Waiting...</div>
+                ) : (
+                   <button onClick={handleRematch} className="px-3 py-1 bg-green-500 shadow-xl shadow-green-500/20 text-white text-[10px] font-black rounded-full animate-bounce uppercase">{t("accept_draw") === "Aceptar Tablas" ? "Revancha" : "Accept Rematch"}</button>
+                )}
+                <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over</div>
+              </div>
+           )}
            <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
                <Settings className="w-4 h-4 md:w-6 md:h-6" />
            </button>
