@@ -109,7 +109,7 @@ export default function BughouseArena() {
 
   const claimSlot = (slotRole: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const name = (typeof window !== "undefined" ? localStorage.getItem("ag_username") : "") || "Player";
+    const name = (typeof window !== "undefined" ? localStorage.getItem("ag_name") : "") || "Player";
     const update = create(MatchUpdateSchema, {
        event: { case: "lobby", value: { type: "claim", role: slotRole, name } }
     });

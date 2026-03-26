@@ -82,9 +82,22 @@ export class Lobby {
               return;
           }
 
+          if (mode === "bughouse") {
+             const matchId = crypto.randomUUID();
+             this.challenges.set(matchId, { 
+                id: matchId, socket: server, playerName: pName, tc, colorPref, mode,
+                players: [{ name: pName, socket: server, role: "w0" }]
+             });
+             this.broadcastChallenges();
+             server.send(JSON.stringify({ 
+                type: "MATCH_FOUND", matchId, mode: "bughouse", role: "w0", tc, opponent: "Bughouse Lobby"
+             }));
+             return;
+          }
+
           this.challenges.set(id, { 
              id, socket: server, playerName: pName, tc, colorPref, mode,
-             players: [{ name: pName, socket: server, role: mode === "bughouse" ? "w0" : "" }]
+             players: [{ name: pName, socket: server, role: "" }]
           });
           this.broadcastChallenges();
           server.send(JSON.stringify({ type: "waiting_created", id }));
@@ -95,23 +108,11 @@ export class Lobby {
              const pName = data.playerName || "Гравець";
 
              if (challenge.mode === "bughouse") {
-                const roles = ["w0", "b0", "w1", "b1"];
-                const nextRole = roles[challenge.players.length];
-                challenge.players.push({ name: pName, socket: server, role: nextRole });
-                
-                if (challenge.players.length < 4) {
-                   this.broadcastChallenges();
-                   server.send(JSON.stringify({ type: "waiting_created", id: challenge.id })); 
-                   return;
-                }
-                
-                const matchId = crypto.randomUUID();
-                challenge.players.forEach(p => {
-                    p.socket.send(JSON.stringify({
-                        type: "MATCH_FOUND", matchId, mode: "bughouse", role: p.role,
-                        tc: challenge.tc, opponent: "Team Match"
-                    }));
-                });
+                server.send(JSON.stringify({
+                   type: "MATCH_FOUND", matchId: challenge.id, mode: "bughouse", role: "spectator",
+                   tc: challenge.tc, opponent: challenge.playerName
+                }));
+                return;
              } else {
                 const matchId = crypto.randomUUID();
                 let creatorColor = "white";
@@ -189,7 +190,7 @@ export class Lobby {
   removeUserChallenges(server: WebSocket): boolean {
      let removed = false;
      for (const [id, c] of this.challenges.entries()) {
-         if (c.socket === server) {
+         if (c.socket === server && c.mode !== "bughouse") {
              this.challenges.delete(id);
              removed = true;
          }
