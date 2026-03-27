@@ -1,0 +1,5 @@
+DAILY_API_KEY=your-daily-api-key
+DAILY_DOMAIN=your-daily-domain
+ADMIN_SECRET=your-secure-admin-secret
+LIBSQL_URL=libsql://your-db-url.turso.io
+LIBSQL_AUTH_TOKEN=your-db-auth-token-here
