@@ -126,6 +126,7 @@ export class BughouseMatch {
           createdAt: new Date(), updatedAt: new Date()
        }).onConflictDoNothing().execute().catch(() => {});
        this.state.waitUntil(p);
+       this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000);
     }
  
     const pair = new WebSocketPair();
@@ -220,20 +221,16 @@ export class BughouseMatch {
       }
 
       if (this.isActive && humanPlayersCount === 0) {
-         console.log("[BUGHOUSE] No human players left. Starting 60s grace period before cleanup.");
+         console.log(`[BUGHOUSE] No human players left. Starting 60s grace period and setting persistence alarm.`);
          if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
          this.disconnectTimer = setTimeout(() => {
             if (this.isActive && this.sessions.size === 0) {
-               console.log("[BUGHOUSE] Grace period expired. Performing cleanup.");
-               if (!this.isStarted && this.db) {
-                  // If it never started and nobody is here, delete from DB to stay clean
-                  const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-                  this.state.waitUntil(p);
-               } else {
-                  this.endGame("Aborted", "all_players_disconnected_timeout");
-               }
+               console.log("[BUGHOUSE] Memory Grace expired. Performing cleanup.");
+               this.forceCleanup();
             }
          }, 60000); 
+         // Persistent alarm for 65s just in case DO is evicted
+         this.state.storage.setAlarm(Date.now() + 65000);
       } else {
          this.broadcastStatus();
       }
@@ -429,6 +426,22 @@ export class BughouseMatch {
     }
     
     this.broadcastStatus();
+  }
+
+  forceCleanup() {
+     if (!this.isActive || this.sessions.size > 0) return;
+     console.log(`[BUGHOUSE] Force cleanup for ${this.matchId}`);
+     if (!this.isStarted && this.db) {
+        const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+        this.state.waitUntil(p);
+     } else {
+        this.endGame("Aborted", "all_players_disconnected_timeout");
+     }
+  }
+
+  async alarm() {
+     console.log(`[BUGHOUSE] Alarm triggered for ${this.matchId}`);
+     this.forceCleanup();
   }
 
   handleMove(uci: string, server: WebSocket | null, botRole?: string) {
