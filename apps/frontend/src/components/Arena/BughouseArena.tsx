@@ -104,17 +104,18 @@ export default function BughouseArena() {
      return true;
   };
 
-  const onSquareClick = (boardIdx: number, square: string) => {
-      if (!selectedPiece || selectedPiece.board !== boardIdx) return;
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+  const onSquareClick = (boardIdx: number, squareArg: any) => {
+    const square = typeof squareArg === 'string' ? squareArg : (squareArg?.square || squareArg?.id);
+    if (!square || !selectedPiece || selectedPiece.board !== boardIdx) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-      const uci = `${selectedPiece.char}@${square}`;
-      console.log(`[BUGHOUSE] Drop Request: ${uci}`);
-      const update = create(MatchUpdateSchema, {
-          event: { case: "move", value: { matchId: id, uci, timestamp: BigInt(Date.now()) } }
-      });
-      wsRef.current.send(toBinary(MatchUpdateSchema, update));
-      setSelectedPiece(null);
+    const uci = `${selectedPiece.char}@${square}`;
+    console.log(`[BUGHOUSE] Drop Request: ${uci}`);
+    const update = create(MatchUpdateSchema, {
+      event: { case: "move", value: { matchId: id, uci, timestamp: BigInt(Date.now()) } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+    setSelectedPiece(null);
   };
 
   const completePromotion = (promotionPiece: string) => {
@@ -398,17 +399,17 @@ export default function BughouseArena() {
 
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl relative landscape:max-h-[60vh] landscape:w-auto mx-auto">
                 <Chessboard 
-                   options={{
-                      id: `board${myBoardIdx}`,
-                      position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                      boardOrientation: boardOrientation,
-                      darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
-                      lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
-                      pieces: stableCustomPieces as any,
-                      onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(myBoardIdx, sourceSquare, targetSquare)) as any,
-                      onSquareClick: ((s: any) => onSquareClick(myBoardIdx, s)) as any,
-                      allowDragging: (role !== "spectator") && !state?.board0?.result && !selectedPiece
-                   } as any}
+                    options={{
+                        id: `board${myBoardIdx}`,
+                        position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                        boardOrientation: boardOrientation,
+                        darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
+                        lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
+                        pieces: stableCustomPieces as any,
+                        onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(myBoardIdx, sourceSquare, targetSquare)) as any,
+                        onSquareClick: ((s: any) => onSquareClick(myBoardIdx, s)) as any,
+                        allowDragging: (role !== "spectator") && !myBoard?.result && !selectedPiece
+                    } as any}
                 />
                 
                 {pendingPromotion && pendingPromotion.boardIdx === myBoardIdx && (
@@ -471,17 +472,17 @@ export default function BughouseArena() {
 
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl opacity-80 hover:opacity-100 transition-opacity landscape:max-h-[60vh] landscape:w-auto mx-auto relative">
                 <Chessboard 
-                   options={{
-                      id: `board${partnerBoardIdx}`,
-                      position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                      boardOrientation: partnerOrientation,
-                      darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
-                      lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
-                      pieces: stableCustomPieces as any,
-                      onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(partnerBoardIdx, sourceSquare, targetSquare)) as any,
-                      onSquareClick: ((s: any) => onSquareClick(partnerBoardIdx, s)) as any,
-                      allowDragging: false // Cannot drag on partner board
-                   } as any}
+                    options={{
+                        id: `board${partnerBoardIdx}`,
+                        position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                        boardOrientation: partnerOrientation,
+                        darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
+                        lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
+                        pieces: stableCustomPieces as any,
+                        onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(partnerBoardIdx, sourceSquare, targetSquare)) as any,
+                        onSquareClick: ((s: any) => onSquareClick(partnerBoardIdx, s)) as any,
+                        allowDragging: (role !== "spectator") && !partnerBoard?.result && !selectedPiece
+                    } as any}
                 />
             </div>
 

@@ -34,12 +34,13 @@ export default {
 
     // Handle CORS preflight
     const origin = request.headers.get("Origin");
+    const corsHeaders = CORS_HEADERS(origin);
     
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: CORS_HEADERS(origin) });
+      return new Response(null, { headers: corsHeaders });
     }
 
-    let response: Response | undefined; // Initialize as undefined
+    let response: Response | undefined;
 
     if (path.startsWith("/lobby")) {
       const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
@@ -317,7 +318,7 @@ export default {
                 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
               }
 
-            } catch (e) {
+            } catch (e: any) {
                console.error("Daily API Error:", e);
                response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: e.message || e.toString() }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
