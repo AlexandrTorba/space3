@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/chess.proto.
  */
 export const file_v1_chess: GenFile = /*@__PURE__*/
-  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSI3CgtMb2JieUFjdGlvbhIMCgR0eXBlGAEgASgJEgwKBHJvbGUYAiABKAkSDAoEbmFtZRgDIAEoCSLGAQoOQnVnaG91c2VTdGF0dXMSJQoGYm9hcmQwGAEgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSJQoGYm9hcmQxGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSDgoGYmFuazB3GAMgAygJEg4KBmJhbmswYhgEIAMoCRIOCgZiYW5rMXcYBSADKAkSDgoGYmFuazFiGAYgAygJEiYKBWxvYmJ5GAcgASgLMhcuY2hlc3MudjEuQnVnaG91c2VMb2JieSLSAgoNQnVnaG91c2VMb2JieRIuCgJ3MBgBIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMBgCIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJ3MRgDIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMRgEIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIUCgxpc19hbGxfcmVhZHkYBSABKAgaawoKUGxheWVyU2xvdBISCgppc19jbGFpbWVkGAEgASgIEhMKC3BsYXllcl9uYW1lGAIgASgJEhAKCGlzX3JlYWR5GAMgASgIEhIKCnNlc3Npb25faWQYBCABKAkSDgoGaXNfYm90GAUgASgIIs8BCg5CdWdob3VzZVVwZGF0ZRIQCghtYXRjaF9pZBgBIAEoCRIeCgRtb3ZlGAIgASgLMg4uY2hlc3MudjEuTW92ZUgAEioKBnN0YXR1cxgDIAEoCzIYLmNoZXNzLnYxLkJ1Z2hvdXNlU3RhdHVzSAASJwoGYWN0aW9uGAQgASgLMhUuY2hlc3MudjEuTWF0Y2hBY3Rpb25IABItCgpsb2JieV9pbmZvGAUgASgLMhcuY2hlc3MudjEuQnVnaG91c2VMb2JieUgAQgcKBWV2ZW50It4BCgtNYXRjaFVwZGF0ZRIeCgRtb3ZlGAEgASgLMg4uY2hlc3MudjEuTW92ZUgAEicKBnN0YXR1cxgCIAEoCzIVLmNoZXNzLnYxLk1hdGNoU3RhdHVzSAASJwoGYWN0aW9uGAMgASgLMhUuY2hlc3MudjEuTWF0Y2hBY3Rpb25IABIsCghidWdob3VzZRgEIAEoCzIYLmNoZXNzLnYxLkJ1Z2hvdXNlVXBkYXRlSAASJgoFbG9iYnkYBSABKAsyFS5jaGVzcy52MS5Mb2JieUFjdGlvbkgAQgcKBWV2ZW50YgZwcm90bzM");
+  fileDesc("Cg52MS9jaGVzcy5wcm90bxIIY2hlc3MudjEiOAoETW92ZRIQCghtYXRjaF9pZBgBIAEoCRILCgN1Y2kYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDItsBCgtNYXRjaFN0YXR1cxILCgNmZW4YASABKAkSEQoJaXNfYWN0aXZlGAIgASgIEhAKCHdoaXRlX2lkGAMgASgJEhAKCGJsYWNrX2lkGAQgASgJEg4KBnJlc3VsdBgFIAEoCRIOCgZyZWFzb24YBiABKAkSFQoNd2hpdGVfdGltZV9tcxgHIAEoBRIVCg1ibGFja190aW1lX21zGAggASgFEhIKCndoaXRlX25hbWUYCSABKAkSEgoKYmxhY2tfbmFtZRgKIAEoCRISCgpzcGVjdGF0b3JzGAsgASgFIkoKC01hdGNoQWN0aW9uEhAKCG1hdGNoX2lkGAEgASgJEhMKC2FjdGlvbl90eXBlGAIgASgJEhQKDHBsYXllcl9jb2xvchgDIAEoCSI3CgtMb2JieUFjdGlvbhIMCgR0eXBlGAEgASgJEgwKBHJvbGUYAiABKAkSDAoEbmFtZRgDIAEoCSLGAQoOQnVnaG91c2VTdGF0dXMSJQoGYm9hcmQwGAEgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSJQoGYm9hcmQxGAIgASgLMhUuY2hlc3MudjEuTWF0Y2hTdGF0dXMSDgoGYmFuazB3GAMgAygJEg4KBmJhbmswYhgEIAMoCRIOCgZiYW5rMXcYBSADKAkSDgoGYmFuazFiGAYgAygJEiYKBWxvYmJ5GAcgASgLMhcuY2hlc3MudjEuQnVnaG91c2VMb2JieSLSAgoNQnVnaG91c2VMb2JieRIuCgJ3MBgBIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMBgCIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJ3MRgDIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIuCgJiMRgEIAEoCzIiLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnkuUGxheWVyU2xvdBIUCgxpc19hbGxfcmVhZHkYBSABKAgaawoKUGxheWVyU2xvdBISCgppc19jbGFpbWVkGAEgASgIEhMKC3BsYXllcl9uYW1lGAIgASgJEhAKCGlzX3JlYWR5GAMgASgIEhIKCnNlc3Npb25faWQYBCABKAkSDgoGaXNfYm90GAUgASgIIj4KC0NoYXRNZXNzYWdlEg4KBnNlbmRlchgBIAEoCRIMCgR0ZXh0GAIgASgJEhEKCXRpbWVzdGFtcBgDIAEoAyL2AQoOQnVnaG91c2VVcGRhdGUSEAoIbWF0Y2hfaWQYASABKAkSHgoEbW92ZRgCIAEoCzIOLmNoZXNzLnYxLk1vdmVIABIqCgZzdGF0dXMYAyABKAsyGC5jaGVzcy52MS5CdWdob3VzZVN0YXR1c0gAEicKBmFjdGlvbhgEIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSAASLQoKbG9iYnlfaW5mbxgFIAEoCzIXLmNoZXNzLnYxLkJ1Z2hvdXNlTG9iYnlIABIlCgRjaGF0GAYgASgLMhUuY2hlc3MudjEuQ2hhdE1lc3NhZ2VIAEIHCgVldmVudCKFAgoLTWF0Y2hVcGRhdGUSHgoEbW92ZRgBIAEoCzIOLmNoZXNzLnYxLk1vdmVIABInCgZzdGF0dXMYAiABKAsyFS5jaGVzcy52MS5NYXRjaFN0YXR1c0gAEicKBmFjdGlvbhgDIAEoCzIVLmNoZXNzLnYxLk1hdGNoQWN0aW9uSAASLAoIYnVnaG91c2UYBCABKAsyGC5jaGVzcy52MS5CdWdob3VzZVVwZGF0ZUgAEiYKBWxvYmJ5GAUgASgLMhUuY2hlc3MudjEuTG9iYnlBY3Rpb25IABIlCgRjaGF0GAYgASgLMhUuY2hlc3MudjEuQ2hhdE1lc3NhZ2VIAEIHCgVldmVudGIGcHJvdG8z");
 
 /**
  * @generated from message chess.v1.Move
@@ -292,6 +292,33 @@ export const BughouseLobby_PlayerSlotSchema: GenMessage<BughouseLobby_PlayerSlot
   messageDesc(file_v1_chess, 5, 0);
 
 /**
+ * @generated from message chess.v1.ChatMessage
+ */
+export type ChatMessage = Message<"chess.v1.ChatMessage"> & {
+  /**
+   * @generated from field: string sender = 1;
+   */
+  sender: string;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+
+  /**
+   * @generated from field: int64 timestamp = 3;
+   */
+  timestamp: bigint;
+};
+
+/**
+ * Describes the message chess.v1.ChatMessage.
+ * Use `create(ChatMessageSchema)` to create a new message.
+ */
+export const ChatMessageSchema: GenMessage<ChatMessage> = /*@__PURE__*/
+  messageDesc(file_v1_chess, 6);
+
+/**
  * @generated from message chess.v1.BughouseUpdate
  */
 export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
@@ -327,6 +354,12 @@ export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
      */
     value: BughouseLobby;
     case: "lobbyInfo";
+  } | {
+    /**
+     * @generated from field: chess.v1.ChatMessage chat = 6;
+     */
+    value: ChatMessage;
+    case: "chat";
   } | { case: undefined; value?: undefined };
 };
 
@@ -335,7 +368,7 @@ export type BughouseUpdate = Message<"chess.v1.BughouseUpdate"> & {
  * Use `create(BughouseUpdateSchema)` to create a new message.
  */
 export const BughouseUpdateSchema: GenMessage<BughouseUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 6);
+  messageDesc(file_v1_chess, 7);
 
 /**
  * @generated from message chess.v1.MatchUpdate
@@ -376,6 +409,12 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
      */
     value: LobbyAction;
     case: "lobby";
+  } | {
+    /**
+     * @generated from field: chess.v1.ChatMessage chat = 6;
+     */
+    value: ChatMessage;
+    case: "chat";
   } | { case: undefined; value?: undefined };
 };
 
@@ -384,5 +423,5 @@ export type MatchUpdate = Message<"chess.v1.MatchUpdate"> & {
  * Use `create(MatchUpdateSchema)` to create a new message.
  */
 export const MatchUpdateSchema: GenMessage<MatchUpdate> = /*@__PURE__*/
-  messageDesc(file_v1_chess, 7);
+  messageDesc(file_v1_chess, 8);
 

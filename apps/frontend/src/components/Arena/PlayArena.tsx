@@ -91,6 +91,7 @@ function PlayArenaContent() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(color === "black" ? "black" : "white");
   const [showVideo, setShowVideo] = useState(false);
   const [videoAuthorized, setVideoAuthorized] = useState(false);
+  const [chatInput, setChatInput] = useState("");
 
   const gameRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
@@ -198,6 +199,10 @@ function PlayArenaContent() {
                 const newColor = isSpectator ? "spectator" : (color === "white" ? "black" : "white");
                 router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}`);
              }
+          }
+          else if (update.event.case === "chat") {
+             const chat = update.event.value;
+             logMessage(`${chat.sender}: ${chat.text}`);
           }
       } catch (err) {
           console.error(err);
@@ -389,6 +394,18 @@ function PlayArenaContent() {
       a.download = `antigravity_${wName}_vs_${bName}_${id.substring(0,8)}.pgn`;
       a.click();
       URL.revokeObjectURL(url);
+  };
+
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+       const u = create(MatchUpdateSchema, {
+          event: { case: "chat", value: { text: chatInput, sender: "", timestamp: BigInt(0) } }
+       });
+       wsRef.current.send(toBinary(MatchUpdateSchema, u));
+       setChatInput("");
+    }
   };
   
   const handleCopyPGN = () => {
@@ -686,6 +703,30 @@ function PlayArenaContent() {
                             </div>
                         )}
                     </div>
+                </div>
+
+                <div className="bg-slate-900/60 border border-white/5 rounded-3xl overflow-hidden flex flex-col h-48 shadow-2xl backdrop-blur-xl group">
+                    <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                           <Activity className="w-4 h-4 text-blue-500"/> Chat & Logs
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-[10px] text-slate-400">
+                        {logs.map((l, i) => (
+                             <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>
+                                 {l}
+                             </div>
+                        ))}
+                    </div>
+                    <form onSubmit={handleChatSubmit} className="p-2 bg-white/5 border-t border-white/5 flex gap-2">
+                        <input 
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Type to chat..."
+                            className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                        />
+                    </form>
                 </div>
 
                 <div className="bg-blue-900/5 border border-blue-500/10 rounded-2xl p-4 flex flex-col gap-2">

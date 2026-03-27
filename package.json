@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "concurrently -k -p \"[{name}]\" -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run dev -w apps/edge-backend\" \"npm run dev -w apps/frontend\"",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "deploy": "bash deploy.sh"
   },
   "devDependencies": {
     "@bufbuild/protobuf": "^2.11.0",

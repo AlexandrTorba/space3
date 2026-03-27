@@ -10,7 +10,7 @@ import { MatchUpdateSchema } from "@antigravity/contracts";
 import { Chess, Square } from "chess.js";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
-import { RotateCcw, Video, VideoOff } from "lucide-react";
+import { RotateCcw, Video, VideoOff, CheckCircle } from "lucide-react";
 import VideoChat from "./VideoChat";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
@@ -55,6 +55,7 @@ export default function BughouseArena() {
   const [partnerOrientation, setPartnerOrientation] = useState<"white" | "black">(role.startsWith("b") ? "white" : "black");
   const [showVideo, setShowVideo] = useState(false);
   const [videoAuthorized, setVideoAuthorized] = useState(false);
+  const [chatInput, setChatInput] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
@@ -97,49 +98,48 @@ export default function BughouseArena() {
 
      const uci = source + target;
      const update = create(MatchUpdateSchema, {
-        event: { case: "move", value: { uci, matchId: id, timestamp: BigInt(Date.now()) } }
+        event: { case: "move", value: { matchId: id, uci, timestamp: BigInt(Date.now()) } }
      });
      wsRef.current.send(toBinary(MatchUpdateSchema, update));
      return true;
   };
 
-  const completePromotion = (piece: string) => {
-     if (!pendingPromotion || !wsRef.current) return;
-     const { boardIdx, source, target } = pendingPromotion;
-     const uci = source + target + piece.toLowerCase();
-     const update = create(MatchUpdateSchema, {
-         event: { case: "move", value: { uci, matchId: id, timestamp: BigInt(Date.now()) } }
-     });
-     wsRef.current.send(toBinary(MatchUpdateSchema, update));
-     setPendingPromotion(null);
+  const onSquareClick = (boardIdx: number, square: string) => {
+      if (!selectedPiece || selectedPiece.board !== boardIdx) return;
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+      const uci = `${selectedPiece.char}@${square}`;
+      console.log(`[BUGHOUSE] Drop Request: ${uci}`);
+      const update = create(MatchUpdateSchema, {
+          event: { case: "move", value: { matchId: id, uci, timestamp: BigInt(Date.now()) } }
+      });
+      wsRef.current.send(toBinary(MatchUpdateSchema, update));
+      setSelectedPiece(null);
   };
 
-  const onSquareClick = (boardIdx: number, square: any) => {
-     if (selectedPiece && selectedPiece.board === boardIdx) {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-        const targetSquare = typeof square === 'string' ? square : (square?.square || square);
-        const uci = `${selectedPiece.char.toUpperCase()}@${targetSquare}`;
-        console.log(`[BUGHOUSE] Sending Drop: ${uci}`);
-        const update = create(MatchUpdateSchema, {
-            event: { case: "move", value: { uci, matchId: id, timestamp: BigInt(Date.now()) } }
-        });
-        wsRef.current.send(toBinary(MatchUpdateSchema, update));
-        setSelectedPiece(null);
-     }
-  }
-
-  const claimSlot = (slotRole: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const update = create(MatchUpdateSchema, {
-       event: { case: "lobby", value: { type: "claim", role: slotRole, name: playerName } }
-    });
-    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  const completePromotion = (promotionPiece: string) => {
+      if (!pendingPromotion || !wsRef.current) return;
+      const { source, target, boardIdx } = pendingPromotion;
+      const uci = source + target + promotionPiece;
+      const update = create(MatchUpdateSchema, {
+          event: { case: "move", value: { matchId: id, uci, timestamp: BigInt(Date.now()) } }
+      });
+      wsRef.current.send(toBinary(MatchUpdateSchema, update));
+      setPendingPromotion(null);
   };
 
   const toggleReady = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const update = create(MatchUpdateSchema, {
-       event: { case: "lobby", value: { type: "ready", role: "", name: "" } }
+       event: { case: "lobby", value: { type: "ready", role, name: playerName } }
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, update));
+  };
+
+  const claimSlot = (slotRole: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const update = create(MatchUpdateSchema, {
+       event: { case: "lobby", value: { type: "claim", role: slotRole, name: playerName } }
     });
     wsRef.current.send(toBinary(MatchUpdateSchema, update));
   };
@@ -248,6 +248,9 @@ export default function BughouseArena() {
                const fillBotsParam = searchParams?.get("fillBots") === "1" ? "&fillBots=1" : "";
                router.push(`/play/bughouse/${newId}?role=${role}${fillBotsParam}`);
            }
+        } else if (update.event.case === "chat") {
+            const chat = update.event.value;
+            logMessage(`${chat.sender}: ${chat.text}`);
         }
       } catch (e) {}
 
@@ -300,6 +303,25 @@ export default function BughouseArena() {
      return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+       const u = create(MatchUpdateSchema, {
+          event: { case: "chat", value: { text: chatInput, sender: "", timestamp: BigInt(Date.now()) } }
+       });
+       wsRef.current.send(toBinary(MatchUpdateSchema, u));
+       setChatInput("");
+    }
+  };
+
+  const getPlayerLabel = (r: string) => {
+     const slot = (state?.lobby as any)?.[r];
+     if (slot?.isClaimed) return slot.playerName;
+     if (slot?.isBot) return "Bot Engine";
+     return r.toUpperCase();
+  };
+
   const isTeam2 = role.endsWith('1');
   const myBoardIdx = isTeam2 ? 1 : 0;
   const partnerBoardIdx = 1 - myBoardIdx;
@@ -332,31 +354,22 @@ export default function BughouseArena() {
                       <RotateCcw className="w-3 h-3" /> {t("rematch")}
                    </button>
                 ) : rematchState === "waiting" ? (
-                   <div className="px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Waiting...</div>
+                    <span className="text-[10px] p-2 text-slate-500 animate-pulse">{t("waiting" as any)}...</span>
                 ) : (
-                   <button onClick={handleRematch} className="px-3 py-1 bg-green-500 shadow-xl shadow-green-500/20 text-white text-[10px] font-black rounded-full animate-bounce uppercase">{t("accept_draw") === "Aceptar Tablas" ? "Revancha" : "Accept Rematch"}</button>
+                    <button onClick={handleRematch} className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold rounded-full transition-all uppercase flex items-center gap-1.5 shadow-lg shadow-emerald-500/10 animate-bounce">
+                        {t("accept_rematch" as any)}
+                    </button>
                 )}
-                <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold rounded-full animate-pulse uppercase">Game Over {state.result && `: ${state.result}`} {state.reason && `(${state.reason})`}</div>
+                 <button onClick={() => sendAction("resign")} className="p-2 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-full transition-all active:scale-95">
+                    <RotateCcw className="w-4 h-4 md:w-6 md:h-6 rotate-45" />
+                 </button>
               </div>
            )}
-            {mounted && (
-                <button 
-                   onClick={flipBoards} 
-                   className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400"
-                   title="Flip Boards"
-                >
-                   <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
+           {videoAuthorized && (
+                <button onClick={() => setShowVideo(!showVideo)} className={`p-2 rounded-full transition-all border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}>
+                   {showVideo ? <Video className="w-4 h-4 md:w-6 md:h-6" /> : <VideoOff className="w-4 h-4 md:w-6 md:h-6" />}
                 </button>
-            )}
-            {videoAuthorized && (
-               <button 
-                  onClick={() => setShowVideo(!showVideo)} 
-                  className={`p-2 transition-all rounded-full border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-slate-400'}`}
-                  title="Toggle Video Chat"
-               >
-                  {showVideo ? <Video className="w-4 h-4 md:w-6 md:h-6" /> : <VideoOff className="w-4 h-4 md:w-6 md:h-6" />}
-               </button>
-            )}
+           )}
             <button onClick={() => setIsPanelOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
                <Settings className="w-4 h-4 md:w-6 md:h-6" />
            </button>
@@ -367,10 +380,12 @@ export default function BughouseArena() {
         
         {/* Your Board */}
         <div className="flex flex-col gap-1 md:gap-4 w-full">
-            <div className="flex justify-between items-end px-2">
-                <div className="text-[9px] md:text-xs uppercase font-black text-slate-500">Board {myBoardIdx} (You)</div>
-                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(myBoard?.fen).turn() === 'w' ? (clocks as any)[('w' + myBoardIdx)] : (clocks as any)[('b' + myBoardIdx)]) < 10000 ? 'text-red-500' : 'text-white/80'}`}>
-                    {formatTime(myBoardIdx === 0 ? (new Chess(myBoard?.fen).turn() === 'w' ? clocks.w0 : clocks.b0) : (new Chess(myBoard?.fen).turn() === 'w' ? clocks.w1 : clocks.b1))}
+            <div className="flex justify-between items-center px-2 bg-white/5 rounded-t-xl py-1 border-x border-t border-white/5">
+                <div className="text-[9px] md:text-xs uppercase font-black text-slate-400">
+                    {boardOrientation === 'white' ? getPlayerLabel('b' + myBoardIdx) : getPlayerLabel('w' + myBoardIdx)}
+                </div>
+                <div className={`text-xs md:text-lg font-mono font-bold font-mono transition-colors ${ (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'b' : 'w') ? (clocks as any)[(boardOrientation === 'white' ? 'b' : 'w') + myBoardIdx] : 0) < 10000 && (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'b' : 'w')) ? 'text-red-500' : (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'b' : 'w') ? 'text-white' : 'text-slate-500')}`}>
+                    {formatTime(boardOrientation === 'white' ? (myBoardIdx === 0 ? clocks.b0 : clocks.b1) : (myBoardIdx === 0 ? clocks.w0 : clocks.w1))}
                 </div>
             </div>
             
@@ -391,7 +406,7 @@ export default function BughouseArena() {
                       pieces: stableCustomPieces as any,
                       onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(myBoardIdx, sourceSquare, targetSquare)) as any,
                       onSquareClick: ((s: any) => onSquareClick(myBoardIdx, s)) as any,
-                      allowDragging: (role !== "spectator") && !selectedPiece
+                      allowDragging: (role !== "spectator") && !state?.board0?.result && !selectedPiece
                    } as any}
                 />
                 
@@ -415,6 +430,15 @@ export default function BughouseArena() {
                 )}
             </div>
 
+            <div className="flex justify-between items-center px-2 bg-white/5 rounded-b-xl py-1 border-x border-b border-white/5">
+                <div className="text-[9px] md:text-xs uppercase font-black text-slate-400">
+                    {boardOrientation === 'white' ? getPlayerLabel('w' + myBoardIdx) : getPlayerLabel('b' + myBoardIdx)}
+                </div>
+                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'w' : 'b') ? (clocks as any)[(boardOrientation === 'white' ? 'w' : 'b') + myBoardIdx] : 0) < 10000 && (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'w' : 'b')) ? 'text-red-500' : (new Chess(myBoard?.fen).turn() === (boardOrientation === 'white' ? 'w' : 'b') ? 'text-white' : 'text-slate-500')}`}>
+                    {formatTime(boardOrientation === 'white' ? (myBoardIdx === 0 ? clocks.w0 : clocks.w1) : (myBoardIdx === 0 ? clocks.b0 : clocks.b1))}
+                </div>
+            </div>
+            
             <div className="h-6 md:h-10 bg-white/5 rounded-lg flex items-center px-4 gap-2 overflow-x-auto min-h-0">
                 {(role.startsWith('w') ? myBankW : myBankB)?.map((p: string, i: number) => (
                     <button 
@@ -429,10 +453,12 @@ export default function BughouseArena() {
 
         {/* Partner's Board */}
         <div className="flex flex-col gap-1 md:gap-4 w-full">
-            <div className="flex justify-between items-end px-2">
-                <div className="text-[9px] md:text-xs uppercase font-black text-slate-500">Board {partnerBoardIdx} (Partner)</div>
-                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(partnerBoard?.fen).turn() === 'w' ? (clocks as any)[('w' + partnerBoardIdx)] : (clocks as any)[('b' + partnerBoardIdx)]) < 10000 ? 'text-red-500' : 'text-white/80'}`}>
-                    {formatTime(partnerBoardIdx === 0 ? (new Chess(partnerBoard?.fen).turn() === 'w' ? clocks.w0 : clocks.b0) : (new Chess(partnerBoard?.fen).turn() === 'w' ? clocks.w1 : clocks.b1))}
+            <div className="flex justify-between items-center px-2 bg-white/5 rounded-t-xl py-1 border-x border-t border-white/5">
+                <div className="text-[9px] md:text-xs uppercase font-black text-slate-400">
+                    {partnerOrientation === 'white' ? getPlayerLabel('b' + partnerBoardIdx) : getPlayerLabel('w' + partnerBoardIdx)}
+                </div>
+                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'b' : 'w') ? (clocks as any)[(partnerOrientation === 'white' ? 'b' : 'w') + partnerBoardIdx] : 0) < 10000 && (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'b' : 'w')) ? 'text-red-500' : (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'b' : 'w') ? 'text-white' : 'text-slate-500')}`}>
+                    {formatTime(partnerOrientation === 'white' ? (partnerBoardIdx === 0 ? clocks.b0 : clocks.b1) : (partnerBoardIdx === 0 ? clocks.w0 : clocks.w1))}
                 </div>
             </div>
 
@@ -447,7 +473,7 @@ export default function BughouseArena() {
                    options={{
                       id: `board${partnerBoardIdx}`,
                       position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                       boardOrientation: partnerOrientation,
+                      boardOrientation: partnerOrientation,
                       darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                       lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                       pieces: stableCustomPieces as any,
@@ -456,6 +482,15 @@ export default function BughouseArena() {
                       allowDragging: false // Cannot drag on partner board
                    } as any}
                 />
+            </div>
+
+            <div className="flex justify-between items-center px-2 bg-white/5 rounded-b-xl py-1 border-x border-b border-white/5">
+                <div className="text-[9px] md:text-xs uppercase font-black text-slate-400">
+                    {partnerOrientation === 'white' ? getPlayerLabel('w' + partnerBoardIdx) : getPlayerLabel('b' + partnerBoardIdx)}
+                </div>
+                <div className={`text-xs md:text-lg font-mono font-bold transition-colors ${ (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'w' : 'b') ? (clocks as any)[(partnerOrientation === 'white' ? 'w' : 'b') + partnerBoardIdx] : 0) < 10000 && (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'w' : 'b')) ? 'text-red-500' : (new Chess(partnerBoard?.fen).turn() === (partnerOrientation === 'white' ? 'w' : 'b') ? 'text-white' : 'text-slate-500')}`}>
+                    {formatTime(partnerOrientation === 'white' ? (partnerBoardIdx === 0 ? clocks.w0 : clocks.w1) : (partnerBoardIdx === 0 ? clocks.b0 : clocks.b1))}
+                </div>
             </div>
 
             <div className="h-6 md:h-10 bg-white/5 rounded-lg flex items-center px-4 gap-2 overflow-x-auto min-h-0">
@@ -561,29 +596,68 @@ export default function BughouseArena() {
         </div>
       )}
 
+      {/* Game Over Overlay */}
+      {state && state.board0?.isActive === false && state.board0?.result && (
+        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+           <div className="bg-[#0A0C14] border border-white/10 p-10 md:p-16 rounded-[4rem] shadow-4xl flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
+               <div className="bg-emerald-500/20 p-6 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                   <CheckCircle className="w-12 h-12 text-emerald-400" />
+               </div>
+               <div className="text-center">
+                   <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-2 uppercase italic">{state.board0.result}</h2>
+                   <p className="text-emerald-400 font-mono text-sm md:text-lg uppercase tracking-[0.3em] font-black opacity-80">{state.board0.reason || "MATCH ENDED"}</p>
+               </div>
+               <div className="flex flex-col gap-4 w-full mt-4">
+                  <button 
+                      onClick={handleRematch}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-4 px-12 rounded-[2rem] font-bold uppercase tracking-widest text-xs transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+                  >
+                      {rematchState === "waiting" ? "WAITING..." : (rematchState === "offered" ? "ACCEPT REMATCH" : "REMATCH OFFER")}
+                  </button>
+                  <button 
+                      onClick={() => router.push("/")}
+                      className="w-full bg-white/5 hover:bg-white/10 text-slate-400 py-4 px-12 rounded-[2rem] font-bold uppercase tracking-widest text-xs transition-all border border-white/10"
+                  >
+                      EXIT TO LOBBY
+                  </button>
+               </div>
+           </div>
+        </div>
+      )}
+
       {/* Logs and Video Section */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="bg-black/40 border border-white/5 p-4 rounded-xl h-48 overflow-y-auto font-mono text-[10px] text-slate-500 order-2 md:order-1">
-             {logs.map((l, i) => <div key={i}>{l}</div>)}
+          <div className="flex flex-col bg-black/40 border border-white/5 rounded-2xl overflow-hidden h-64 order-2 md:order-1">
+             <div className="flex-1 p-4 overflow-y-auto font-mono text-[10px] text-slate-400 space-y-1">
+                {logs.map((l, i) => (
+                    <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>
+                        {l}
+                    </div>
+                ))}
+             </div>
+             <form onSubmit={handleChatSubmit} className="p-2 bg-white/5 border-t border-white/5 flex gap-2">
+                <input 
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Type to chat..."
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                />
+             </form>
           </div>
           
-          {showVideo && (
-             <div className="order-1 md:order-2">
-                <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-t-2xl text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center justify-between">
-                   <span>Real-time Communication</span>
-                   <div className="flex gap-1">
-                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse delay-75" />
-                      <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse delay-150" />
-                   </div>
+          <div className="bg-black/40 border border-white/5 rounded-2xl h-64 flex items-center justify-center order-1 md:order-2 relative overflow-hidden">
+              {showVideo ? (
+                 <VideoChat matchId={id} />
+              ) : (
+                <div className="flex flex-col items-center gap-2 opacity-20 transition-all">
+                    <VideoOff className="w-12 h-12 text-slate-400" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">{t("video_off" as any)}</span>
+                    <p className="text-[8px] max-w-[150px] text-center text-slate-600 font-bold leading-relaxed">{t("video_hint" as any)}</p>
                 </div>
-                <div className="p-4 bg-white/5 border border-white/10 border-t-0 rounded-b-2xl shadow-xl">
-                   <VideoChat matchId={id} />
-                </div>
-             </div>
-          )}
+              )}
+          </div>
       </div>
-
     </div>
   );
 }
