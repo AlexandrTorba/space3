@@ -319,7 +319,7 @@ export default {
 
             } catch (e) {
                console.error("Daily API Error:", e);
-               response = new Response(JSON.stringify({ error: "Failed to create secure video session" }), { status: 500 });
+               response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: "Server Error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
           }
        }
