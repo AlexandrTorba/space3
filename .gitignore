@@ -3,7 +3,10 @@ node_modules/
 dist/
 .next/
 .env*
+!.env.example
+!.env.local.example
 .dev.vars*
+!.dev.vars.example
 *.png
 *.webp
 *.log
