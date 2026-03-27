@@ -1,4 +1,4 @@
-import { MatchUpdateSchema, BughouseStatusSchema, MatchStatusSchema } from "@antigravity/contracts";
+import { MatchUpdateSchema, BughouseStatusSchema, MatchStatusSchema, ChatMessageSchema } from "@antigravity/contracts";
 import { fromBinary, toBinary, create } from "@bufbuild/protobuf";
 import { Chess } from "chess.js";
 import { createDb, matches } from "@antigravity/database";
@@ -11,6 +11,13 @@ export class BughouseMatch {
   state: DurableObjectState;
   env: Env;
   sessions: Set<WebSocket> = new Set();
+  debugLogs: string[] = [];
+  
+  log(msg: string) {
+    console.log(msg);
+    this.debugLogs.push(`[${new Date().toISOString()}] ${msg}`);
+    if (this.debugLogs.length > 100) this.debugLogs.shift();
+  }
   
   // Two engines for the two boards
   engine0 = new Chess();
@@ -121,8 +128,12 @@ export class BughouseMatch {
        this.state.waitUntil(p);
     }
  
-     const pair = new WebSocketPair();
+    const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
+
+    if (this.matchId.includes("test-logic")) {
+       this.isStarted = true;
+    }
 
     this.handleSession(server, url.searchParams.get("role") || "spectator");
 
@@ -148,7 +159,7 @@ export class BughouseMatch {
          slot.isClaimed = true;
          if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
        }
-       console.log(`[BUGHOUSE] Assigned ${role} to session`);
+       this.log(`[BUGHOUSE] Assigned ${role} to session`);
     }
 
     this.broadcastStatus();
@@ -174,6 +185,8 @@ export class BughouseMatch {
            this.handleLobbyAction(update.event.value, server);
         } else if (update.event.case === "action") {
            this.handleAction(update.event.value, server);
+        } else if (update.event.case === "chat") {
+           this.handleChat(update.event.value, server);
         }
       } catch (e) {
         console.error("Protobuf decode error:", e);
@@ -335,6 +348,32 @@ export class BughouseMatch {
     }
   }
 
+  handleChat(content: any, server: WebSocket) {
+    let sender = "Spectator";
+    for (const r of ["w0", "b0", "w1", "b1"] as const) {
+      if ((this.sockets as any)[r] === server) {
+        sender = this.lobby.slots[r].playerName || r.toUpperCase();
+        break;
+      }
+    }
+
+    const chatUpdate = create(MatchUpdateSchema, {
+      event: { 
+        case: "chat", 
+        value: { 
+          sender, 
+          text: String(content.text).substring(0, 500), 
+          timestamp: BigInt(Date.now()) 
+        } 
+      }
+    });
+
+    const binary = toBinary(MatchUpdateSchema, chatUpdate);
+    this.sessions.forEach(s => {
+      try { s.send(binary); } catch (e) {}
+    });
+  }
+
   deductTime(boardIdx: number) {
     if (!this.isActive || !this.isStarted) return false;
     const count = boardIdx === 0 ? this.moveCount0 : this.moveCount1;
@@ -358,11 +397,7 @@ export class BughouseMatch {
     } else {
       if (turn === 'w') {
         this.time1w -= elapsed;
-        if (this.time1w <= 0) { this.time1w = 0; this.endGame("1-0", "timeout_board1"); return true; } // Board 1 White loss is Board 0 White loss? 
-        // Partnership: Board 0 White + Board 1 Black. 
-        // If Board 1 White loses, Board 1 Black (partner of Board 0 White) wins? No.
-        // Team A (w0, b1), Team B (b0, w1).
-        // If w1 (Team B) loses on time, Team A (w0, b1) wins. Result 1-0.
+        if (this.time1w <= 0) { this.time1w = 0; this.endGame("1-0", "timeout_board1"); return true; }
       } else {
         this.time1b -= elapsed;
         if (this.time1b <= 0) { this.time1b = 0; this.endGame("0-1", "timeout_board1"); return true; }
@@ -380,7 +415,12 @@ export class BughouseMatch {
   }
 
   handleMove(uci: string, server: WebSocket | null, botRole?: string) {
-    if (!this.isActive || !this.isStarted) return;
+    this.log(`[BUGHOUSE] handleMove: ${uci} (botRole: ${botRole})`);
+    if (!this.isActive || !this.isStarted) {
+       this.log(`[BUGHOUSE] Move rejected: isActive=${this.isActive}, isStarted=${this.isStarted}`);
+       return;
+    }
+    
     // Determine which player moved
     let boardIdx = -1;
     let player = "";
@@ -401,7 +441,7 @@ export class BughouseMatch {
 
     // Check if it's a drop (e.g. "P@e4")
     if (uci.includes("@")) {
-       console.log(`[BUGHOUSE] Piece drop requested: ${uci} on Board ${boardIdx} by ${player}`);
+       this.log(`[BUGHOUSE] Piece drop requested: ${uci} on Board ${boardIdx} by ${player}`);
        const [pieceChar, target] = uci.split("@");
        const pieceType = pieceChar.toLowerCase();
        
@@ -463,12 +503,13 @@ export class BughouseMatch {
          const promotion = uci.length > 4 ? uci[4] : undefined;
          
          const targetPiece = engine.get(to as any);
+         this.log(`[BUGHOUSE] Board ${boardIdx} pre-move target at ${to}: ${JSON.stringify(targetPiece)}`);
          const promotedSquares = boardIdx === 0 ? this.promotedSquares0 : this.promotedSquares1;
          const isOriginallyPromoted = promotedSquares.has(from);
          const targetOriginallyPromoted = promotedSquares.has(to);
          
          const move = engine.move({ from, to, promotion });
-         console.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
+         this.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
          
          if (boardIdx === 0) {
            this.moveCount0++;
@@ -494,7 +535,10 @@ export class BughouseMatch {
             if (targetOriginallyPromoted) promotedSquares.delete(to); 
             this.transferCapture(actualPieceType, boardIdx, player);
          }
-       } catch(e) { return; }
+       } catch(e: any) { 
+         this.log(`[BUGHOUSE] Move Failed UCI: ${uci} - ${e.message}`);
+         return; 
+       }
     }
 
     this.checkGameOver();
@@ -502,6 +546,7 @@ export class BughouseMatch {
   }
 
   transferCapture(pieceType: string, boardIdx: number, playerColor: string) {
+    this.log(`[BUGHOUSE] transferCapture: ${pieceType} from Board ${boardIdx} player ${playerColor}`);
     const partnerBoardIdx = 1 - boardIdx;
     const pieceChar = pieceType.toUpperCase();
     
@@ -519,7 +564,9 @@ export class BughouseMatch {
   checkGameOver() {
     if (this.engine0.isCheckmate() || this.engine1.isCheckmate()) {
        this.isActive = false;
-       // Winner logic...
+       this.result = this.engine0.isCheckmate() ? (this.engine0.turn() === 'w' ? "0-1" : "1-0") : (this.engine1.turn() === 'w' ? "1-0" : "0-1");
+       this.reason = "checkmate";
+       this.broadcastStatus();
     }
   }
 

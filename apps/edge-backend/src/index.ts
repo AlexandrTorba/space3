@@ -303,11 +303,15 @@ export default {
                 });
 
                 const tokenData: any = await tokenRes.json();
+                if (!tokenData.token) {
+                  console.error("Daily Token Error:", tokenData);
+                  throw new Error(`Daily.co API failure: ${JSON.stringify(tokenData)}`);
+                }
                 const domain = (env.DAILY_DOMAIN || 'antigravity'); 
 
                 response = new Response(JSON.stringify({ 
                    roomUrl: `https://${domain}.daily.co/${matchId}`,
-                   token: tokenData.token, // This is the secret access token
+                   token: tokenData.token,
                 }), { headers: { "Content-Type": "application/json" } });
               }
 

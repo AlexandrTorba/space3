@@ -183,6 +183,11 @@ export class ChessMatch {
         
         if (this.deductTime()) return;
 
+        if (matchUpdate.event.case === "chat") {
+            this.handleChat(matchUpdate.event.value, server);
+            return;
+        }
+
         if (matchUpdate.event.case === "action") {
             const action = matchUpdate.event.value;
             const claimColor = action.playerColor;
@@ -297,6 +302,28 @@ export class ChessMatch {
             const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
             this.state.waitUntil(p);
         }
+    });
+  }
+
+  handleChat(content: any, server: WebSocket) {
+    let sender = "Spectator";
+    if (server === this.whiteSocket) sender = this.whiteName;
+    else if (server === this.blackSocket) sender = this.blackName;
+
+    const chatUpdate = create(MatchUpdateSchema, {
+      event: { 
+        case: "chat", 
+        value: { 
+          sender, 
+          text: String(content.text).substring(0, 500), 
+          timestamp: BigInt(Date.now()) 
+        } 
+      }
+    });
+
+    const binary = toBinary(MatchUpdateSchema, chatUpdate);
+    this.sessions.forEach(s => {
+      try { s.send(binary); } catch (e) {}
     });
   }
 

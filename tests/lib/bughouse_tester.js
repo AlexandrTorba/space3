@@ -75,9 +75,9 @@ async function performBoardMove(page, boardIdx, source, target) {
 
 async function addBotToSlot(page, role) {
     console.log(`[HELPER] Adding bot to slot ${role}...`);
-    const slotBtn = page.locator(`button:has-text("${role.toUpperCase()}")`).first();
-    const addBotBtn = slotBtn.locator('button:has-text("+ BOT")');
-    await addBotBtn.click({ force: true });
+    // Find the slot by the role text (W0, B0) and then the + BOT button within it
+    const slot = page.locator('div').filter({ has: page.locator('div', { hasText: role.toUpperCase() }) }).filter({ has: page.locator('button', { hasText: '+ BOT' }) }).first();
+    await slot.locator('button:has-text("+ BOT")').click();
 }
 
 module.exports = {

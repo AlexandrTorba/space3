@@ -253,10 +253,8 @@ export default function VideoChat({ matchId }: Props) {
   const initializingRef = useRef(false);
 
   useEffect(() => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
-
-    let call: DailyCall | null = null;
+    let call: DailyCall | null | undefined = null;
+    let aborted = false;
 
     const init = async () => {
       setLoading(true);
@@ -265,36 +263,44 @@ export default function VideoChat({ matchId }: Props) {
         const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}`);
         const data = await res.json();
         
+        if (aborted) return;
         if (!data.roomUrl) throw new Error("No room URL");
 
-        const options: any = { url: data.roomUrl };
-        if (data.token) options.token = data.token;
+        // Use existing instance if available, otherwise create new
+        const existingCall = DailyIframe.getCallInstance();
+        if (existingCall) {
+           call = existingCall;
+        } else {
+           call = DailyIframe.createCallObject({ 
+             url: data.roomUrl,
+             token: data.token
+           });
+        }
         
-        console.log("Connecting to Daily:", options.url, "Token:", !!options.token);
-        
-        call = DailyIframe.createCallObject(options);
+        if (aborted) {
+          if (call && !existingCall) await call.destroy();
+          return;
+        }
+
         setCallObject(call);
         
         await call.join();
-        // Default cam/mic to OFF on join for privacy
         await call.setLocalVideo(false);
         await call.setLocalAudio(false);
       } catch (e) {
         console.error("Daily init error details:", e);
       } finally {
-        setLoading(false);
+        if (!aborted) setLoading(false);
       }
     };
 
     init();
 
     return () => {
+      aborted = true;
       if (call) {
-        call.destroy().then(() => {
-           initializingRef.current = false;
-        });
-      } else {
-        initializingRef.current = false;
+        call.destroy();
+        setCallObject(null);
       }
     };
   }, [matchId]);

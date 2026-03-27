@@ -13,10 +13,8 @@ const { addBotToSlot, performBoardMove } = require('../lib/bughouse_tester');
     // Wait for hydration
     await new Promise(r => setTimeout(r, 8000));
 
-    console.log("Adding 3 bots...");
-    await addBotToSlot(page, 'b0');
-    await addBotToSlot(page, 'w1');
-    await addBotToSlot(page, 'b1');
+    console.log("Adding bots...");
+    await page.getByText('Fill vacant with bots').click();
 
     console.log("Readying up...");
     await page.locator('#ready-button').click();

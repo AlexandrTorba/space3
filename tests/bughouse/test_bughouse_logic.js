@@ -17,9 +17,16 @@ async function runTest() {
     let lastStatusB1 = null;
 
     b1WS.on('message', (data) => {
-        const update = fromBinary(MatchUpdateSchema, new Uint8Array(data));
-        if (update.event.case === 'bughouse' && update.event.value.event.case === 'status') {
-            lastStatusB1 = update.event.value.event.value;
+        // Skip JSON messages
+        if (data.toString().startsWith('{')) return;
+        
+        try {
+            const update = fromBinary(MatchUpdateSchema, new Uint8Array(data));
+            if (update.event.case === 'bughouse' && update.event.value.event.case === 'status') {
+                lastStatusB1 = update.event.value.event.value;
+            }
+        } catch (e) {
+            // console.error("Proto decode skip:", e.message);
         }
     });
 
@@ -50,6 +57,12 @@ async function runTest() {
     } else {
         console.log("❌ FAILURE: Partner b1 did not receive the pawn or bank1b is empty.");
         console.log("Bank 1b:", lastStatusB1 ? lastStatusB1.bank1b : "No status");
+        
+        console.log("\n--- BACKEND DEBUG LOGS ---");
+        try {
+            const resp = await fetch(`http://localhost:8787/bughouse/${matchId}/debug/logs`);
+            console.log(await resp.text());
+        } catch(e) { console.log("Could not fetch debug logs:", e.message); }
     }
 
     w0WS.close();
