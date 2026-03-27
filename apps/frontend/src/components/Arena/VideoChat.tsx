@@ -259,7 +259,9 @@ export default function VideoChat({ matchId }: Props) {
     const init = async () => {
       setLoading(true);
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (window.location.protocol + "//" + window.location.hostname + ":8787");
+        const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
+           (typeof window !== "undefined" ? (isProd ? `${window.location.protocol}//${window.location.hostname}` : `${window.location.protocol}//${window.location.hostname}:8787`) : "http://localhost:8787");
         console.log(`[VIDEO] Fetching token for ${matchId} from ${backendUrl}`);
         const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}`);
         if (!res.ok) {
