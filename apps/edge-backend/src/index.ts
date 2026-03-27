@@ -261,7 +261,9 @@ export default {
           } else {
             try {
               const db = createDb(dbUrl, dbToken);
+              console.log(`[BACKEND] Checking video for match: ${matchId}`);
               const matchRecord = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+              console.log(`[BACKEND] Match found: ${matchRecord.length > 0}, enabled: ${matchRecord[0]?.videoEnabled}`);
 
               if (!matchRecord || matchRecord.length === 0 || !matchRecord[0].videoEnabled) {
                 response = new Response(JSON.stringify({ 
