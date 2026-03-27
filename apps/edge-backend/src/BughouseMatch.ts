@@ -196,7 +196,7 @@ export class BughouseMatch {
 
     // Start bot loop periodically just in case
     if (!this.botTimer) {
-      this.botTimer = setInterval(() => this.tickBots(), 2000);
+      this.botTimer = setInterval(() => this.tickBots(), 500);
     }
 
     server.addEventListener("close", () => {
@@ -497,11 +497,15 @@ export class BughouseMatch {
          if (this.deductTime(boardIdx)) return;
 
          // Try the drop
-         engine.put({ type: pieceType as any, color: player as any }, target as any);
+         if (!engine.put({ type: pieceType as any, color: player as any }, target as any)) {
+            this.log(`[BUGHOUSE] engine.put failed (Target square: ${target})`);
+            return;
+         }
          
          // Illegal: if the player who just dropped is STILL in check (standard chess rules)
          if (engine.isCheck()) {
             engine.remove(target as any);
+            this.log(`[BUGHOUSE] engine.isCheck returned true after drop (Illegal move)`);
             return;
          }
 
@@ -517,7 +521,15 @@ export class BughouseMatch {
          // Toggle turn manually since put doesn't do it
          const fen = engine.fen();
          const parts = fen.split(" ");
+         if (parts[1] === "b") {
+            // If black just moved, increment fullmove number
+            parts[5] = (parseInt(parts[5], 10) + 1).toString();
+         }
          parts[1] = parts[1] === "w" ? "b" : "w";
+         // Drops reset the halfmove clock and clear en-passant square
+         parts[3] = "-";
+         parts[4] = "0";
+
          engine.load(parts.join(" "));
          
          bank.splice(pieceIdx, 1);
@@ -580,22 +592,64 @@ export class BughouseMatch {
     const partnerBoardIdx = 1 - boardIdx;
     const pieceChar = pieceType.toUpperCase();
     
-    if (playerColor === "w") {
-       // White captured a piece, give it to Black partner on the other board
-       if (partnerBoardIdx === 0) this.bank0b.push(pieceChar);
-       else this.bank1b.push(pieceChar);
+    // Team 1: w0 & b1. Team 2: b0 & w1.
+    if (boardIdx === 0) {
+       if (playerColor === "w") { // w0 captured, give to b1
+          this.bank1b.push(pieceChar);
+       } else { // b0 captured, give to w1
+          this.bank1w.push(pieceChar);
+       }
     } else {
-       // Black captured a piece, give it to White partner on the other board
-       if (partnerBoardIdx === 0) this.bank0w.push(pieceChar);
-       else this.bank1w.push(pieceChar);
+       if (playerColor === "w") { // w1 captured, give to b0
+          this.bank0b.push(pieceChar);
+       } else { // b1 captured, give to w0
+          this.bank0w.push(pieceChar);
+       }
     }
   }
 
   checkGameOver() {
-    if (this.engine0.isCheckmate() || this.engine1.isCheckmate()) {
-       const result = this.engine0.isCheckmate() ? (this.engine0.turn() === 'w' ? "0-1" : "1-0") : (this.engine1.turn() === 'w' ? "1-0" : "0-1");
+    if (this.isBughouseMate(0) || this.isBughouseMate(1)) {
+       const boardIdx = this.isBughouseMate(0) ? 0 : 1;
+       const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+       const result = engine.turn() === 'w' ? "0-1" : "1-0";
        this.endGame(result, "checkmate");
     }
+  }
+
+  private isBughouseMate(boardIdx: number): boolean {
+    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+    if (!engine.isCheckmate()) return false;
+    
+    // Check if any piece in the bank can save the king
+    const bank = boardIdx === 0 
+      ? (engine.turn() === 'w' ? this.bank0w : this.bank0b)
+      : (engine.turn() === 'w' ? this.bank1w : this.bank1b);
+
+    if (bank.length === 0) return true;
+
+    // Simulate all possible drops to see if any escapes check
+    const pieces = [...new Set(bank)];
+    for (const pChar of pieces) {
+        const type = pChar.toLowerCase();
+        for (let r = 1; r <= 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const square = String.fromCharCode(97 + f) + r;
+                if (!engine.get(square as any)) {
+                    if (type === 'p' && (r === 1 || r === 8)) continue;
+                    
+                    // Use a temporary put to check for safety
+                    if (engine.put({ type: type as any, color: engine.turn() }, square as any)) {
+                        const isSafe = !engine.isCheck();
+                        engine.remove(square as any);
+                        if (isSafe) return false;
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
   }
 
   broadcastStatus() {
@@ -678,8 +732,8 @@ export class BughouseMatch {
              const selected = this.calculateBestBotMove(role);
              if (selected) {
                 this.botSelectedMove[role] = selected;
-                // Think between 1.5 and 4.5 seconds
-                this.botDecisionAt[role] = now + 1500 + Math.random() * 3000;
+                // Hyperbullet: think between 0.4 and 1.2 seconds
+                this.botDecisionAt[role] = now + 400 + Math.random() * 800;
              }
           } else if (now >= this.botDecisionAt[role]) {
              // Execute thought
@@ -702,11 +756,68 @@ export class BughouseMatch {
     const player = role.startsWith('w') ? 'w' : 'b';
     const engine = boardIdx === 0 ? this.engine0 : this.engine1;
 
-    const pieceValues: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+    const pieceValues: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
     const pst: Record<string, number[]> = {
-        p: [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10, -5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, 5, 10, 25, 25, 10, 5, 5, 10, 10, 20, 30, 30, 20, 10, 10, 50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0],
-        n: [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 5, 5, 0, -20, -40, -30, 5, 10, 15, 15, 10, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 10, 15, 15, 10, 0, -30, -40, -20, 0, 0, 0, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
-        b: [-20, -10, -10, -10, -10, -10, -10, -20, -10, 5, 0, 0, 0, 0, 5, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -10, -10, -10, -10, -20]
+        p: [
+            0,  0,  0,  0,  0,  0,  0,  0,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            10, 10, 20, 30, 30, 20, 10, 10,
+             5,  5, 10, 25, 25, 10,  5,  5,
+             0,  0,  0, 20, 20,  0,  0,  0,
+             5, -5,-10,  0,  0,-10, -5,  5,
+             5, 10, 10,-20,-20, 10, 10,  5,
+             0,  0,  0,  0,  0,  0,  0,  0
+        ],
+        n: [
+            -50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50
+        ],
+        b: [
+            -20,-10,-10,-10,-10,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5, 10, 10,  5,  0,-10,
+            -10,  5,  5, 10, 10,  5,  5,-10,
+            -10,  0, 10, 10, 10, 10,  0,-10,
+            -10, 10, 10, 10, 10, 10, 10,-10,
+            -10,  5,  0,  0,  0,  0,  5,-10,
+            -20,-10,-10,-10,-10,-10,-10,-20
+        ],
+        r: [
+              0,  0,  0,  0,  0,  0,  0,  0,
+              5, 10, 10, 10, 10, 10, 10,  5,
+             -5,  0,  0,  0,  0,  0,  0, -5,
+             -5,  0,  0,  0,  0,  0,  0, -5,
+             -5,  0,  0,  0,  0,  0,  0, -5,
+             -5,  0,  0,  0,  0,  0,  0, -5,
+             -5,  0,  0,  0,  0,  0,  0, -5,
+              0,  0,  0,  5,  5,  0,  0,  0
+        ],
+        q: [
+            -20,-10,-10, -5, -5,-10,-10,-20,
+            -10,  0,  0,  0,  0,  0,  0,-10,
+            -10,  0,  5,  5,  5,  5,  0,-10,
+             -5,  0,  5,  5,  5,  5,  0, -5,
+              0,  0,  5,  5,  5,  5,  0, -5,
+            -10,  5,  5,  5,  5,  5,  0,-10,
+            -10,  0,  5,  0,  0,  0,  0,-10,
+            -20,-10,-10, -5, -5,-10,-10,-20
+        ],
+        k: [
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -30,-40,-40,-50,-50,-40,-40,-30,
+            -20,-30,-30,-40,-40,-30,-30,-20,
+            -10,-20,-20,-20,-20,-20,-20,-10,
+             20, 20,  0,  0,  0,  0, 20, 20,
+             20, 30, 10,  0,  0, 10, 30, 20
+        ]
     };
 
     const moves = engine.moves({ verbose: true });
@@ -735,11 +846,11 @@ export class BughouseMatch {
         else if (testEngine.isCheck()) score += 80;
 
         // Mobility
-        score += testEngine.moves().length;
+        score += testEngine.moves().length * 2;
 
-        // Safety check (very simplified: don't move to square attacked by more enemies than friends)
-        // Since we can't easily calculate total attackers in chess.js without heavy compute, 
-        // we just rely on mobility and PST. But at 1800 we at least check if target is attacked.
+        // Safety check (very simplified: don't move back into check)
+        // Since testEngine.move() was successful, it must be a legal move.
+        // We just need to check if it's generally safe.
         if (testEngine.attackers(move.to, player === 'w' ? 'b' : 'w').length > 0) {
             score -= pieceValues[type] * 5; 
         }
@@ -756,25 +867,36 @@ export class BughouseMatch {
                 for (let j = 0; j < 8; j++) {
                     const square = String.fromCharCode(97 + i) + (j + 1);
                     if (!engine.get(square as any)) {
+                        // Pawn restrictions
                         if (pieceType === 'p' && (j === 0 || j === 7)) continue;
-                        
+
                         let score = 50; // Drop is valuable
                         const dropUci = `${piece.toUpperCase()}@${square}`;
-                        
-                        try {
-                            const enemyKingPos = this.findKing(engine, player === 'w' ? 'b' : 'w');
-                            const dx = Math.abs(i - (enemyKingPos.charCodeAt(0) - 97));
-                            const dy = Math.abs(j - (parseInt(enemyKingPos[1]) - 1));
-                            
-                            // Tactical drops near king
-                            if (dx <= 1 && dy <= 1) score += 250;
-                            else if (dx <= 2 && dy <= 2) score += 100;
-                            
-                            // Center control drops
-                            if (i >= 2 && i <= 5 && j >= 2 && j <= 5) score += 40;
 
-                            scoredMoves.push({ uci: dropUci, score });
-                        } catch (e) {}
+                        // Optimized: use a single put/remove instead of new Chess()
+                        if (engine.put({ type: pieceType as any, color: player }, square as any)) {
+                           const inCheck = engine.isCheck();
+                           if (inCheck) {
+                               engine.remove(square as any);
+                               continue;
+                           }
+                           
+                           try {
+                                const enemyKingPos = this.findKing(engine, player === 'w' ? 'b' : 'w');
+                                const dx = Math.abs(i - (enemyKingPos.charCodeAt(0) - 97));
+                                const dy = Math.abs(j - (parseInt(enemyKingPos[1]) - 1));
+                                
+                                // Tactical drops near king
+                                if (dx <= 1 && dy <= 1) score += 250;
+                                else if (dx <= 2 && dy <= 2) score += 100;
+                                
+                                // Center control drops
+                                if (i >= 2 && i <= 5 && j >= 2 && j <= 5) score += 40;
+
+                                scoredMoves.push({ uci: dropUci, score });
+                            } catch (e) {}
+                            engine.remove(square as any);
+                        }
                     }
                 }
             }
