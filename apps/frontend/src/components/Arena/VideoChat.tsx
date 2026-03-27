@@ -250,6 +250,7 @@ function VideoChatUI() {
 export default function VideoChat({ matchId }: Props) {
   const [callObject, setCallObject] = useState<DailyCall | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const initializingRef = useRef(false);
 
   useEffect(() => {
@@ -265,9 +266,10 @@ export default function VideoChat({ matchId }: Props) {
         console.log(`[VIDEO] Fetching token for ${matchId} from ${backendUrl}`);
         const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}`);
         if (!res.ok) {
-           const errText = await res.text();
-           console.error(`[VIDEO] Token fetch failed: ${res.status} ${errText}`);
-           throw new Error(`Token fetch failed: ${res.status}`);
+           const errData = await res.json().catch(() => ({ error: `Status ${res.status}` }));
+           const msg = errData?.details || errData?.error || `Error ${res.status}`;
+           setErrorDetails(msg);
+           throw new Error(msg);
         }
         const data = await res.json();
         
@@ -320,9 +322,10 @@ export default function VideoChat({ matchId }: Props) {
      </div>
   );
 
-  if (!callObject) return (
-    <div className="p-8 text-center text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20 rounded-2xl bg-red-500/5">
-       Video service unavailable
+  if (errorDetails || !callObject) return (
+    <div className="p-8 text-center text-red-400 border border-red-500/20 rounded-2xl bg-red-500/5 flex flex-col gap-2">
+       <span className="text-[10px] font-black uppercase tracking-widest">Video service unavailable</span>
+       <span className="text-[8px] font-mono opacity-60 uppercase">{errorDetails || "Call Failed"}</span>
     </div>
   );
 

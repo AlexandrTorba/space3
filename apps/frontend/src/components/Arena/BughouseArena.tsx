@@ -577,7 +577,8 @@ export default function BughouseArena() {
                   <button 
                       id="ready-button"
                       onClick={toggleReady}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-500/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-30"
+                      disabled={!state?.lobby || !["w0", "b0", "w1", "b1"].every(r => (state.lobby as any)[r]?.isClaimed)}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-500/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                       {t("ready_to_play" as any)}
                   </button>
@@ -586,12 +587,6 @@ export default function BughouseArena() {
                           <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${(state?.lobby as any)?.[r]?.isReady ? 'bg-green-500' : 'bg-white/10 shadow-inner'}`} />
                       ))}
                   </div>
-                  <button 
-                      onClick={fillBots}
-                      className="w-full mt-2 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-2xl text-slate-500 transition-all"
-                  >
-                      Fill vacant with bots
-                  </button>
               </div>
            </div>
         </div>
