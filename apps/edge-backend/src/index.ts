@@ -104,7 +104,7 @@ export default {
           }
         } catch (e) {
           console.error("Archive fetch error:", e);
-          response = new Response(JSON.stringify({ error: "Failed to fetch archive" }), { status: 500, headers: { "Content-Type": "application/json" } });
+          response = new Response(JSON.stringify({ error: "Failed to fetch archive" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
     }
@@ -114,7 +114,7 @@ export default {
       const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
 
       if (!dbUrl || !dbToken) {
-        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { status: 500, headers: { "Content-Type": "application/json" } });
+        response = new Response(JSON.stringify({ error: "Database configuration missing" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } else {
         try {
           const db = createDb(dbUrl, dbToken);
@@ -141,7 +141,7 @@ export default {
           response = new Response(JSON.stringify(enriched), { headers: { "Content-Type": "application/json" } });
         } catch (e) {
           console.error("Live fetch error:", e);
-          response = new Response(JSON.stringify({ error: "Failed to fetch live matches" }), { status: 500, headers: { "Content-Type": "application/json" } });
+          response = new Response(JSON.stringify({ error: "Failed to fetch live matches" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
     }
@@ -251,13 +251,13 @@ export default {
           response = new Response(JSON.stringify({ 
              error: "Insufficient configuration",
              details: matchId ? "DAILY_API_KEY missing" : "matchId missing"
-          }), { status: 400 });
+          }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
        } else {
           const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
           const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
 
           if (!dbUrl || !dbToken) {
-            response = new Response(JSON.stringify({ error: "Database configuration missing for video check" }), { status: 500, headers: { "Content-Type": "application/json" } });
+            response = new Response(JSON.stringify({ error: "Database configuration missing for video check" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
           } else {
             try {
               const db = createDb(dbUrl, dbToken);
@@ -269,7 +269,7 @@ export default {
                 response = new Response(JSON.stringify({ 
                   error: "Video chat not available for this match",
                   details: "Match not found or video is not enabled."
-                }), { status: 404, headers: { "Content-Type": "application/json" } });
+                }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
               } else {
                 // 1. Create room (ignoring if it already exists)
                 const roomRes = await fetch("https://api.daily.co/v1/rooms", {
