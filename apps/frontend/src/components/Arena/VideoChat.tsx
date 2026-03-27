@@ -260,7 +260,13 @@ export default function VideoChat({ matchId }: Props) {
       setLoading(true);
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (window.location.protocol + "//" + window.location.hostname + ":8787");
+        console.log(`[VIDEO] Fetching token for ${matchId} from ${backendUrl}`);
         const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}`);
+        if (!res.ok) {
+           const errText = await res.text();
+           console.error(`[VIDEO] Token fetch failed: ${res.status} ${errText}`);
+           throw new Error(`Token fetch failed: ${res.status}`);
+        }
         const data = await res.json();
         
         if (aborted) return;
