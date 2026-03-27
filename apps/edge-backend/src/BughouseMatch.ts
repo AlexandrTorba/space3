@@ -411,6 +411,17 @@ export class BughouseMatch {
     this.isActive = false;
     this.result = result;
     this.reason = reason;
+    
+    if (this.db) {
+       const p = this.db.update(matches).set({
+          status: 'finished',
+          result: this.result,
+          reason: this.reason,
+          updatedAt: new Date()
+       }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+       this.state.waitUntil(p);
+    }
+    
     this.broadcastStatus();
   }
 
@@ -563,10 +574,8 @@ export class BughouseMatch {
 
   checkGameOver() {
     if (this.engine0.isCheckmate() || this.engine1.isCheckmate()) {
-       this.isActive = false;
-       this.result = this.engine0.isCheckmate() ? (this.engine0.turn() === 'w' ? "0-1" : "1-0") : (this.engine1.turn() === 'w' ? "1-0" : "0-1");
-       this.reason = "checkmate";
-       this.broadcastStatus();
+       const result = this.engine0.isCheckmate() ? (this.engine0.turn() === 'w' ? "0-1" : "1-0") : (this.engine1.turn() === 'w' ? "1-0" : "0-1");
+       this.endGame(result, "checkmate");
     }
   }
 
