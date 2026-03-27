@@ -314,12 +314,12 @@ export default {
                 response = new Response(JSON.stringify({ 
                    roomUrl: `https://${domain}.daily.co/${matchId}`,
                    token: tokenData.token,
-                }), { headers: { "Content-Type": "application/json" } });
+                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
               }
 
             } catch (e) {
                console.error("Daily API Error:", e);
-               response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: "Server Error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+               response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: e.message || e.toString() }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
           }
        }
