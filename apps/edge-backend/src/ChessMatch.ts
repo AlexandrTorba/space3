@@ -326,7 +326,12 @@ export class ChessMatch {
       }
     });
     const binary = toBinary(MatchUpdateSchema, statusSync);
-    this.sessions.forEach(s => s.send(binary));
+    this.sessions.forEach(s => {
+        try {
+            s.send(binary);
+            s.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
+        } catch(e) {}
+    });
   }
 
   endGame(matchId: string, result: string, reason: string) {

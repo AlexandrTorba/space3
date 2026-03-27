@@ -578,6 +578,7 @@ export class BughouseMatch {
      this.sessions.forEach(s => {
        try {
          s.send(binary);
+         s.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
        } catch (e: any) {
          this.sessions.delete(s);
        }
