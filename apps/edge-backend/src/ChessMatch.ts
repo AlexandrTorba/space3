@@ -288,19 +288,21 @@ export class ChessMatch {
         if (server === this.whiteSocket) this.whiteSocket = null;
         if (server === this.blackSocket) this.blackSocket = null;
         
-        // If no human sockets left in an active game, wait 15s then abort
-        if (this.isActive && this.sessions.size === 0 && (this.moveCount > 0 || this.isBotMatch)) {
-             console.log("[CHESS] No humans left. Starting 15s grace period.");
+        // If no human sockets left in an active game, wait 60s then abort/delete
+        if (this.isActive && this.sessions.size === 0) {
+             console.log("[CHESS] No humans left. Starting 60s grace period.");
              if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
              this.disconnectTimer = setTimeout(() => {
-                if (this.isActive && !this.whiteSocket && !this.blackSocket) {
-                    console.log("[CHESS] Grace period expired. Ending match.");
-                    this.endGame(this.matchId, "Aborted", "all_players_disconnected_timeout");
+                if (this.isActive && this.sessions.size === 0) {
+                    console.log("[CHESS] Grace period expired. Performing cleanup.");
+                    if (this.moveCount === 0 && !this.isBotMatch && this.db) {
+                        const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+                        this.state.waitUntil(p);
+                    } else {
+                        this.endGame(this.matchId, "Aborted", "all_players_disconnected_timeout");
+                    }
                 }
-             }, 15000);
-        } else if (this.isActive && this.moveCount === 0 && this.sessions.size === 0 && this.db) {
-            const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-            this.state.waitUntil(p);
+             }, 60000);
         }
     });
   }
