@@ -19,18 +19,7 @@ import { BughouseActivityLogs } from "./BughouseArena/BughouseActivityLogs";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
-function makePieceComponent(pieceCode: string, urlRef: React.MutableRefObject<(p: string) => string>) {
-  function PieceImg(props: { svgStyle?: React.CSSProperties; square?: string } = {}) {
-    return <img src={urlRef.current(pieceCode)} style={props.svgStyle} className="w-full h-full object-contain pointer-events-none" alt={pieceCode} />;
-  }
-  return PieceImg;
-}
 
-const getPieceUrlRef: { current: (p: string) => string } = { current: () => "" };
-
-const stableCustomPieces = Object.fromEntries(
-  piecesLabels.map(p => [p, makePieceComponent(p, getPieceUrlRef)])
-);
 
 export default function BughouseArena() {
   const [mounted, setMounted] = useState(false);
@@ -42,7 +31,24 @@ export default function BughouseArena() {
   const { t } = useTranslation();
   const { settings, updateSettings, getPieceUrl } = useSettings();
   const { setIsPanelOpen } = useSettingsContext();
-  getPieceUrlRef.current = getPieceUrl;
+
+  const urlRef = useRef(getPieceUrl);
+  urlRef.current = getPieceUrl;
+
+  const stableCustomPieces = useMemo(() => {
+    const p: any = {};
+    piecesLabels.forEach(label => {
+      p[label] = (props: any) => (
+        <img 
+          src={urlRef.current(label)} 
+          style={props.svgStyle} 
+          className="w-full h-full object-contain pointer-events-none" 
+          alt={label} 
+        />
+      );
+    });
+    return p;
+  }, []);
 
   const [state, setState] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
@@ -392,7 +398,7 @@ export default function BughouseArena() {
                      clocks={clocks}
                      playerName={playerName}
                      isMain={true}
-                     theme={boardThemes[settings.boardTheme]}
+                     theme={boardThemes[settings.boardTheme] || boardThemes.classic}
                      customPieces={stableCustomPieces}
                      onDrop={onDrop}
                      onSquareClick={onSquareClick}
@@ -416,7 +422,7 @@ export default function BughouseArena() {
                      clocks={clocks}
                      playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
                      isMain={false}
-                     theme={boardThemes[settings.boardTheme]}
+                     theme={boardThemes[settings.boardTheme] || boardThemes.classic}
                      customPieces={stableCustomPieces}
                      onDrop={onDrop}
                      onSquareClick={onSquareClick}
