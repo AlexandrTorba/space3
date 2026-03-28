@@ -19,6 +19,7 @@ export interface ChessSettings {
   engineThreads: number;
   engineHash: number;
   engineMultiPV: number;
+  volume: number;
 }
 
 export const boardThemes: Record<BoardTheme, { dark: string; light: string }> = {
@@ -45,6 +46,7 @@ export function useSettings() {
     engineThreads: 1,
     engineHash: 16,
     engineMultiPV: 1,
+    volume: 0.7,
   });
 
   useEffect(() => {
