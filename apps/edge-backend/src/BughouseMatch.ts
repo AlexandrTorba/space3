@@ -161,9 +161,10 @@ export class BughouseMatch {
        (this.sockets as any)[role] = server;
        const slot = (this.lobby.slots as any)[role];
        if (slot) {
-         slot.isClaimed = true;
-         if (nameParam) slot.playerName = nameParam;
-         else if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
+          slot.isClaimed = true;
+          slot.isReady = true;
+          if (nameParam) slot.playerName = nameParam;
+          else if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
        }
        this.log(`[BUGHOUSE] Assigned ${role} to session (${nameParam || 'No name'})`);
     }
@@ -270,7 +271,7 @@ export class BughouseMatch {
            (this.sockets as any)[role] = server;
            targetSlot.isClaimed = true;
            targetSlot.playerName = name || "Player";
-           targetSlot.isReady = false;
+           targetSlot.isReady = true;
         }
     } else if (type === "ready") {
        for(const r of ["w0", "b0", "w1", "b1"] as const) {

@@ -12,6 +12,10 @@ import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 import DailyIframe from "@daily-co/daily-js";
 import VideoChat from "./VideoChat";
+import { BughouseBoard } from "./BughouseArena/BughouseBoard";
+import { BughouseLobby } from "./BughouseArena/BughouseLobby";
+import { BughouseBank } from "./BughouseArena/BughouseBank";
+import { BughouseActivityLogs } from "./BughouseArena/BughouseActivityLogs";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
@@ -346,138 +350,17 @@ export default function BughouseArena() {
       
       {/* Lobby Overlay */}
       {(!state || !state.lobby?.isAllReady) && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-500">
-           {!state ? (
-               <div className="p-12 text-center">
-                 <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6" />
-                 <p className="text-white font-black tracking-widest text-sm uppercase">{t("bh_connecting")}</p>
-              </div>
-           ) : (
-             <div className="max-w-4xl w-full bg-slate-900/50 border border-white/10 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
-               <div className="text-center mb-10">
-                  <div className="flex justify-center mb-6">
-                     <div className="p-4 bg-white/10 rounded-full">
-                        <Swords className="w-12 h-12 text-white" />
-                     </div>
-                  </div>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter text-white">{t("bh_assemble_teams")}</h2>
-                  <p className="text-slate-400 mt-2 font-medium">{t("bh_lobby_hint")}</p>
-               </div>
-
-              <div className="grid grid-cols-2 gap-8 mb-12">
-                 {/* Team White */}
-                  <div className="space-y-4">
-                     <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest text-center">{t("bh_team0")}</h3>
-                    {["w0", "b0"].map(r => {
-                       const slot = state.lobby?.[r];
-                       if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
-                       return (
-                          <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-blue-500/5 border-blue-500/20 hover:border-blue-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
-                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
-                                      {r.slice(0,1).toUpperCase()}
-                                   </div>
-                                    <div>
-                                       <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'w0' ? t('bh_board0_w') : t('bh_board0_b')}</div>
-                                       <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : t('bh_empty_slot')}</div>
-                                    </div>
-                                </div>
-                                {slot.isClaimed ? (
-                                   <div className="flex items-center gap-2">
-                                      {slot.isReady ? <CheckCircle className="w-6 h-6 text-emerald-500" /> : <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />}
-                                      {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[10px] font-black p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase">Kick Bot</button>}
-                                   </div>
-                                ) : (
-                                   <button 
-                                      onClick={(e) => { e.stopPropagation(); addBot(r); }} 
-                                      className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-blue-500/20 rounded-xl text-slate-500 hover:text-white transition-all group/bot"
-                                   >
-                                      <UserPlus className="w-4 h-4" />
-                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/bot:block animate-in fade-in slide-in-from-right-1">{t("bh_add_bot")}</span>
-                                   </button>
-                                )}
-                             </div>
-                             {slot.isClaimed && (
-                                <div className="absolute top-2 right-2 flex gap-1">
-                                   {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[9px] font-black px-2 py-1 bg-red-500/20 text-red-500 rounded hover:bg-red-500/40 transition-all uppercase">{t("bh_kick_bot")}</button>}
-                                </div>
-                             )}
-                             {slot.isClaimed && slot.sessionId === (state?.mySessionId || '') && (
-                                <div className="absolute inset-0 border-2 border-blue-500 rounded-3xl pointer-events-none shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
-                             )}
-                          </div>
-                       );
-                    })}
-                 </div>
-
-                 {/* Team Black */}
-                  <div className="space-y-4">
-                     <h3 className="text-sm font-black text-emerald-500 uppercase tracking-widest text-center">{t("bh_team1")}</h3>
-                    {["b1", "w1"].map(r => {
-                       const slot = state.lobby?.[r];
-                       if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
-                       return (
-                          <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
-                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
-                                      {r.slice(0,1).toUpperCase()}
-                                   </div>
-                                    <div>
-                                       <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'b1' ? t('bh_board1_b') : t('bh_board1_w')}</div>
-                                       <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : t('bh_empty_slot')}</div>
-                                    </div>
-                                </div>
-                                {slot.isClaimed ? (
-                                   <div className="flex items-center gap-2">
-                                      {slot.isReady ? <CheckCircle className="w-6 h-6 text-emerald-500" /> : <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />}
-                                      {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[10px] font-black p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase">Kick Bot</button>}
-                                   </div>
-                                ) : (
-                                   <button onClick={(e) => { e.stopPropagation(); addBot(r); }} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
-                                      <UserPlus className="w-5 h-5" />
-                                   </button>
-                                )}
-                             </div>
-                          </div>
-                       );
-                    })}
-                 </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-6">
-                  {state.lobby?.[useRole]?.isClaimed ? (
-                     <button 
-                        onClick={toggleReady}
-                        className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
-                           state.lobby?.[useRole]?.isReady 
-                              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
-                              : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
-                        }`}
-                     >
-                        {state.lobby?.[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
-                        {state.lobby?.[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
-                     </button>
-                  ) : (
-                     <div className="w-full py-6 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
-                        <Users className="w-8 h-8 text-slate-600" />
-                        <p className="text-amber-500 font-black tracking-widest uppercase text-xs animate-pulse">{t("bh_select_role_hint") || "Select a role to enable Ready button"}</p>
-                     </div>
-                  )}
-
-                  <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
-                     <span className="flex items-center gap-2">
-                        <Users className="w-3 h-3" />
-                        {Object.values(state.lobby || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
-                     </span>
-                     <span className="w-1 h-1 rounded-full bg-white/20" />
-                     <span className="text-blue-500/50">ID: {id}</span>
-                  </div>
-              </div>
-           </div>
-           )}
-        </div>
+        <BughouseLobby 
+          state={state}
+          t={t}
+          id={id}
+          role={role}
+          useRole={useRole}
+          claimRole={claimRole}
+          toggleReady={toggleReady}
+          addBot={addBot}
+          removeBot={removeBot}
+        />
       )}
 
       <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-8 flex-1">
@@ -499,82 +382,63 @@ export default function BughouseArena() {
         )}
 
         {/* Boards Section */}
-        <div 
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mx-auto transition-all duration-300"
-          style={{ width: `${boardScale}%`, maxWidth: '100%' }}
-        >
-             {/* My Board */}
-             <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center px-4 bg-white/5 rounded-t-2xl py-2 border border-white/5">
-                    <div className="text-sm font-black text-slate-400 uppercase tracking-widest">{getPlayerLabel(boardOrientation === 'white' ? 'b' + myBoardIdx : 'w' + myBoardIdx)}</div>
-                    <div className="text-2xl font-mono font-bold text-white">{formatTime(boardOrientation === 'white' ? (myBoardIdx === 0 ? clocks.b0 : clocks.b1) : (myBoardIdx === 0 ? clocks.w0 : clocks.w1))}</div>
-                </div>
-                <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative bg-slate-800">
-                    <Chessboard options={{
-                        id: `b0-${myBoardIdx}`,
-                        position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                        boardOrientation: boardOrientation,
-                        darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark },
-                        lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light },
-                        pieces: stableCustomPieces as any,
-                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => {
-                             if (!piece || !sourceSquare || !targetSquare) return false;
-                             return onDrop(myBoardIdx, sourceSquare as any, targetSquare as any, piece as any);
-                        },
-                        onSquareClick: (s: any) => onSquareClick(myBoardIdx, s)
-                    }} />
-                </div>
-                <div className="flex justify-between items-center px-4 bg-white/5 rounded-b-2xl py-2 border border-white/5">
-                    <div className="text-sm font-black text-slate-400 uppercase tracking-widest">{getPlayerLabel(boardOrientation === 'white' ? 'w' + myBoardIdx : 'b' + myBoardIdx)}</div>
-                    <div className="text-2xl font-mono font-bold text-white">{formatTime(boardOrientation === 'white' ? (myBoardIdx === 0 ? clocks.w0 : clocks.w1) : (myBoardIdx === 0 ? clocks.b0 : clocks.b1))}</div>
-                </div>
-                <div className="h-12 bg-white/5 rounded-xl flex items-center px-4 gap-2">
-                    {myBankW?.map((p: string, i: number) => <button key={i} onClick={() => setSelectedPiece({char: p, board: myBoardIdx})} className="text-lg font-black text-blue-400">{p}</button>)}
-                </div>
+        <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
+             {/* Main Board Area */}
+             <div className="flex flex-col gap-6">
+                 <BughouseBoard 
+                     boardIdx={myBoardIdx}
+                     orientation={boardOrientation}
+                     fen={myBoard?.fen || "start"}
+                     clocks={clocks}
+                     playerName={playerName}
+                     isMain={true}
+                     theme={boardThemes[settings.boardTheme]}
+                     customPieces={stableCustomPieces}
+                     onDrop={onDrop}
+                     onSquareClick={onSquareClick}
+                     formatTime={formatTime}
+                     getPlayerLabel={getPlayerLabel}
+                 />
+                 <BughouseBank 
+                     bank={myBankW || []} 
+                     boardIdx={myBoardIdx} 
+                     setSelectedPiece={setSelectedPiece} 
+                     getPieceUrl={getPieceUrl} 
+                 />
              </div>
 
-             {/* Partner Board */}
-             <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center px-4 bg-white/5 rounded-t-2xl py-2 border border-white/5">
-                    <div className="text-sm font-black text-slate-400 uppercase tracking-widest">{getPlayerLabel(partnerOrientation === 'white' ? 'b' + partnerBoardIdx : 'w' + partnerBoardIdx)}</div>
-                    <div className="text-2xl font-mono font-bold text-white">{formatTime(partnerOrientation === 'white' ? (partnerBoardIdx === 0 ? clocks.b0 : clocks.b1) : (partnerBoardIdx === 0 ? clocks.w0 : clocks.w1))}</div>
-                </div>
-                <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative bg-slate-800 opacity-90 hover:opacity-100 transition-opacity">
-                    <Chessboard options={{
-                        id: `b1-${partnerBoardIdx}`,
-                        position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                        boardOrientation: partnerOrientation,
-                        darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark },
-                        lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light },
-                        pieces: stableCustomPieces as any,
-                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => {
-                             if (!piece || !sourceSquare || !targetSquare) return false;
-                             return onDrop(partnerBoardIdx, sourceSquare as any, targetSquare as any, piece as any);
-                        },
-                        onSquareClick: (s: any) => onSquareClick(partnerBoardIdx, s)
-                    }} />
-                </div>
-                <div className="flex justify-between items-center px-4 bg-white/5 rounded-b-2xl py-2 border border-white/5">
-                    <div className="text-sm font-black text-slate-400 uppercase tracking-widest">{getPlayerLabel(partnerOrientation === 'white' ? 'w' + partnerBoardIdx : 'b' + partnerBoardIdx)}</div>
-                    <div className="text-2xl font-mono font-bold text-white">{formatTime(partnerOrientation === 'white' ? (partnerBoardIdx === 0 ? clocks.w0 : clocks.w1) : (partnerBoardIdx === 0 ? clocks.b0 : clocks.b1))}</div>
-                </div>
+             {/* Partner Board Area */}
+             <div className="flex flex-col gap-6 opacity-80 hover:opacity-100 transition-opacity duration-500">
+                 <BughouseBoard 
+                     boardIdx={partnerBoardIdx}
+                     orientation={partnerOrientation}
+                     fen={partnerBoard?.fen || "start"}
+                     clocks={clocks}
+                     playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
+                     isMain={false}
+                     theme={boardThemes[settings.boardTheme]}
+                     customPieces={stableCustomPieces}
+                     onDrop={onDrop}
+                     onSquareClick={onSquareClick}
+                     formatTime={formatTime}
+                     getPlayerLabel={getPlayerLabel}
+                 />
+                 <BughouseBank 
+                     bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
+                     boardIdx={partnerBoardIdx} 
+                     setSelectedPiece={setSelectedPiece} 
+                     getPieceUrl={getPieceUrl} 
+                 />
              </div>
         </div>
 
         {/* Activity Logs Section */}
-        <div className="flex flex-col bg-black/40 border border-white/5 rounded-3xl overflow-hidden h-[240px] shadow-2xl backdrop-blur-xl w-full mb-12">
-           <div className="px-6 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
-                 <RotateCcw className="w-4 h-4 text-blue-500"/> Activity Logs
-              </div>
-           </div>
-           <div className="flex-1 p-6 overflow-y-auto font-mono text-xs text-slate-400 space-y-2 custom-scrollbar">
-              {logs.map((l, i) => <div key={i} className="border-l-2 border-white/5 pl-3">{l}</div>)}
-           </div>
-           <form onSubmit={handleChatSubmit} className="p-4 bg-white/5 border-t border-white/5 flex gap-3">
-              <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type to chat..." className="flex-1 bg-black/30 border border-white/10 rounded-xl px-6 py-3 text-sm text-white outline-none focus:border-blue-500/50 transition-all font-mono" />
-           </form>
-        </div>
+        <BughouseActivityLogs 
+            logs={logs}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            handleSubmit={handleChatSubmit}
+        />
       </div>
     </div>
   );
