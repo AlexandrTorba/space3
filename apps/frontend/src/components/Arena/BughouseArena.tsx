@@ -330,7 +330,10 @@ export default function BughouseArena() {
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark },
                         lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light },
                         pieces: stableCustomPieces as any,
-                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => onDrop(myBoardIdx, sourceSquare, targetSquare, piece as unknown as string),
+                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => {
+                             if (!piece || !sourceSquare || !targetSquare) return false;
+                             return onDrop(myBoardIdx, sourceSquare as any, targetSquare as any, piece as any);
+                        },
                         onSquareClick: (s: any) => onSquareClick(myBoardIdx, s)
                     }} />
                 </div>
@@ -357,7 +360,10 @@ export default function BughouseArena() {
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark },
                         lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light },
                         pieces: stableCustomPieces as any,
-                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => onDrop(partnerBoardIdx, sourceSquare, targetSquare, piece as unknown as string),
+                        onPieceDrop: ({ sourceSquare, targetSquare, piece }) => {
+                             if (!piece || !sourceSquare || !targetSquare) return false;
+                             return onDrop(partnerBoardIdx, sourceSquare as any, targetSquare as any, piece as any);
+                        },
                         onSquareClick: (s: any) => onSquareClick(partnerBoardIdx, s)
                     }} />
                 </div>
