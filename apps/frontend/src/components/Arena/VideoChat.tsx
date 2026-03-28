@@ -17,6 +17,8 @@ interface Props {
   role?: string;
   filterBoardIdx?: number;
   hideControls?: boolean;
+  initialMicOn?: boolean;
+  initialCamOn?: boolean;
 }
 
 function VideoTile({ id, isLocal = false }: { id: string; isLocal?: boolean }) {
@@ -225,7 +227,7 @@ function VideoChatUI({ filterBoardIdx, hideControls }: { filterBoardIdx?: number
   );
 }
 
-export default function VideoChat({ matchId, role, filterBoardIdx, hideControls = false }: Props) {
+export default function VideoChat({ matchId, role, filterBoardIdx, hideControls = false, initialMicOn = false, initialCamOn = false }: Props) {
   const [callObject, setCallObject] = useState<DailyCall | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -257,7 +259,10 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
         if (aborted) { if (call && !existingCall) await call.destroy(); return; }
         setCallObject(call);
         await call.join();
-        if (role && role !== 'spectator') { await call.setLocalAudio(true); await call.setLocalVideo(true); }
+        if (role && role !== 'spectator') { 
+           await call.setLocalAudio(initialMicOn); 
+           await call.setLocalVideo(initialCamOn); 
+        }
       } catch (e: any) { setErrorDetails(e.message); } finally { if (!aborted) setLoading(false); }
     };
     init();
