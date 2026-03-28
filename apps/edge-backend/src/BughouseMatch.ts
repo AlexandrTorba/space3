@@ -142,9 +142,11 @@ export class BughouseMatch {
     // Auto-claim if role provided in URL or find free slot
     let finalRole = initialRole;
     if (finalRole === "spectator") {
-       // try to find free slot
+       // try to find free slot (or slot with disconnected socket)
        for(const r of ["w0", "b0", "w1", "b1"] as const) {
-          if (!this.lobby.slots[r].isClaimed) {
+          const slot = this.lobby.slots[r];
+          const hasActiveSocket = (this.sockets as any)[r];
+          if (!slot.isClaimed || (!hasActiveSocket && !slot.isBot)) {
              finalRole = r;
              break;
           }
