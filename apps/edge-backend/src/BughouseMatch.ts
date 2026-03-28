@@ -411,7 +411,17 @@ export class BughouseMatch {
 
     const update = create(MatchUpdateSchema, { event: { case: "bughouse", value: { matchId: this.matchId, event: { case: "status", value: bughouseStatus } } } });
     const binary = toBinary(MatchUpdateSchema, update);
-    this.sessions.forEach((_, s) => s.send(binary));
+    
+    const syncMsg = JSON.stringify({ 
+      type: "lobby_sync", 
+      adminSessionId: this.lobby.adminSessionId,
+      spectators: connectedSpecs 
+    });
+
+    this.sessions.forEach((_, s) => {
+      s.send(binary);
+      s.send(syncMsg);
+    });
   }
 
   forceCleanup() { if (this.sessions.size===0) this.isActive=false; }
