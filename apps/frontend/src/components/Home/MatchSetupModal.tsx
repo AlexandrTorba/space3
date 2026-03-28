@@ -124,7 +124,6 @@ export default function MatchSetupModal({
 
                         {/* Footer Action */}
                         <div className="flex flex-col gap-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <button 
                                     onClick={onCreate}
                                     className={`w-full h-16 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 ${
@@ -136,20 +135,6 @@ export default function MatchSetupModal({
                                     <Swords className="w-5 h-5 text-current" />
                                     {isBughouse ? t("bh_wait_humans") : t("create_match")}
                                 </button>
-                                {isBughouse && (
-                                    <button 
-                                        onClick={() => {
-                                            (window as any).__ag_vs_bots = true;
-                                            onCreate();
-                                            delete (window as any).__ag_vs_bots;
-                                        }}
-                                        className="w-full h-16 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 bg-white/5 hover:bg-emerald-600 border border-white/10 text-white shadow-emerald-600/10"
-                                    >
-                                        <Zap className="w-5 h-5 text-emerald-400" />
-                                        {t("bh_practice_bots")}
-                                    </button>
-                                )}
-                            </div>
                             <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest opacity-60">
                                 {t("match_created_hint")}
                             </p>

@@ -114,12 +114,21 @@ export default function BughouseArena() {
     const name = localStorage.getItem("ag_name") || "Player";
     setPlayerName(name);
 
-    const isProd = window.location.protocol === "https:";
-    const wsUrl = isProd ? `wss://${window.location.host}/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}` : `ws://${window.location.hostname}:8787/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}`;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
+    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? (isProd ? window.location.hostname : window.location.hostname + ":8787") : "localhost:8787");
+    let host = rawUrl;
+    try {
+      if (rawUrl.includes("://")) {
+        host = new URL(rawUrl).host;
+      }
+    } catch (e) {}
+
+    const wsUrl = `${protocol}//${host}/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}`;
     
     const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
     ws.binaryType = "arraybuffer";
+    wsRef.current = ws;
 
     ws.onmessage = async (ev) => {
        const update = fromBinary(MatchUpdateSchema, new Uint8Array(ev.data));
