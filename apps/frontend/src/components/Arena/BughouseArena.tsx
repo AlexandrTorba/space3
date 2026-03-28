@@ -328,23 +328,26 @@ export default function BughouseArena() {
       {(!state || !state.lobby?.isAllReady) && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-500">
            {!state ? (
-               <div className="flex flex-col items-center gap-6">
-                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                  <p className="text-blue-500 font-black uppercase tracking-[0.2em] animate-pulse">Connecting to Match...</p>
-               </div>
+               <div className="p-12 text-center">
+                 <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6" />
+                 <p className="text-white font-black tracking-widest text-sm uppercase">{t("bh_connecting")}</p>
+              </div>
            ) : (
              <div className="max-w-4xl w-full bg-slate-900/50 border border-white/10 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
-              <div className="text-center mb-12">
-                 <Swords className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
-                 <h2 className="text-4xl font-black uppercase tracking-tighter text-white">Assemble Teams</h2>
-                 <p className="text-slate-400 mt-2 font-medium">Bughouse requires 4 players to start. Claim your seat.</p>
-              </div>
+               <div className="text-center mb-10">
+                  <div className="flex justify-center mb-6">
+                     <div className="p-4 bg-white/10 rounded-full">
+                        <Swords className="w-12 h-12 text-white" />
+                     </div>
+                  </div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter text-white">{t("bh_assemble_teams")}</h2>
+                  <p className="text-slate-400 mt-2 font-medium">{t("bh_lobby_hint")}</p>
+               </div>
 
               <div className="grid grid-cols-2 gap-8 mb-12">
                  {/* Team White */}
-                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest text-center">Team 0 (White/Black)</h3>
+                  <div className="space-y-4">
+                     <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest text-center">{t("bh_team0")}</h3>
                     {["w0", "b0"].map(r => {
                        const slot = state.lobby?.[r];
                        if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
@@ -355,10 +358,10 @@ export default function BughouseArena() {
                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
                                       {r.slice(0,1).toUpperCase()}
                                    </div>
-                                   <div>
-                                      <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'w0' ? 'Board 0 White' : 'Board 0 Black'}</div>
-                                      <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : 'EMPTY SLOT'}</div>
-                                   </div>
+                                    <div>
+                                       <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'w0' ? t('bh_board0_w') : t('bh_board0_b')}</div>
+                                       <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : t('bh_empty_slot')}</div>
+                                    </div>
                                 </div>
                                 {slot.isClaimed ? (
                                    <div className="flex items-center gap-2">
@@ -366,11 +369,20 @@ export default function BughouseArena() {
                                       {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[10px] font-black p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase">Kick Bot</button>}
                                    </div>
                                 ) : (
-                                   <button onClick={(e) => { e.stopPropagation(); addBot(r); }} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
-                                      <UserPlus className="w-5 h-5" />
+                                   <button 
+                                      onClick={(e) => { e.stopPropagation(); addBot(r); }} 
+                                      className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-blue-500/20 rounded-xl text-slate-500 hover:text-white transition-all group/bot"
+                                   >
+                                      <UserPlus className="w-4 h-4" />
+                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/bot:block animate-in fade-in slide-in-from-right-1">{t("bh_add_bot")}</span>
                                    </button>
                                 )}
                              </div>
+                             {slot.isClaimed && (
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                   {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[9px] font-black px-2 py-1 bg-red-500/20 text-red-500 rounded hover:bg-red-500/40 transition-all uppercase">{t("bh_kick_bot")}</button>}
+                                </div>
+                             )}
                              {slot.isClaimed && slot.sessionId === (state?.mySessionId || '') && (
                                 <div className="absolute inset-0 border-2 border-blue-500 rounded-3xl pointer-events-none shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
                              )}
@@ -380,8 +392,8 @@ export default function BughouseArena() {
                  </div>
 
                  {/* Team Black */}
-                 <div className="space-y-4">
-                    <h3 className="text-sm font-black text-emerald-500 uppercase tracking-widest text-center">Team 1 (Black/White)</h3>
+                  <div className="space-y-4">
+                     <h3 className="text-sm font-black text-emerald-500 uppercase tracking-widest text-center">{t("bh_team1")}</h3>
                     {["b1", "w1"].map(r => {
                        const slot = state.lobby?.[r];
                        if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
@@ -392,10 +404,10 @@ export default function BughouseArena() {
                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
                                       {r.slice(0,1).toUpperCase()}
                                    </div>
-                                   <div>
-                                      <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'b1' ? 'Board 1 Black' : 'Board 1 White'}</div>
-                                      <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : 'EMPTY SLOT'}</div>
-                                   </div>
+                                    <div>
+                                       <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'b1' ? t('bh_board1_b') : t('bh_board1_w')}</div>
+                                       <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : t('bh_empty_slot')}</div>
+                                    </div>
                                 </div>
                                 {slot.isClaimed ? (
                                    <div className="flex items-center gap-2">
@@ -417,11 +429,15 @@ export default function BughouseArena() {
               <div className="flex flex-col items-center gap-6">
                  {state.lobby?.[role]?.isClaimed ? (
                     <button 
-                      onClick={toggleReady}
-                      className={`px-12 py-4 rounded-2xl font-black uppercase tracking-widest transition-all scale-100 hover:scale-105 active:scale-95 ${state.lobby?.[role]?.isReady ? 'bg-emerald-500 text-white shadow-[0_0_30px_rgba(16,185,129,0.4)]' : 'bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]'}`}
-                    >
-                       {state.lobby?.[role]?.isReady ? 'Ready to Start' : 'Mark as Ready'}
-                    </button>
+                     onClick={toggleReady}
+                     className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] ${
+                        state.lobby?.[role]?.isReady 
+                           ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
+                           : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
+                     }`}
+                  >
+                     {state.lobby?.[role]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
+                  </button>
                  ) : (
                     <p className="text-amber-500 font-bold animate-pulse text-sm">Select a role to enable Ready button</p>
                  )}
