@@ -58,20 +58,7 @@ export default function BughouseArena() {
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
-  useEffect(() => {
-    if (!isMicOn && !isCamOn) return;
-    const interval = setInterval(() => {
-      const call = DailyIframe.getCallInstance();
-      if (call) {
-        const local = call.participants().local;
-        if (local) {
-          setIsMicOn(local.audio);
-          setIsCamOn(local.video);
-        }
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isMicOn, isCamOn]);
+  // Remove automatic state synchronization to avoid forced resets after turning off
 
   const toggleGlobalMic = () => {
     const call = DailyIframe.getCallInstance();
@@ -473,17 +460,12 @@ export default function BughouseArena() {
 
       <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-8 flex-1">
         {/* Top Video Ribbon - Visible if Cam is on, but VideoChat loads if either is on */}
+        {/* Single VideoChat instance for both Mic and Cam to avoid conflicts */}
         {(isMicOn || isCamOn) && (
             <div 
               className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-500 overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
               style={{ height: `${videoHeight}px` }}
             >
-                <VideoChat matchId={id} role={role} hideControls={true} />
-            </div>
-        )}
-        {/* Invisible VideoChat for Mic-only mode */}
-        {(isMicOn && !isCamOn) && (
-            <div className="hidden">
                 <VideoChat matchId={id} role={role} hideControls={true} />
             </div>
         )}
