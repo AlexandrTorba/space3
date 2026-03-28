@@ -165,6 +165,7 @@ export default function Home() {
 
                 <div className="xl:col-span-6 flex flex-col gap-6">
                     <ChallengeConfig 
+                        isBughouse={activeTab === "bughouse"}
                         timeControl={activeTab === "bughouse" ? bughouseTimeControl : timeControl}
                         onTimeControlChange={activeTab === "bughouse" ? setBughouseTimeControl : setTimeControl}
                         colorPref={activeTab === "bughouse" ? bughouseColorPref : colorPref}

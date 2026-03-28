@@ -10,12 +10,14 @@ interface ChallengeConfigProps {
     onColorPrefChange: (v: any) => void;
     myChallengeId: string | null;
     onCancelChallenge: () => void;
+    isBughouse?: boolean;
 }
 
 export default function ChallengeConfig({ 
     timeControl, onTimeControlChange, 
     colorPref, onColorPrefChange, 
-    myChallengeId, onCancelChallenge 
+    myChallengeId, onCancelChallenge,
+    isBughouse 
 }: ChallengeConfigProps) {
   return (
     <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 md:p-8 rounded-[2.5rem] shadow-xl">
@@ -37,21 +39,23 @@ export default function ChallengeConfig({
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col gap-2 w-full">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Color Pref</label>
-                <div className="bg-black/40 border border-white/5 rounded-2xl px-5 h-14 flex items-center gap-3">
-                   <Shield className={`w-5 h-5 ${colorPref === 'white' ? 'text-white' : colorPref === 'black' ? 'text-slate-600' : 'text-blue-400'}`} />
-                   <select 
-                     value={colorPref}
-                     onChange={e => onColorPrefChange(e.target.value as any)}
-                     className="bg-transparent border-none text-sm font-black w-full focus:outline-none appearance-none cursor-pointer"
-                   >
-                      <option value="random">Randomized</option>
-                      <option value="white">White</option>
-                      <option value="black">Black</option>
-                   </select>
+            {!isBughouse && (
+                <div className="flex-1 flex flex-col gap-2 w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Color Pref</label>
+                    <div className="bg-black/40 border border-white/5 rounded-2xl px-5 h-14 flex items-center gap-3">
+                    <Shield className={`w-5 h-5 ${colorPref === 'white' ? 'text-white' : colorPref === 'black' ? 'text-slate-600' : 'text-blue-400'}`} />
+                    <select 
+                        value={colorPref}
+                        onChange={e => onColorPrefChange(e.target.value as any)}
+                        className="bg-transparent border-none text-sm font-black w-full focus:outline-none appearance-none cursor-pointer"
+                    >
+                        <option value="random">Randomized</option>
+                        <option value="white">White</option>
+                        <option value="black">Black</option>
+                    </select>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
 
         {myChallengeId && (

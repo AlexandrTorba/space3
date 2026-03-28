@@ -528,6 +528,7 @@ function PlayArenaContent() {
                 <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
                     <Chessboard 
                         options={{
+                            id: `board-main-${boardOrientation}`,
                             position: fen,
                             onPieceDrop: onDrop as any,
                             boardOrientation: boardOrientation,

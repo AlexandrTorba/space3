@@ -171,6 +171,15 @@ export default function BughouseArena() {
     });
   };
 
+  const setTimeControl = (ms: number) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+        const update = create(MatchUpdateSchema, {
+            event: { case: "lobby", value: { type: "set_time", role: "", name: "", timeControlMs: ms } }
+        });
+        wsRef.current.send(toBinary(MatchUpdateSchema, update));
+    }
+  };
+
   const sendAction = (actionType: "rematch" | "resign") => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           const update = create(MatchUpdateSchema, {
@@ -400,7 +409,7 @@ export default function BughouseArena() {
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl relative landscape:max-h-[60vh] landscape:w-auto mx-auto">
                 <Chessboard 
                     options={{
-                        id: `board${myBoardIdx}`,
+                        id: `board-${myBoardIdx}-${boardOrientation}`,
                         position: myBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                         boardOrientation: boardOrientation,
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
@@ -473,7 +482,7 @@ export default function BughouseArena() {
             <div className="aspect-square border-2 md:border-4 border-slate-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl opacity-80 hover:opacity-100 transition-opacity landscape:max-h-[60vh] landscape:w-auto mx-auto relative">
                 <Chessboard 
                     options={{
-                        id: `board${partnerBoardIdx}`,
+                        id: `board-${partnerBoardIdx}-${partnerOrientation}`,
                         position: partnerBoard?.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                         boardOrientation: partnerOrientation,
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
@@ -520,6 +529,33 @@ export default function BughouseArena() {
                   </div>
                   <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">{t("setup_teams" as any)}</h2>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-widest opacity-60">{t("bughouse_lobby_hint" as any)}</p>
+              </div>
+
+              <div className="mb-8 flex flex-col gap-3">
+                  <div className="flex items-center gap-2 pl-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t("time_control" as any) || "Time Control"}</label>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                      {[60000, 180000, 300000, 600000].map(ms => (
+                          <button
+                              key={ms}
+                              onClick={() => setTimeControl(ms)}
+                              className={`py-4 rounded-2xl border-2 text-xs font-black transition-all duration-300 ${
+                                  (state?.lobby as any)?.timeControlMs === ms 
+                                  ? 'bg-blue-500/20 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.15)] scale-[1.02]' 
+                                  : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-white/[0.07]'
+                              }`}
+                          >
+                              {ms / 60000}m
+                          </button>
+                      ))}
+                  </div>
+              </div>
+
+              <div className="flex items-center gap-2 pl-1 mb-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t("select_color_slot" as any) || "Select Color & Board"}</label>
               </div>
 
               <div className="grid grid-cols-2 gap-4 md:gap-8 mb-10">
