@@ -19,11 +19,20 @@ export interface Env {
   ADMIN_SECRET?: string;
 }
 
-const CORS_HEADERS = (origin: string | null) => ({
-  "Access-Control-Allow-Origin": origin || "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Admin-Secret",
-});
+const ALLOWED_ORIGINS = [
+  "https://antigravitychess.io",
+  "http://localhost:3000",
+  "http://localhost:8787"
+];
+
+const CORS_HEADERS = (origin: string | null) => {
+  const allowed = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : "https://antigravitychess.io";
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Secret",
+  };
+};
 
 // Note: localMatchRegistry removed as we use DB in production
 
@@ -35,7 +44,7 @@ export default {
     // Handle CORS preflight
     const origin = request.headers.get("Origin");
     const corsHeaders = CORS_HEADERS(origin);
-    
+
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
@@ -45,7 +54,7 @@ export default {
     if (path.startsWith("/lobby")) {
       const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
       const stub = env.LOBBY.get(id);
-      
+
       // Monitor match creation events from lobby logs (simplified for local proxy)
       const res = await stub.fetch(request);
       if (res.status === 101) return res; // WebSocket
@@ -80,9 +89,9 @@ export default {
 
       if (!dbUrl || !dbToken) {
         console.error("CRITICAL: Database configuration is missing! Neither TURSO_URL/LIBSQL_URL nor flags are set.");
-        response = new Response(JSON.stringify({ 
-          error: "Database configuration missing", 
-          details: "Please set LIBSQL_URL and LIBSQL_AUTH_TOKEN in Cloudflare Dashboard" 
+        response = new Response(JSON.stringify({
+          error: "Database configuration missing",
+          details: "Please set LIBSQL_URL and LIBSQL_AUTH_TOKEN in Cloudflare Dashboard"
         }), {
           status: 500,
           headers: { "Content-Type": "application/json" }
@@ -119,17 +128,17 @@ export default {
       } else {
         try {
           const db = createDb(dbUrl, dbToken);
-          
+
           // Lazy Reaper: Clear matches older than 20 minutes that are still 'active'
           const staleThreshold = new Date(Date.now() - 20 * 60 * 1000);
-          
+
           // Background cleanup
           ctx.waitUntil(
             db.update(matches)
               .set({ status: 'finished', result: 'Aborted', reason: 'stale_cleanup', updatedAt: new Date() })
               .where(and(eq(matches.status, 'active'), lt(matches.updatedAt, staleThreshold)))
               .execute()
-              .catch(() => {})
+              .catch(() => { })
           );
 
           const live = await db.select()
@@ -164,36 +173,36 @@ export default {
     }
     // Admin Video Control Endpoint
     else if (path.startsWith("/api/admin/match/video")) {
-       const matchId = url.searchParams.get("matchId");
-       const enabled = url.searchParams.get("enabled") === "true";
-       const secret = request.headers.get("X-Admin-Secret");
+      const matchId = url.searchParams.get("matchId");
+      const enabled = url.searchParams.get("enabled") === "true";
+      const secret = request.headers.get("X-Admin-Secret");
 
-       if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
-          response = new Response("Unauthorized", { status: 401, headers: CORS_HEADERS(origin) });
-       } else if (!env.ADMIN_SECRET) {
-          response = new Response("Admin Secret not configured", { status: 500, headers: CORS_HEADERS(origin) });
-       } else if (!matchId) {
-          response = new Response("Match ID missing", { status: 400, headers: CORS_HEADERS(origin) });
-       } else {
-          // Send to BOTH Chess AND Bughouse namespaces to be sure
-          const chessStub = env.CHESS_MATCH.get(env.CHESS_MATCH.idFromName(matchId));
-          const bughouseStub = env.BUGHOUSE_MATCH.get(env.BUGHOUSE_MATCH.idFromName(matchId));
-          
-          await chessStub.fetch(request.clone());
-          await bughouseStub.fetch(request.clone());
+      if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
+        response = new Response("Unauthorized", { status: 401, headers: CORS_HEADERS(origin) });
+      } else if (!env.ADMIN_SECRET) {
+        response = new Response("Admin Secret not configured", { status: 500, headers: CORS_HEADERS(origin) });
+      } else if (!matchId) {
+        response = new Response("Match ID missing", { status: 400, headers: CORS_HEADERS(origin) });
+      } else {
+        // Send to BOTH Chess AND Bughouse namespaces to be sure
+        const chessStub = env.CHESS_MATCH.get(env.CHESS_MATCH.idFromName(matchId));
+        const bughouseStub = env.BUGHOUSE_MATCH.get(env.BUGHOUSE_MATCH.idFromName(matchId));
 
-          // Also update the database status if possible
-          const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
-          const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
-          if (dbUrl && dbToken) {
-             try {
-                const db = createDb(dbUrl, dbToken);
-                await db.update(matches).set({ videoEnabled: enabled }).where(eq(matches.id, matchId));
-             } catch(e) {}
-          }
-          
-          response = new Response("OK");
-       }
+        await chessStub.fetch(request.clone());
+        await bughouseStub.fetch(request.clone());
+
+        // Also update the database status if possible
+        const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+        const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+        if (dbUrl && dbToken) {
+          try {
+            const db = createDb(dbUrl, dbToken);
+            await db.update(matches).set({ videoEnabled: enabled }).where(eq(matches.id, matchId));
+          } catch (e) { }
+        }
+
+        response = new Response("OK");
+      }
     }
     // Admin Cleanup Endpoint
     else if (path.startsWith("/api/admin/clear")) {
@@ -207,16 +216,16 @@ export default {
           const db = createDb(dbUrl, dbToken);
           // Delete ALL matches for a clean start
           await db.delete(matches).execute();
-          
+
           // Clear Lobby challenges
           try {
-             const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
-             const stub = env.LOBBY.get(id);
-             await stub.fetch("http://internal/clear", { method: "POST" });
-          } catch(e) {}
+            const id = env.LOBBY.idFromName("global-hyperbullet-lobby");
+            const stub = env.LOBBY.get(id);
+            await stub.fetch("http://internal/clear", { method: "POST" });
+          } catch (e) { }
 
-          response = new Response(JSON.stringify({ success: true, message: "All matches cleared from database" }), { 
-            headers: { "Content-Type": "application/json" } 
+          response = new Response(JSON.stringify({ success: true, message: "All matches cleared from database" }), {
+            headers: { "Content-Type": "application/json" }
           });
         } catch (e) {
           console.error("Cleanup error:", e);
@@ -231,7 +240,7 @@ export default {
       const secret = request.headers.get("X-Admin-Secret");
 
       if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
-         response = new Response("Unauthorized", { status: 401 });
+        response = new Response("Unauthorized", { status: 401 });
       } else if (!dbUrl || !dbToken) {
         response = new Response("Database configuration missing", { status: 500 });
       } else {
@@ -250,124 +259,124 @@ export default {
     }
     // Admin Video Rooms Flush Endpoint (Daily.co)
     else if (path.startsWith("/api/admin/video/flush")) {
-       const apiKey = env.DAILY_API_KEY;
-       const secret = request.headers.get("X-Admin-Secret");
+      const apiKey = env.DAILY_API_KEY;
+      const secret = request.headers.get("X-Admin-Secret");
 
-       if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
-          response = new Response("Unauthorized", { status: 401 });
-       } else if (!apiKey) {
-          response = new Response("DAILY_API_KEY missing", { status: 400 });
-       } else {
-          try {
-             // 1. Get List of rooms
-             const listRes = await fetch("https://api.daily.co/v1/rooms", {
+      if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
+        response = new Response("Unauthorized", { status: 401 });
+      } else if (!apiKey) {
+        response = new Response("DAILY_API_KEY missing", { status: 400 });
+      } else {
+        try {
+          // 1. Get List of rooms
+          const listRes = await fetch("https://api.daily.co/v1/rooms", {
+            headers: { "Authorization": `Bearer ${apiKey}` }
+          });
+          const rooms: any = await listRes.json();
+
+          // 2. Delete each room
+          if (rooms.data) {
+            for (const room of rooms.data) {
+              await fetch(`https://api.daily.co/v1/rooms/${room.name}`, {
+                method: "DELETE",
                 headers: { "Authorization": `Bearer ${apiKey}` }
-             });
-             const rooms: any = await listRes.json();
-             
-             // 2. Delete each room
-             if (rooms.data) {
-                for (const room of rooms.data) {
-                   await fetch(`https://api.daily.co/v1/rooms/${room.name}`, {
-                      method: "DELETE",
-                      headers: { "Authorization": `Bearer ${apiKey}` }
-                   });
-                }
-             }
-             
-             response = new Response(JSON.stringify({ success: true, count: rooms.total_count || 0 }), { 
-                headers: { "Content-Type": "application/json" } 
-             });
-          } catch (e) {
-             response = new Response(JSON.stringify({ error: "Flush failed" }), { status: 500 });
+              });
+            }
           }
-       }
+
+          response = new Response(JSON.stringify({ success: true, count: rooms.total_count || 0 }), {
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (e) {
+          response = new Response(JSON.stringify({ error: "Flush failed" }), { status: 500 });
+        }
+      }
     }
     // Video Chat Token Endpoint (Daily.co)
     else if (path.startsWith("/api/video/token")) {
-       const matchId = url.searchParams.get("matchId");
-       const apiKey = env.DAILY_API_KEY;
+      const matchId = url.searchParams.get("matchId");
+      const apiKey = env.DAILY_API_KEY;
 
-       if (!matchId || !apiKey) {
-          response = new Response(JSON.stringify({ 
-             error: "Insufficient configuration",
-             details: matchId ? "DAILY_API_KEY missing" : "matchId missing"
-          }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-       } else {
-          const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
-          const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+      if (!matchId || !apiKey) {
+        response = new Response(JSON.stringify({
+          error: "Insufficient configuration",
+          details: matchId ? "DAILY_API_KEY missing" : "matchId missing"
+        }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } else {
+        const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+        const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
 
-          if (!dbUrl || !dbToken) {
-            response = new Response(JSON.stringify({ error: "Database configuration missing for video check" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          } else {
-            try {
-              const db = createDb(dbUrl, dbToken);
-              console.log(`[BACKEND] Checking video for match: ${matchId}`);
-              const matchRecord = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
-              console.log(`[BACKEND] Match found: ${matchRecord.length > 0}, enabled: ${matchRecord[0]?.videoEnabled}`);
+        if (!dbUrl || !dbToken) {
+          response = new Response(JSON.stringify({ error: "Database configuration missing for video check" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        } else {
+          try {
+            const db = createDb(dbUrl, dbToken);
+            console.log(`[BACKEND] Checking video for match: ${matchId}`);
+            const matchRecord = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+            console.log(`[BACKEND] Match found: ${matchRecord.length > 0}, enabled: ${matchRecord[0]?.videoEnabled}`);
 
-              if (!matchRecord || matchRecord.length === 0 || !matchRecord[0].videoEnabled) {
-                response = new Response(JSON.stringify({ 
-                  error: "Video chat not available for this match",
-                  details: "Match not found or video is not enabled."
-                }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-              } else {
-                // 1. Create room (ignoring if it already exists)
-                const roomRes = await fetch("https://api.daily.co/v1/rooms", {
-                   method: "POST",
-                   headers: {
-                      "Authorization": `Bearer ${apiKey}`,
-                      "Content-Type": "application/json"
-                   },
-                   body: JSON.stringify({
-                      name: matchId,
-                      privacy: "private",
-                      properties: {
-                         exp: Math.round(Date.now() / 1000) + 7200, // 2 hours
-                         enable_chat: true
-                      }
-                   })
-                });
-                
-                // 2. Generate Meeting Token
-                const tokenRes = await fetch("https://api.daily.co/v1/meeting-tokens", {
-                   method: "POST",
-                   headers: {
-                      "Authorization": `Bearer ${apiKey}`,
-                      "Content-Type": "application/json"
-                   },
-                   body: JSON.stringify({
-                      properties: {
-                         room_name: matchId,
-                         is_owner: false,
-                         exp: Math.round(Date.now() / 1000) + 7200
-                      }
-                   })
-                });
+            if (!matchRecord || matchRecord.length === 0 || !matchRecord[0].videoEnabled) {
+              response = new Response(JSON.stringify({
+                error: "Video chat not available for this match",
+                details: "Match not found or video is not enabled."
+              }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            } else {
+              // 1. Create room (ignoring if it already exists)
+              const roomRes = await fetch("https://api.daily.co/v1/rooms", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${apiKey}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  name: matchId,
+                  privacy: "private",
+                  properties: {
+                    exp: Math.round(Date.now() / 1000) + 7200, // 2 hours
+                    enable_chat: true
+                  }
+                })
+              });
 
-                const tokenData: any = await tokenRes.json();
-                if (!tokenData.token) {
-                  console.error("Daily Token Error:", tokenData);
-                  throw new Error(`Daily.co API failure: ${JSON.stringify(tokenData)}`);
-                }
-                const domain = (env.DAILY_DOMAIN || 'antigravity'); 
+              // 2. Generate Meeting Token
+              const tokenRes = await fetch("https://api.daily.co/v1/meeting-tokens", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${apiKey}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  properties: {
+                    room_name: matchId,
+                    is_owner: false,
+                    exp: Math.round(Date.now() / 1000) + 7200
+                  }
+                })
+              });
 
-                response = new Response(JSON.stringify({ 
-                   roomUrl: `https://${domain}.daily.co/${matchId}`,
-                   token: tokenData.token,
-                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              const tokenData: any = await tokenRes.json();
+              if (!tokenData.token) {
+                console.error("Daily Token Error:", tokenData);
+                throw new Error(`Daily.co API failure: ${JSON.stringify(tokenData)}`);
               }
+              const domain = (env.DAILY_DOMAIN || 'antigravity');
 
-            } catch (e: any) {
-               console.error("Daily API Error:", e);
-               response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: e.message || e.toString() }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              response = new Response(JSON.stringify({
+                roomUrl: `https://${domain}.daily.co/${matchId}`,
+                token: tokenData.token,
+              }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
+
+          } catch (e: any) {
+            console.error("Daily API Error:", e);
+            response = new Response(JSON.stringify({ error: "Failed to create secure video session", details: e.message || e.toString() }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
           }
-       }
+        }
+      }
     }
     // Admin Dashboard Route
     else if (path === "/admin") {
-       const html = `
+      const html = `
        <!DOCTYPE html>
        <html lang="en">
        <head>
@@ -517,7 +526,7 @@ export default {
        </body>
        </html>
        `;
-       response = new Response(html, { headers: { "Content-Type": "text/html" } });
+      response = new Response(html, { headers: { "Content-Type": "text/html" } });
     }
     if (!response) {
       response = new Response(
@@ -528,13 +537,13 @@ export default {
 
     // Apply CORS to all non-WebSocket responses
     if (response.status !== 101) {
-       const newHeaders = new Headers(response.headers);
-       const cors = CORS_HEADERS(origin);
-       Object.entries(cors).forEach(([k, v]) => newHeaders.set(k, v));
-       return new Response(response.body, {
-          status: response.status,
-          headers: newHeaders
-       });
+      const newHeaders = new Headers(response.headers);
+      const cors = CORS_HEADERS(origin);
+      Object.entries(cors).forEach(([k, v]) => newHeaders.set(k, v));
+      return new Response(response.body, {
+        status: response.status,
+        headers: newHeaders
+      });
     }
 
     return response;
