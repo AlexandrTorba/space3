@@ -54,9 +54,9 @@ export default function MatchSetupModal({
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black uppercase tracking-tight">
-                                        {isBughouse ? t("bughouse") : "Standard Match"}
+                                        {isBughouse ? t("bughouse") : t("standard_match")}
                                     </h3>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("setup_teams") || "Match Configuration"}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("match_config")}</p>
                                 </div>
                             </div>
                             <button 
@@ -133,10 +133,10 @@ export default function MatchSetupModal({
                                 }`}
                             >
                                 <Check className="w-5 h-5" />
-                                {t("ready_to_play") || "Create Match"}
+                                {t("create_match")}
                             </button>
                             <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest opacity-60">
-                                Match will be created and listed in the lobby
+                                {t("match_created_hint")}
                             </p>
                         </div>
                     </div>
