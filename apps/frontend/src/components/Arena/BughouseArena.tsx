@@ -259,18 +259,18 @@ export default function BughouseArena() {
      return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
-  if (!mounted || !id) return <div className="min-h-screen bg-[#07090E]" />;
-
-  const isTeam2 = role.endsWith('1');
-  
   // Find my current role dynamically from lobby slots
   const effectiveRole = useMemo(() => {
      if (!state?.lobby || !mySessionId) return role;
      for (const r of ["w0", "b0", "w1", "b1"]) {
-        if (state.lobby[r]?.sessionId === mySessionId) return r;
+        if (state.lobby?.[r]?.sessionId === mySessionId) return r;
      }
      return role; // Fallback to URL role
   }, [state?.lobby, mySessionId, role]);
+
+  if (!mounted || !id) return <div className="min-h-screen bg-[#07090E]" />;
+
+  const isTeam2 = role.endsWith('1');
 
   const useRole = effectiveRole || "spectator";
   const myBoardIdx = useRole.endsWith('1') ? 1 : 0;
@@ -451,13 +451,13 @@ export default function BughouseArena() {
                      <button 
                         onClick={toggleReady}
                         className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
-                           state.lobby[useRole]?.isReady 
+                           state.lobby?.[useRole]?.isReady 
                               ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
                               : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
                         }`}
                      >
-                        {state.lobby[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
-                        {state.lobby[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
+                        {state.lobby?.[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
+                        {state.lobby?.[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
                      </button>
                   ) : (
                      <div className="w-full py-6 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
