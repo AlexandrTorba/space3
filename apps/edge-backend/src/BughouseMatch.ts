@@ -60,7 +60,8 @@ export class BughouseMatch {
       w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
       b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
     },
-    isAllReady: false
+    isAllReady: false,
+    timeControlMs: 3 * 60 * 1000
   };
 
   // Clocks
@@ -290,6 +291,14 @@ export class BughouseMatch {
            targetSlot.isBot = false;
            targetSlot.playerName = "";
            targetSlot.isReady = false;
+        }
+    } else if (type === "set_time") {
+        if (action.timeControlMs > 0 && action.timeControlMs <= 3600000) {
+           this.lobby.timeControlMs = action.timeControlMs;
+           this.time0w = action.timeControlMs;
+           this.time0b = action.timeControlMs;
+           this.time1w = action.timeControlMs;
+           this.time1b = action.timeControlMs;
         }
     }
 
@@ -686,7 +695,8 @@ export class BughouseMatch {
           b0: this.lobby.slots.b0,
           w1: this.lobby.slots.w1,
           b1: this.lobby.slots.b1,
-          isAllReady: this.lobby.isAllReady
+          isAllReady: this.lobby.isAllReady,
+          timeControlMs: this.lobby.timeControlMs
         }
      } as any);
 

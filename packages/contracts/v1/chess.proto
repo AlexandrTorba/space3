@@ -31,6 +31,7 @@ message LobbyAction {
   string type = 1; // "claim", "ready", "leave", "bot_add"
   string role = 2; // "w0", "b0", "w1", "b1"
   string name = 3;
+  int32 time_control_ms = 4;
 }
 
 message BughouseStatus {
@@ -56,6 +57,7 @@ message BughouseLobby {
   PlayerSlot w1 = 3;
   PlayerSlot b1 = 4;
   bool is_all_ready = 5;
+  int32 time_control_ms = 6;
 }
 
 message ChatMessage {
