@@ -125,12 +125,18 @@ export default function BughouseArena() {
        const update = fromBinary(MatchUpdateSchema, new Uint8Array(ev.data));
        if (update.event.case === "bughouse") {
           const val = update.event.value as any;
-          setState(val);
-          if (val.clocks) {
-             setClocks({
-                w0: Number(val.clocks.w0), b0: Number(val.clocks.b0),
-                w1: Number(val.clocks.w1), b1: Number(val.clocks.b1)
-             });
+          if (val.event.case === "status") {
+             const status = val.event.value;
+             setState(status);
+             if (status.clocks) {
+                setClocks({
+                   w0: Number(status.clocks.w0), b0: Number(status.clocks.b0),
+                   w1: Number(status.clocks.w1), b1: Number(status.clocks.b1)
+                });
+             }
+          } else if (val.event.case === "lobbyInfo") {
+             const lobby = val.event.value;
+             setState((prev: any) => ({ ...prev, lobby }));
           }
        } else if (update.event.case === "chat") {
           const val = update.event.value as any;
