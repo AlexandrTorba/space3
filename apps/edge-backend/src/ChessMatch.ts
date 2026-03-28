@@ -245,9 +245,8 @@ export class ChessMatch {
           
           // SECURITY: Verify that the sender is the player whose turn it is
           if (turn === 'w' && (!this.whiteSocket || server !== this.whiteSocket)) {
-             // If whiteSocket is not set, the first person to move as white becomes whiteSocket
              if (!this.whiteSocket) this.whiteSocket = server;
-             else return; // Someone else tried to move for white
+             else return; 
           }
           if (turn === 'b' && (!this.blackSocket || server !== this.blackSocket)) {
              if (!this.blackSocket) this.blackSocket = server;
@@ -268,6 +267,17 @@ export class ChessMatch {
           this.drawOffer = null;
           if (this.moveCount === 1 && !this.isUnlimited) this.lastMoveTimestamp = Date.now();
           this.state.storage.setAlarm(Date.now() + 5 * 60 * 1000);
+          
+          // Update DB updatedAt to keep it alive in the Live list
+          // Throttle: only update DB every 30s
+          const nowMs = Date.now();
+          (this as any).lastDbUpdate = (this as any).lastDbUpdate || 0;
+          if (this.db && nowMs - (this as any).lastDbUpdate > 30000) {
+             (this as any).lastDbUpdate = nowMs;
+             const p = this.db.update(matches).set({ updatedAt: new Date() }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+             this.state.waitUntil(p);
+          }
+
           this.sessions.forEach(session => { if (session !== server) session.send(event.data); });
 
           if (this.engine.isGameOver()) {

@@ -6,11 +6,11 @@ import { motion } from "framer-motion";
 interface ModeSelectionProps {
     isBughouse: boolean;
     myChallengeId: string | null;
-    onCreateChallenge: (bughouse: boolean, vsBots?: boolean) => void;
+    onOpenSetup: (mode: "standard" | "bughouse") => void;
     t: any;
 }
 
-export default function ModeSelection({ isBughouse, myChallengeId, onCreateChallenge, t }: ModeSelectionProps) {
+export default function ModeSelection({ isBughouse, myChallengeId, onOpenSetup, t }: ModeSelectionProps) {
   return (
     <div className="flex flex-col gap-4">
         <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Play Mode</h2>
@@ -18,7 +18,7 @@ export default function ModeSelection({ isBughouse, myChallengeId, onCreateChall
             <motion.button 
               whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onCreateChallenge(false)}
+              onClick={() => onOpenSetup("standard")}
               className={`group relative h-40 rounded-3xl overflow-hidden border transition-all ${!isBughouse && myChallengeId ? 'border-blue-500 bg-blue-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
             >
                <div className="absolute top-6 left-6 text-left">
@@ -34,7 +34,7 @@ export default function ModeSelection({ isBughouse, myChallengeId, onCreateChall
             <motion.button 
               whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onCreateChallenge(true)}
+              onClick={() => onOpenSetup("bughouse")}
               className={`group relative h-40 rounded-3xl overflow-hidden border transition-all ${isBughouse && myChallengeId ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
             >
                <div className="absolute top-6 left-6 text-left">

@@ -2,7 +2,7 @@ import { ChessMatch } from "./ChessMatch";
 import { BughouseMatch } from "./BughouseMatch";
 import { Lobby } from "./Lobby";
 import { createDb, matches } from "@antigravity/database";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, lt, gte } from "drizzle-orm";
 
 export { ChessMatch, BughouseMatch, Lobby };
 
@@ -28,7 +28,7 @@ const CORS_HEADERS = (origin: string | null) => ({
 // Note: localMatchRegistry removed as we use DB in production
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -119,14 +119,29 @@ export default {
       } else {
         try {
           const db = createDb(dbUrl, dbToken);
+          
+          // Lazy Reaper: Clear matches older than 20 minutes that are still 'active'
+          const staleThreshold = new Date(Date.now() - 20 * 60 * 1000);
+          
+          // Background cleanup
+          ctx.waitUntil(
+            db.update(matches)
+              .set({ status: 'finished', result: 'Aborted', reason: 'stale_cleanup', updatedAt: new Date() })
+              .where(and(eq(matches.status, 'active'), lt(matches.updatedAt, staleThreshold)))
+              .execute()
+              .catch(() => {})
+          );
+
           const live = await db.select()
             .from(matches)
-            .where(eq(matches.status, "active"))
+            .where(and(eq(matches.status, "active"), gte(matches.updatedAt, staleThreshold)))
             .orderBy(desc(matches.updatedAt))
             .limit(50);
 
           const enriched = await Promise.all(live.map(async m => {
             try {
+              // Priority for BughouseNamespace check if id matches patterns or just try both
+              // Simplified: try Chess namespance then Bughouse if needed
               const id = env.CHESS_MATCH.idFromName(m.id);
               const stub = env.CHESS_MATCH.get(id);
               const res = await stub.fetch(`http://internal/match/${m.id}/spectators`);
@@ -134,6 +149,7 @@ export default {
                 const data: any = await res.json();
                 return { ...m, spectators: data.count || 0 };
               }
+              // If not in Chess, maybe in Bughouse? (Harder to check without routing info, but 4-player games are common)
               return { ...m, spectators: 0 };
             } catch (e) {
               return { ...m, spectators: 0 };
@@ -205,6 +221,30 @@ export default {
         } catch (e) {
           console.error("Cleanup error:", e);
           response = new Response(JSON.stringify({ error: "Failed to clear matches" }), { status: 500 });
+        }
+      }
+    }
+    // Admin Reap Stale Matches Endpoint
+    else if (path.startsWith("/api/admin/reap")) {
+      const dbUrl = env.TURSO_URL || env.LIBSQL_URL;
+      const dbToken = env.TURSO_AUTH_TOKEN || env.LIBSQL_AUTH_TOKEN;
+      const secret = request.headers.get("X-Admin-Secret");
+
+      if (env.ADMIN_SECRET && secret !== env.ADMIN_SECRET) {
+         response = new Response("Unauthorized", { status: 401 });
+      } else if (!dbUrl || !dbToken) {
+        response = new Response("Database configuration missing", { status: 500 });
+      } else {
+        try {
+          const db = createDb(dbUrl, dbToken);
+          const staleThreshold = new Date(Date.now() - 20 * 60 * 1000);
+          await db.update(matches)
+            .set({ status: 'finished', result: 'Aborted', reason: 'stale_manual', updatedAt: new Date() })
+            .where(and(eq(matches.status, 'active'), lt(matches.updatedAt, staleThreshold)))
+            .execute();
+          response = new Response(JSON.stringify({ success: true }));
+        } catch (e: any) {
+          response = new Response("Reap failed: " + e.message, { status: 500 });
         }
       }
     }
@@ -351,12 +391,15 @@ export default {
                </header>
 
                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div class="card p-6 rounded-3xl shadow-xl space-y-4">
-                       <h2 class="text-sm font-black uppercase tracking-widest text-slate-400">Controls</h2>
-                       <button onclick="clearMatches()" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Clear All Matches</button>
-                       <button onclick="flushVideoRooms()" class="w-full py-4 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Flush Video Rooms</button>
-                       <button onclick="refreshMatches()" class="w-full py-4 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Refresh Live Data</button>
-                   </div>
+                    <div class="card p-6 rounded-3xl shadow-xl space-y-4">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-slate-400">Controls</h2>
+                        <div class="grid grid-cols-2 gap-2">
+                           <button onclick="clearMatches()" class="py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Clear All</button>
+                           <button onclick="reapStale()" class="py-4 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Reap Stale</button>
+                        </div>
+                        <button onclick="flushVideoRooms()" class="w-full py-4 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Flush Video Rooms</button>
+                        <button onclick="refreshMatches()" class="w-full py-4 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-500 text-xs font-black uppercase tracking-widest rounded-2xl transition-all">Refresh Live Data</button>
+                    </div>
                    <div class="card p-6 rounded-3xl shadow-xl space-y-4">
                        <h2 class="text-sm font-black uppercase tracking-widest text-slate-400">Manual Control</h2>
                        <input type="text" id="manualId" placeholder="Match ID (UUID)" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-xs outline-none focus:border-blue-500 transition-all font-mono">
@@ -453,6 +496,19 @@ export default {
                    });
                    if (res.ok) refreshMatches();
                    else alert('Error: ' + await res.text());
+               }
+
+               async function reapStale() {
+                   const res = await fetch('/api/admin/reap', {
+                       method: 'POST',
+                       headers: { 'X-Admin-Secret': getSecret() }
+                   });
+                   if (res.ok) {
+                       alert('Reap completed.');
+                       refreshMatches();
+                   } else {
+                       alert('Error: ' + await res.text());
+                   }
                }
 
                refreshMatches();
