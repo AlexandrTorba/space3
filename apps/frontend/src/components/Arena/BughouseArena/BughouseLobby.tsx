@@ -20,10 +20,15 @@ interface BughouseLobbyProps {
 export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
   state, t, id, role, useRole, claimRole, toggleReady, addBot, removeBot, updateTeamName, spectators, assignRole, isAdmin
 }) => {
-  const team0Name = state.lobby?.team0Name || "Team White";
-  const team1Name = state.lobby?.team1Name || "Team Black";
+  const team0Name = state?.lobby?.team0Name || "Team White";
+  const team1Name = state?.lobby?.team1Name || "Team Black";
   const [editingTeam0, setEditingTeam0] = React.useState(team0Name);
   const [editingTeam1, setEditingTeam1] = React.useState(team1Name);
+
+  React.useEffect(() => {
+    setEditingTeam0(state?.lobby?.team0Name || "Team White");
+    setEditingTeam1(state?.lobby?.team1Name || "Team Black");
+  }, [state?.lobby?.team0Name, state?.lobby?.team1Name]);
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-500 overflow-y-auto">
@@ -191,17 +196,17 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
         )}
 
         <div className="flex flex-col items-center gap-6">
-            {state.lobby?.[useRole]?.isClaimed ? (
+            {state?.lobby?.[useRole]?.isClaimed ? (
                <button 
                   onClick={toggleReady}
                   className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
-                     state.lobby?.[useRole]?.isReady 
+                     state?.lobby?.[useRole]?.isReady 
                         ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
                         : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
                   }`}
                >
-                  {state.lobby?.[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
-                  {state.lobby?.[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
+                  {state?.lobby?.[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
+                  {state?.lobby?.[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
                </button>
             ) : (
                <div className="w-full py-6 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
@@ -213,7 +218,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
             <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
                <span className="flex items-center gap-2">
                   <Users className="w-3 h-3" />
-                  {Object.values(state.lobby || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
+                  {Object.values(state?.lobby || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
                </span>
                <span className="w-1 h-1 rounded-full bg-white/20" />
                <span className="text-blue-500/50">ID: {id}</span>
