@@ -466,7 +466,13 @@ export default function BughouseArena() {
               className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-500 overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
               style={{ height: `${videoHeight}px` }}
             >
-                <VideoChat matchId={id} role={role} hideControls={true} />
+                <VideoChat 
+                  matchId={id} 
+                  role={role} 
+                  hideControls={true} 
+                  initialMicOn={isMicOn} 
+                  initialCamOn={isCamOn} 
+                />
             </div>
         )}
 
