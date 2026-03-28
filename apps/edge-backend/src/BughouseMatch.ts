@@ -594,6 +594,16 @@ export class BughouseMatch {
 
     this.checkGameOver();
     this.broadcastStatus();
+
+    // Update DB updatedAt to keep it alive in the Live list
+    // Throttle: only update DB every 30s
+    const nowMs = Date.now();
+    (this as any).lastDbUpdate = (this as any).lastDbUpdate || 0;
+    if (this.db && nowMs - (this as any).lastDbUpdate > 30000) {
+        (this as any).lastDbUpdate = nowMs;
+        const p = this.db.update(matches).set({ updatedAt: new Date() }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
+        this.state.waitUntil(p);
+    }
   }
 
   transferCapture(pieceType: string, boardIdx: number, playerColor: string) {

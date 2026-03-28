@@ -15,3 +15,5 @@ dist/
 build/
 .gen/
 package-lock.json
+tail_logs.json
+*.tsbuildinfo

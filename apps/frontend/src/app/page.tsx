@@ -8,7 +8,7 @@ import { useSettings } from "@/hooks/useSettings";
 
 import LobbyHeader from "@/components/Home/LobbyHeader";
 import ModeSelection from "@/components/Home/ModeSelection";
-import ChallengeConfig from "@/components/Home/ChallengeConfig";
+import MatchSetupModal from "@/components/Home/MatchSetupModal";
 import LobbyList from "@/components/Home/LobbyList";
 import HomeSidebar from "@/components/Home/HomeSidebar";
 import MatchLoadingOverlay from "@/components/Home/MatchLoadingOverlay";
@@ -37,6 +37,8 @@ export default function Home() {
   const [isMatching, setIsMatching] = useState(false);
   const [activeTab, setActiveTab] = useState<"lobby" | "bughouse" | "live">("lobby");
   const [globalTab, setGlobalTab] = useState<"play" | "analysis" | "settings">("play");
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [setupMode, setSetupMode] = useState<"standard" | "bughouse">("standard");
 
   useEffect(() => {
      const fetchLive = () => {
@@ -111,6 +113,17 @@ export default function Home() {
       return finalName;
   };
 
+  const handleOpenSetup = (mode: "standard" | "bughouse") => {
+      setSetupMode(mode);
+      setIsSetupOpen(true);
+  };
+
+  const handleCreateChallengeInSetup = () => {
+    const isBh = setupMode === "bughouse";
+    handleCreateChallenge(isBh);
+    setIsSetupOpen(false);
+  };
+
   const handleCreateChallenge = (bughouse: boolean, vsBots?: boolean) => {
       const finalName = getNameOrDefault();
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -158,21 +171,31 @@ export default function Home() {
                     <ModeSelection 
                         isBughouse={activeTab === "bughouse"}
                         myChallengeId={myChallengeId}
-                        onCreateChallenge={handleCreateChallenge}
+                        onOpenSetup={handleOpenSetup}
                         t={t}
                     />
                 </div>
 
                 <div className="xl:col-span-6 flex flex-col gap-6">
-                    <ChallengeConfig 
-                        isBughouse={activeTab === "bughouse"}
-                        timeControl={activeTab === "bughouse" ? bughouseTimeControl : timeControl}
-                        onTimeControlChange={activeTab === "bughouse" ? setBughouseTimeControl : setTimeControl}
-                        colorPref={activeTab === "bughouse" ? bughouseColorPref : colorPref}
-                        onColorPrefChange={activeTab === "bughouse" ? setBughouseColorPref : setColorPref}
-                        myChallengeId={myChallengeId}
-                        onCancelChallenge={handleCancelChallenge}
-                    />
+                    {myChallengeId && (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-[2rem] flex items-center justify-between shadow-xl backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                </div>
+                                <div>
+                                    <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Global Lobby</div>
+                                    <h3 className="text-sm font-black text-emerald-400 uppercase tracking-tight">Searching Match...</h3>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleCancelChallenge}
+                                className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
                     <LobbyList 
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
@@ -199,6 +222,18 @@ export default function Home() {
       </div>
 
       <MatchLoadingOverlay isVisible={isMatching} />
+
+      <MatchSetupModal 
+          isOpen={isSetupOpen}
+          mode={setupMode}
+          onClose={() => setIsSetupOpen(false)}
+          onCreate={handleCreateChallengeInSetup}
+          timeControl={setupMode === "bughouse" ? bughouseTimeControl : timeControl}
+          onTimeControlChange={setupMode === "bughouse" ? setBughouseTimeControl : setTimeControl}
+          colorPref={setupMode === "bughouse" ? bughouseColorPref : colorPref}
+          onColorPrefChange={setupMode === "bughouse" ? setBughouseColorPref : setColorPref}
+          t={t}
+      />
       
       <footer className="mt-8 pb-8 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-700/50">
         © 2026 ANTIGRAVITYCHESS.IO. BY USING THIS SERVICE, YOU AGREE TO OUR 
