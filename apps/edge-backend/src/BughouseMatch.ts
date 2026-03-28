@@ -231,7 +231,8 @@ export class BughouseMatch {
          }
        }
        const target = (this.lobby.slots as any)[role];
-       if (target && !target.isClaimed) {
+       const hasActiveSocket = (this.sockets as any)[role];
+       if (target && (!target.isClaimed || !hasActiveSocket)) {
           target.isClaimed = true;
           target.playerName = name || sData.name;
           target.isReady = true;
