@@ -175,7 +175,13 @@ export const translations = {
       new_version: "New Branch",
       setup_teams: "Team Setup",
       bughouse_lobby_hint: "Choose your seat & partner",
-      ready_to_play: "READY TO PLAY"
+      ready_to_play: "READY TO PLAY",
+      standard_match: "Standard Match",
+      match_config: "Match Configuration",
+      create_match: "Create Match",
+      global_lobby: "Global Lobby",
+      searching_match: "Searching Match...",
+      match_created_hint: "Match will be created and listed in the lobby"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -349,7 +355,13 @@ export const translations = {
       new_version: "Створити гілку",
       setup_teams: "Налаштування команд",
       bughouse_lobby_hint: "Оберіть місце та напарника",
-      ready_to_play: "ГОТОВИЙ ДО ГРИ"
+      ready_to_play: "ГОТОВИЙ ДО ГРИ",
+      standard_match: "Стандартна гра",
+      match_config: "Налаштування матчу",
+      create_match: "Створити гру",
+      global_lobby: "Загальне лобі",
+      searching_match: "Пошук гри...",
+      match_created_hint: "Матч буде створено та додано до списку в лобі"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -523,7 +535,13 @@ export const translations = {
       new_version: "Nueva Rama",
       setup_teams: "Configuración de Equipos",
       bughouse_lobby_hint: "Elige tu asiento y compañero",
-      ready_to_play: "LISTO PARA JUGAR"
+      ready_to_play: "LISTO PARA JUGAR",
+      standard_match: "Partida Estándar",
+      match_config: "Configuración de Partida",
+      create_match: "Crear Partida",
+      global_lobby: "Lobby Global",
+      searching_match: "Buscando Partida...",
+      match_created_hint: "La partida se creará y aparecerá en el vestíbulo"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -697,7 +715,13 @@ export const translations = {
       new_version: "Yeni Dal",
       setup_teams: "Takım Kurulumu",
       bughouse_lobby_hint: "Koltuğunuzu ve partnerinizi seçin",
-      ready_to_play: "OYUNA HAZIR"
+      ready_to_play: "OYUNA HAZIR",
+      standard_match: "Standart Maç",
+      match_config: "Maç Yapılandırması",
+      create_match: "Maç Oluştur",
+      global_lobby: "Global Lobi",
+      searching_match: "Maç Aranıyor...",
+      match_created_hint: "Maç oluşturulacak ve lobi listesine eklenecek"
     }
 };
 

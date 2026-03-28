@@ -184,8 +184,8 @@ export default function Home() {
                                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Global Lobby</div>
-                                    <h3 className="text-sm font-black text-emerald-400 uppercase tracking-tight">Searching Match...</h3>
+                                    <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">{t("global_lobby")}</div>
+                                    <h3 className="text-sm font-black text-emerald-400 uppercase tracking-tight">{t("searching_match")}</h3>
                                 </div>
                             </div>
                             <button 
