@@ -197,7 +197,8 @@ export const translations = {
       bh_board0_w: "Board 0 White",
       bh_board0_b: "Board 0 Black",
       bh_board1_w: "Board 1 White",
-      bh_board1_b: "Board 1 Black"
+      bh_board1_b: "Board 1 Black",
+      bh_select_role_hint: "Select a role to enable Ready button"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -393,7 +394,8 @@ export const translations = {
       bh_board0_w: "Дошка 0 Білі",
       bh_board0_b: "Дошка 0 Чорні",
       bh_board1_w: "Дошка 1 Білі",
-      bh_board1_b: "Дошка 1 Чорні"
+      bh_board1_b: "Дошка 1 Чорні",
+      bh_select_role_hint: "Оберіть роль, щоб активувати Готовність"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -588,8 +590,9 @@ export const translations = {
       bh_connecting: "Conectando...",
       bh_board0_w: "Tablero 0 Blancas",
       bh_board0_b: "Tablero 0 Negras",
-      bh_board1_w: "Tablero 1 Blancas",
-      bh_board1_b: "Tablero 1 Negras"
+      bh_board1_w: "Tablero 1 Blanco",
+      bh_board1_b: "Tablero 1 Negro",
+      bh_select_role_hint: "Selecciona un rol para activar Listo"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -785,7 +788,8 @@ export const translations = {
       bh_board0_w: "Tahta 0 Beyaz",
       bh_board0_b: "Tahta 0 Siyah",
       bh_board1_w: "Tahta 1 Beyaz",
-      bh_board1_b: "Tahta 1 Siyah"
+      bh_board1_b: "Tahta 1 Siyah",
+      bh_select_role_hint: "Hazır butonunu etkinleştirmek için bir rol seçin"
     }
 };
 

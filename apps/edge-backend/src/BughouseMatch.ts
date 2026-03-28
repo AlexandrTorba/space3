@@ -151,6 +151,8 @@ export class BughouseMatch {
        clearTimeout(this.disconnectTimer);
        this.disconnectTimer = null;
     }
+    const sessionId = crypto.randomUUID();
+    server.send(JSON.stringify({ type: "session_id", id: sessionId }));
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
     // Initial assignment from URL params
