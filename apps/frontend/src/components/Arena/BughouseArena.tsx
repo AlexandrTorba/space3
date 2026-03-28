@@ -88,6 +88,19 @@ export default function BughouseArena() {
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
+  const startMatch = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { 
+                type: "start"
+            } as any 
+        } 
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
   const assignRole = (targetSessionId: string, targetRole: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const u = create(MatchUpdateSchema, { 
@@ -410,6 +423,7 @@ export default function BughouseArena() {
           addBot={addBot}
           removeBot={removeBot}
           updateTeamName={updateTeamName}
+          startMatch={startMatch}
           spectators={spectators}
           assignRole={assignRole}
           isAdmin={isAdmin}

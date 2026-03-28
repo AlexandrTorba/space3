@@ -139,15 +139,27 @@ export class BughouseMatch {
     server.send(JSON.stringify({ type: "session_id", id: sessionId }));
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
-    // Auto-claim if role provided in URL
-    if (["w0", "b0", "w1", "b1"].includes(initialRole)) {
-       const slot = (this.lobby.slots as any)[initialRole];
+    // Auto-claim if role provided in URL or find free slot
+    let finalRole = initialRole;
+    if (finalRole === "spectator") {
+       // try to find free slot
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+          if (!this.lobby.slots[r].isClaimed) {
+             finalRole = r;
+             break;
+          }
+       }
+    }
+
+    if (["w0", "b0", "w1", "b1"].includes(finalRole)) {
+       const slot = (this.lobby.slots as any)[finalRole];
        if (slot && !slot.isClaimed) {
           slot.isClaimed = true;
           slot.isReady = true;
           slot.playerName = name;
           slot.sessionId = sessionId;
-          (this.sockets as any)[initialRole] = server;
+          (this.sockets as any)[finalRole] = server;
+          this.sessions.get(server)!.role = finalRole;
           
           if (!this.lobby.adminSessionId) {
              this.lobby.adminSessionId = sessionId;
@@ -259,30 +271,26 @@ export class BughouseMatch {
     } else if (type === "team_name" && sData.id === this.lobby.adminSessionId) {
        if (role === "team0") this.lobby.team0Name = name;
        if (role === "team1") this.lobby.team1Name = name;
-    } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
-       const target = (this.lobby.slots as any)[role];
-       if (target && target.isBot) {
-          target.isClaimed = false;
-          target.playerName = "";
-          target.isReady = false;
-          target.sessionId = "";
-          target.isBot = false;
-       }
-    }
-
-    this.checkAutoStart();
-    this.broadcastStatus();
-  }
-
-  checkAutoStart() {
-     const slots = Object.values(this.lobby.slots);
-     const allClaimed = slots.every(s => s.isClaimed);
-     const allReady = slots.every(s => s.isReady);
-     if (allClaimed && allReady && !this.isStarted) {
-        this.isStarted = true;
-        this.lastMove0 = Date.now();
-        this.lastMove1 = Date.now();
+     } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
+        const target = (this.lobby.slots as any)[role];
+        if (target && target.isBot) {
+           target.isClaimed = false;
+           target.playerName = "";
+           target.isReady = false;
+           target.sessionId = "";
+           target.isBot = false;
+        }
+     } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
+        const slots = Object.values(this.lobby.slots);
+        if (slots.every(s => s.isClaimed)) {
+           this.lobby.isAllReady = true;
+           this.isStarted = true;
+           this.lastMove0 = Date.now();
+           this.lastMove1 = Date.now();
+        }
      }
+
+     this.broadcastStatus();
   }
 
   handleAction(action: any, server: WebSocket) {

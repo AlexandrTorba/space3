@@ -1,5 +1,8 @@
 import React from "react";
-import { Swords, CheckCircle, CheckCircle2, RotateCcw, UserPlus, Users } from "lucide-react";
+import { 
+  Users, CheckCircle2, UserPlus, RotateCcw, Shield, Bot, Trash2, Edit3, Save, X, Plus, 
+  Settings2, Play, Clock, Swords, CheckCircle
+} from "lucide-react";
 
 interface BughouseLobbyProps {
   state: any;
@@ -12,13 +15,14 @@ interface BughouseLobbyProps {
   addBot: (r: string) => void;
   removeBot: (r: string) => void;
   updateTeamName: (team: "team0" | "team1", name: string) => void;
+  startMatch: () => void;
   spectators: {id: string, name: string}[];
   assignRole: (sessionId: string, role: string) => void;
   isAdmin: boolean;
 }
 
 export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
-  state, t, id, role, useRole, claimRole, toggleReady, addBot, removeBot, updateTeamName, spectators, assignRole, isAdmin
+  state, t, id, role, useRole, claimRole, toggleReady, addBot, removeBot, updateTeamName, startMatch, spectators, assignRole, isAdmin
 }) => {
   const team0Name = state?.lobby?.team0Name || "Team White";
   const team1Name = state?.lobby?.team1Name || "Team Black";
@@ -196,22 +200,25 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
         )}
 
          <div className="flex flex-col items-center gap-6">
-            {state?.lobby?.slots?.[useRole]?.isClaimed ? (
+            {isAdmin ? (
                <button 
-                  onClick={toggleReady}
+                  onClick={startMatch}
+                  disabled={!Object.values(state?.lobby?.slots || {}).every((s:any) => s.isClaimed)}
                   className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
-                     state?.lobby?.slots?.[useRole]?.isReady 
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
-                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
+                     Object.values(state?.lobby?.slots || {}).every((s:any) => s.isClaimed)
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40' 
+                        : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
                >
-                  {state?.lobby?.slots?.[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
-                  {state?.lobby?.slots?.[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
+                  <Play className="w-8 h-8" />
+                  {t("bh_start_match") || "START MATCH"}
                </button>
             ) : (
-               <div className="w-full py-6 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
-                  <Users className="w-8 h-8 text-slate-600" />
-                  <p className="text-amber-500 font-black tracking-widest uppercase text-xs animate-pulse">{t("bh_select_role_hint") || "Select a role to enable Ready button"}</p>
+               <div className="w-full py-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-3">
+                  <div className="flex items-center gap-3 text-amber-500 animate-pulse">
+                     <Clock className="w-5 h-5" />
+                     <span className="font-bold tracking-wider uppercase text-sm">{t("bh_waiting_admin") || "Waiting for Admin to start..."}</span>
+                  </div>
                </div>
             )}
 
