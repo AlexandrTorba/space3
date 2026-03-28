@@ -227,8 +227,8 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
                   <Users className="w-3 h-3" />
                   {Object.values(state?.lobby?.slots || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
                </span>
-               <span className="w-1 h-1 rounded-full bg-white/20" />
-               <span className="text-blue-500/50">ID: {id}</span>
+                <span className="w-1 h-1 rounded-full bg-white/20" />
+                <span className="text-blue-500/50">v. 2.5 | ID: {id}</span>
             </div>
         </div>
       </div>
