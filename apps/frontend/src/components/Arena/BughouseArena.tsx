@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Chessboard } from "react-chessboard";
-import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, PhoneOff, UserPlus } from "lucide-react";
+import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, PhoneOff, UserPlus, CheckCircle2, Play, Users } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
@@ -55,6 +55,7 @@ export default function BughouseArena() {
   const [videoHeight, setVideoHeight] = useState(180);
   const [boardScale, setBoardScale] = useState(100);
   const [chatInput, setChatInput] = useState("");
+  const [mySessionId, setMySessionId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
@@ -123,6 +124,8 @@ export default function BughouseArena() {
              const data = JSON.parse(ev.data);
              if (data.type === 'video_enabled') {
                 setVideoAuthorized(data.enabled);
+             } else if (data.type === 'session_id') {
+                setMySessionId(data.id);
              }
           } catch(e) {}
           return;
@@ -259,7 +262,18 @@ export default function BughouseArena() {
   if (!mounted || !id) return <div className="min-h-screen bg-[#07090E]" />;
 
   const isTeam2 = role.endsWith('1');
-  const myBoardIdx = isTeam2 ? 1 : 0;
+  
+  // Find my current role dynamically from lobby slots
+  const effectiveRole = useMemo(() => {
+     if (!state?.lobby || !mySessionId) return role;
+     for (const r of ["w0", "b0", "w1", "b1"]) {
+        if (state.lobby[r]?.sessionId === mySessionId) return r;
+     }
+     return role; // Fallback to URL role
+  }, [state?.lobby, mySessionId, role]);
+
+  const useRole = effectiveRole || "spectator";
+  const myBoardIdx = useRole.endsWith('1') ? 1 : 0;
   const partnerBoardIdx = 1 - myBoardIdx;
   const myBoard = myBoardIdx === 0 ? state?.board0 : state?.board1;
   const partnerBoard = partnerBoardIdx === 0 ? state?.board0 : state?.board1;
@@ -433,25 +447,33 @@ export default function BughouseArena() {
               </div>
 
               <div className="flex flex-col items-center gap-6">
-                 {state.lobby?.[role]?.isClaimed ? (
-                    <button 
-                     onClick={toggleReady}
-                     className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] ${
-                        state.lobby?.[role]?.isReady 
-                           ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
-                           : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
-                     }`}
-                  >
-                     {state.lobby?.[role]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
-                  </button>
-                 ) : (
-                    <p className="text-amber-500 font-bold animate-pulse text-sm">Select a role to enable Ready button</p>
-                 )}
-                 <div className="text-slate-500 text-[10px] uppercase font-black space-x-4">
-                    <span>Waiting for: {Object.values(state.lobby || {}).filter((s:any) => !s.isReady).length} Players</span>
-                    <span>•</span>
-                    <span>Match ID: {id}</span>
-                 </div>
+                  {state.lobby?.[useRole]?.isClaimed ? (
+                     <button 
+                        onClick={toggleReady}
+                        className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
+                           state.lobby[useRole]?.isReady 
+                              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20' 
+                              : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40'
+                        }`}
+                     >
+                        {state.lobby[useRole]?.isReady ? <RotateCcw className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
+                        {state.lobby[useRole]?.isReady ? t("bh_cancel_ready") : t("bh_ready")}
+                     </button>
+                  ) : (
+                     <div className="w-full py-6 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
+                        <Users className="w-8 h-8 text-slate-600" />
+                        <p className="text-amber-500 font-black tracking-widest uppercase text-xs animate-pulse">{t("bh_select_role_hint") || "Select a role to enable Ready button"}</p>
+                     </div>
+                  )}
+
+                  <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
+                     <span className="flex items-center gap-2">
+                        <Users className="w-3 h-3" />
+                        {Object.values(state.lobby || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
+                     </span>
+                     <span className="w-1 h-1 rounded-full bg-white/20" />
+                     <span className="text-blue-500/50">ID: {id}</span>
+                  </div>
               </div>
            </div>
            )}
