@@ -295,6 +295,7 @@ export default {
     // Video Chat Token Endpoint (Daily.co)
     else if (path.startsWith("/api/video/token")) {
       const matchId = url.searchParams.get("matchId");
+      const role = url.searchParams.get("role") || "spectator"; // Added role param
       const apiKey = env.DAILY_API_KEY;
 
       if (!matchId || !apiKey) {
@@ -313,7 +314,6 @@ export default {
             const db = createDb(dbUrl, dbToken);
             console.log(`[BACKEND] Checking video for match: ${matchId}`);
             const matchRecord = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
-            console.log(`[BACKEND] Match found: ${matchRecord.length > 0}, enabled: ${matchRecord[0]?.videoEnabled}`);
 
             if (!matchRecord || matchRecord.length === 0 || !matchRecord[0].videoEnabled) {
               response = new Response(JSON.stringify({
@@ -321,8 +321,8 @@ export default {
                 details: "Match not found or video is not enabled."
               }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             } else {
-              // 1. Create room (ignoring if it already exists)
-              const roomRes = await fetch("https://api.daily.co/v1/rooms", {
+              // 1. Create room
+              await fetch("https://api.daily.co/v1/rooms", {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${apiKey}`,
@@ -332,13 +332,13 @@ export default {
                   name: matchId,
                   privacy: "private",
                   properties: {
-                    exp: Math.round(Date.now() / 1000) + 7200, // 2 hours
+                    exp: Math.round(Date.now() / 1000) + 7200,
                     enable_chat: true
                   }
                 })
               });
 
-              // 2. Generate Meeting Token
+              // 2. Generate Meeting Token with role
               const tokenRes = await fetch("https://api.daily.co/v1/meeting-tokens", {
                 method: "POST",
                 headers: {
@@ -349,7 +349,8 @@ export default {
                   properties: {
                     room_name: matchId,
                     is_owner: false,
-                    exp: Math.round(Date.now() / 1000) + 7200
+                    exp: Math.round(Date.now() / 1000) + 7200,
+                    user_name: role // Set user_name as the role
                   }
                 })
               });

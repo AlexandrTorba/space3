@@ -8,12 +8,14 @@ import {
   useAudioTrack, 
   useDaily, 
   useLocalParticipant, 
-  useParticipantIds 
+  useParticipantIds
 } from "@daily-co/daily-react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff, User, Send, MessageSquare } from "lucide-react";
 
 interface Props {
   matchId: string;
+  role?: string;
+  filterBoardIdx?: number;
 }
 
 function VideoTile({ id, isLocal = false }: { id: string; isLocal?: boolean }) {
@@ -84,17 +86,18 @@ function VideoTile({ id, isLocal = false }: { id: string; isLocal?: boolean }) {
   );
 }
 
-function VideoChatUI() {
+function VideoChatUI({ filterBoardIdx }: { filterBoardIdx?: number }) {
   const daily = useDaily();
   const localParticipant = useLocalParticipant();
   const participantIds = useParticipantIds();
-  const [isMicOn, setIsMicOn] = useState(false);
-  const [isCamOn, setIsCamOn] = useState(false);
   const [messages, setMessages] = useState<{ id: string; text: string; name: string; isLocal: boolean }[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isMicOn = !!localParticipant?.audio;
+  const isCamOn = !!localParticipant?.video;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,7 +125,7 @@ function VideoChatUI() {
     return () => {
       daily.off("app-message", handleAppMessage);
     };
-  }, [daily]);
+  }, [daily, showChat]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,19 +143,15 @@ function VideoChatUI() {
     setInputValue("");
   };
 
-  const toggleMic = () => {
+  const toggleMic = useCallback(() => {
     if (!daily) return;
-    const next = !isMicOn;
-    daily.setLocalAudio(next);
-    setIsMicOn(next);
-  };
+    daily.setLocalAudio(!isMicOn);
+  }, [daily, isMicOn]);
 
-  const toggleCam = () => {
+  const toggleCam = useCallback(() => {
     if (!daily) return;
-    const next = !isCamOn;
-    daily.setLocalVideo(next);
-    setIsCamOn(next);
-  };
+    daily.setLocalVideo(!isCamOn);
+  }, [daily, isCamOn]);
 
   const leaveCall = () => {
     if (!daily) return;
@@ -164,6 +163,18 @@ function VideoChatUI() {
       if (!showChat) setHasUnread(false);
    };
 
+  const filteredIds = React.useMemo(() => {
+    if (filterBoardIdx === undefined || !daily) return participantIds;
+    const allParticipants = daily.participants();
+    return participantIds.filter(id => {
+      const p = allParticipants[id];
+      const encodedRole = p?.user_name || "";
+      if (filterBoardIdx === 0) return encodedRole === 'w0' || encodedRole === 'b0';
+      if (filterBoardIdx === 1) return encodedRole === 'w1' || encodedRole === 'b1';
+      return true;
+    });
+  }, [participantIds, daily, filterBoardIdx]);
+
    return (
     <div className="flex flex-col gap-4">
       <style>{`
@@ -173,14 +184,14 @@ function VideoChatUI() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
       `}</style>
 
-      <div className="grid grid-cols-2 gap-3">
-        {participantIds.map(id => (
+      <div className={`grid ${filteredIds.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+        {filteredIds.map(id => (
            <VideoTile key={id} id={id} isLocal={id === localParticipant?.session_id} />
         ))}
-        {participantIds.length === 0 && (
-           <div className="col-span-2 aspect-video bg-white/5 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-slate-500 gap-2">
+        {filteredIds.length === 0 && (
+           <div className="aspect-video bg-white/5 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-slate-500 gap-2">
               <Video className="w-8 h-8 opacity-20" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Awaiting Players...</span>
+              <span className="text-[10px] font-black uppercase tracking-widest italic">Waiting...</span>
            </div>
         )}
       </div>
@@ -232,12 +243,14 @@ function VideoChatUI() {
          </button>
          <button 
            onClick={toggleMic}
+           title={isMicOn ? "Mute" : "Unmute"}
            className={`p-3 rounded-full transition-all border ${isMicOn ? 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10' : 'bg-red-500/20 border-red-500 text-red-500'}`}
          >
            {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
          </button>
          <button 
            onClick={toggleCam}
+           title={isCamOn ? "Stop Camera" : "Start Camera"}
            className={`p-3 rounded-full transition-all border ${isCamOn ? 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10' : 'bg-red-500/20 border-red-500 text-red-500'}`}
          >
            {isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
@@ -253,7 +266,7 @@ function VideoChatUI() {
   );
 }
 
-export default function VideoChat({ matchId }: Props) {
+export default function VideoChat({ matchId, role, filterBoardIdx }: Props) {
   const [callObject, setCallObject] = useState<DailyCall | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -269,8 +282,8 @@ export default function VideoChat({ matchId }: Props) {
         const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
            (typeof window !== "undefined" ? (isProd ? `${window.location.protocol}//${window.location.hostname}` : `${window.location.protocol}//${window.location.hostname}:8787`) : "http://localhost:8787");
-        console.log(`[VIDEO] Fetching token for ${matchId} from ${backendUrl}`);
-        const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}`);
+        console.log(`[VIDEO] Fetching token for ${matchId} (Role: ${role}) from ${backendUrl}`);
+        const res = await fetch(`${backendUrl}/api/video/token?matchId=${matchId}&role=${role || 'spectator'}`);
         if (!res.ok) {
            const errData = await res.json().catch(() => ({ error: `Status ${res.status}` }));
            const msg = errData?.details || errData?.error || `Error ${res.status}`;
@@ -308,9 +321,6 @@ export default function VideoChat({ matchId }: Props) {
         setCallObject(call);
         
         await call.join();
-        // Default to off to give user control and save bandwidth on join
-        await call.setLocalVideo(false);
-        await call.setLocalAudio(false);
       } catch (e) {
         console.error("Daily init error details:", e);
       } finally {
@@ -348,7 +358,7 @@ export default function VideoChat({ matchId }: Props) {
 
   return (
     <DailyProvider callObject={callObject}>
-      <VideoChatUI />
+      <VideoChatUI filterBoardIdx={filterBoardIdx} />
     </DailyProvider>
   );
 }
