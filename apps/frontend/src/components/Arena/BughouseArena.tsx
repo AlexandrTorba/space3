@@ -78,17 +78,17 @@ export default function BughouseArena() {
     setPartnerOrientation(prev => prev === "white" ? "black" : "white");
   };
 
-  const onDrop = (boardIdx: number, source: string, target: string) => {
-     console.log(`[BUGHOUSE] onDrop ${boardIdx}: ${source} -> ${target}`);
+  const onDrop = (boardIdx: number, source: string, target: string, pieceCode?: string) => {
+     console.log(`[BUGHOUSE] onDrop ${boardIdx}: ${source} -> ${target} (${pieceCode})`);
      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
      
      // Local validation for promotion
      const fen = boardIdx === 0 ? state?.board0?.fen : state?.board1?.fen;
      if (fen) {
         const game = new Chess(fen);
-        const piece = game.get(source as Square);
-        if (piece?.type === 'p') {
-           const isPromotion = (piece.color === 'w' && target[1] === '8') || (piece.color === 'b' && target[1] === '1');
+        const p = game.get(source as Square);
+        if (p?.type === 'p') {
+           const isPromotion = (p.color === 'w' && target[1] === '8') || (p.color === 'b' && target[1] === '1');
            if (isPromotion) {
               setPendingPromotion({ boardIdx, source, target });
               return true;
@@ -415,10 +415,10 @@ export default function BughouseArena() {
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                         lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                         pieces: stableCustomPieces as any,
-                        onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(myBoardIdx, sourceSquare, targetSquare)) as any,
+                        onPieceDrop: ((source: string, target: string, piece: string) => onDrop(myBoardIdx, source, target, piece)) as any,
                         onSquareClick: ((s: any) => onSquareClick(myBoardIdx, s)) as any,
                         allowDragging: (role !== "spectator") && !myBoard?.result && !selectedPiece
-                    } as any}
+                    }}
                 />
                 
                 {pendingPromotion && pendingPromotion.boardIdx === myBoardIdx && (
@@ -488,10 +488,10 @@ export default function BughouseArena() {
                         darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                         lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                         pieces: stableCustomPieces as any,
-                        onPieceDrop: (({ sourceSquare, targetSquare }: any) => onDrop(partnerBoardIdx, sourceSquare, targetSquare)) as any,
+                        onPieceDrop: ((source: string, target: string, piece: string) => onDrop(partnerBoardIdx, source, target, piece)) as any,
                         onSquareClick: ((s: any) => onSquareClick(partnerBoardIdx, s)) as any,
                         allowDragging: (role !== "spectator") && !partnerBoard?.result && !selectedPiece
-                    } as any}
+                    }}
                 />
             </div>
 
@@ -658,35 +658,54 @@ export default function BughouseArena() {
         </div>
       )}
 
-      {/* Logs and Video Section */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="flex flex-col bg-black/40 border border-white/5 rounded-2xl overflow-hidden h-64 order-2 md:order-1">
-             <div className="flex-1 p-4 overflow-y-auto font-mono text-[10px] text-slate-400 space-y-1">
+      {/* Logs and Video Section - Now more stable */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-[320px]">
+          {/* Logs */}
+          <div className="lg:col-span-4 flex flex-col bg-black/40 border border-white/5 rounded-3xl overflow-hidden h-[320px] shadow-2xl backdrop-blur-xl">
+             <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                   <RotateCcw className="w-3.5 h-3.5 text-blue-500"/> Activity Logs
+                </div>
+             </div>
+             <div className="flex-1 p-5 overflow-y-auto font-mono text-[11px] text-slate-400 space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
                 {logs.map((l, i) => (
-                    <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>
+                    <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic opacity-60"}>
                         {l}
                     </div>
                 ))}
              </div>
-             <form onSubmit={handleChatSubmit} className="p-2 bg-white/5 border-t border-white/5 flex gap-2">
+             <form onSubmit={handleChatSubmit} className="p-3 bg-white/5 border-t border-white/5 flex gap-2">
                 <input 
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type to chat..."
-                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-blue-500/50 transition-all font-mono"
                 />
              </form>
           </div>
           
-          <div className="bg-black/40 border border-white/5 rounded-2xl h-64 flex items-center justify-center order-1 md:order-2 relative overflow-hidden">
+          {/* Video Section - Fixed Height to prevent jumping */}
+          <div className="lg:col-span-8 bg-black/40 border border-white/5 rounded-3xl h-[320px] flex items-center justify-center relative overflow-hidden shadow-2xl backdrop-blur-xl group">
+              <div className="absolute top-4 left-5 z-10">
+                  <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                     <Video className="w-3.5 h-3.5 text-blue-500"/> {t("video_chat" as any) || "Video Stream"}
+                  </div>
+              </div>
+              
               {showVideo ? (
-                 <VideoChat matchId={id} />
+                 <div className="w-full h-full animate-in fade-in duration-500">
+                    <VideoChat matchId={id} />
+                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 opacity-20 transition-all">
-                    <VideoOff className="w-12 h-12 text-slate-400" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">{t("video_off" as any)}</span>
-                    <p className="text-[8px] max-w-[150px] text-center text-slate-600 font-bold leading-relaxed">{t("video_hint" as any)}</p>
+                <div className="flex flex-col items-center gap-4 group-hover:scale-105 transition-transform duration-500">
+                    <div className="p-6 rounded-full bg-white/5 border border-white/10 shadow-inner">
+                        <VideoOff className="w-10 h-10 text-slate-600" />
+                    </div>
+                    <div className="text-center">
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 block mb-2">{t("video_off" as any)}</span>
+                        <p className="text-[9px] max-w-[200px] text-slate-600 font-bold leading-relaxed uppercase tracking-widest opacity-40">{t("video_hint" as any)}</p>
+                    </div>
                 </div>
               )}
           </div>
