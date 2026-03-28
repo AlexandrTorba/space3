@@ -19,8 +19,6 @@ import { BughouseActivityLogs } from "./BughouseArena/BughouseActivityLogs";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
-
-
 export default function BughouseArena() {
   const [mounted, setMounted] = useState(false);
   const params = useParams();
@@ -66,10 +64,44 @@ export default function BughouseArena() {
   const [boardScale, setBoardScale] = useState(100);
   const [chatInput, setChatInput] = useState("");
   const [mySessionId, setMySessionId] = useState<string | null>(null);
+  
+  const [team0Name, setTeam0Name] = useState("Team White");
+  const [team1Name, setTeam1Name] = useState("Team Black");
+  const [spectators, setSpectators] = useState<{id: string, name: string}[]>([]);
+  const [adminSessionId, setAdminSessionId] = useState("");
+
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter(); 
 
-  // Remove automatic state synchronization to avoid forced resets after turning off
+  const updateTeamName = (team: "team0" | "team1", name: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { 
+                type: "team_name", 
+                role: team, 
+                name 
+            } as any 
+        } 
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
+  const assignRole = (targetSessionId: string, targetRole: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { 
+                type: "force_assign", 
+                role: targetRole, 
+                name: targetSessionId // Using name field as carried sessionId for simplicity in custom action
+            } as any 
+        } 
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
 
   const toggleGlobalMic = () => {
     const call = DailyIframe.getCallInstance();
@@ -136,6 +168,9 @@ export default function BughouseArena() {
                 setVideoAuthorized(data.enabled);
              } else if (data.type === 'session_id') {
                 setMySessionId(data.id);
+             } else if (data.type === 'lobby_sync') {
+                setSpectators(data.spectators || []);
+                setAdminSessionId(data.adminSessionId || "");
              }
           } catch(e) {}
           return;
@@ -153,9 +188,17 @@ export default function BughouseArena() {
                    w1: Number(status.clocks.w1), b1: Number(status.clocks.b1)
                 });
              }
+             if (status.lobby) {
+                setTeam0Name(status.lobby.team0Name || "Team White");
+                setTeam1Name(status.lobby.team1Name || "Team Black");
+                setAdminSessionId(status.lobby.adminSessionId || "");
+             }
           } else if (val.event.case === "lobbyInfo") {
              const lobby = val.event.value;
              setState((prev: any) => ({ ...prev, lobby }));
+             setTeam0Name(lobby.team0Name || "Team White");
+             setTeam1Name(lobby.team1Name || "Team Black");
+             setAdminSessionId(lobby.adminSessionId || "");
           }
        } else if (update.event.case === "chat") {
           const val = update.event.value as any;
@@ -227,7 +270,7 @@ export default function BughouseArena() {
 
   const handleRematch = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "rematch", role, name: playerName } } });
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "rematch", role, name: playerName } as any } });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
     setRematchState("waiting");
   };
@@ -280,8 +323,6 @@ export default function BughouseArena() {
 
   if (!mounted || !id) return <div className="min-h-screen bg-[#07090E]" />;
 
-  const isTeam2 = role.endsWith('1');
-
   const useRole = effectiveRole || "spectator";
   const myBoardIdx = useRole.endsWith('1') ? 1 : 0;
   const partnerBoardIdx = 1 - myBoardIdx;
@@ -291,6 +332,8 @@ export default function BughouseArena() {
   const myBankB = myBoardIdx === 0 ? state?.bank0b : state?.bank1b;
   const partnerBankW = partnerBoardIdx === 0 ? state?.bank0w : state?.bank1w;
   const partnerBankB = partnerBoardIdx === 0 ? state?.bank0b : state?.bank1b;
+
+  const isAdmin = mySessionId === adminSessionId;
 
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
@@ -346,7 +389,7 @@ export default function BughouseArena() {
                 )}
                 <button onClick={() => updateSettings({ volume: settings.volume === 0 ? 0.7 : 0 })} className="p-3 rounded-2xl hover:bg-white/5 text-slate-400 transition-all">
                    {settings.volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                </button>
+                 </button>
                 <button onClick={() => setIsPanelOpen(true)} className="p-3 rounded-2xl hover:bg-white/5 text-slate-400 transition-all">
                     <Settings className="w-6 h-6" />
                 </button>
@@ -360,18 +403,20 @@ export default function BughouseArena() {
           state={state}
           t={t}
           id={id}
-          role={role}
+          role={useRole}
           useRole={useRole}
           claimRole={claimRole}
           toggleReady={toggleReady}
           addBot={addBot}
           removeBot={removeBot}
+          updateTeamName={updateTeamName}
+          spectators={spectators}
+          assignRole={assignRole}
+          isAdmin={isAdmin}
         />
       )}
 
       <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-8 flex-1">
-        {/* Top Video Ribbon - Visible if Cam is on, but VideoChat loads if either is on */}
-        {/* Single VideoChat instance for both Mic and Cam to avoid conflicts */}
         {(isMicOn || isCamOn) && (
             <div 
               className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-500 overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
@@ -387,10 +432,11 @@ export default function BughouseArena() {
             </div>
         )}
 
-        {/* Boards Section */}
         <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
-             {/* Main Board Area */}
              <div className="flex flex-col gap-6">
+                 <div className="flex items-center justify-between gap-4 px-2">
+                    <h3 className="text-xl font-bold text-blue-400">{team0Name}</h3>
+                 </div>
                  <BughouseBoard 
                      boardIdx={myBoardIdx}
                      orientation={boardOrientation}
@@ -413,8 +459,10 @@ export default function BughouseArena() {
                  />
              </div>
 
-             {/* Partner Board Area */}
              <div className="flex flex-col gap-6 opacity-80 hover:opacity-100 transition-opacity duration-500">
+                 <div className="flex items-center justify-between gap-4 px-2">
+                    <h3 className="text-xl font-bold text-emerald-400">{team1Name}</h3>
+                 </div>
                  <BughouseBoard 
                      boardIdx={partnerBoardIdx}
                      orientation={partnerOrientation}
@@ -438,7 +486,6 @@ export default function BughouseArena() {
              </div>
         </div>
 
-        {/* Activity Logs Section */}
         <BughouseActivityLogs 
             logs={logs}
             chatInput={chatInput}

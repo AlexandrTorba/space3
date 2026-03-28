@@ -58,6 +58,8 @@ message BughouseLobby {
   PlayerSlot b1 = 4;
   bool is_all_ready = 5;
   int32 time_control_ms = 6;
+  string team0_name = 7;
+  string team1_name = 8;
 }
 
 message ChatMessage {

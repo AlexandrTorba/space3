@@ -5,12 +5,18 @@ import { createDb, matches } from "@antigravity/database";
 import { eq } from "drizzle-orm";
 import type { Env } from "./index";
 
-console.log("BUGHOUSE_VERSION_LOBBY_V1");
+console.log("BUGHOUSE_VERSION_LOBBY_V2_FIXED");
+
+interface SessionData {
+  id: string;
+  name: string;
+  role: string;
+}
 
 export class BughouseMatch {
   state: DurableObjectState;
   env: Env;
-  sessions: Set<WebSocket> = new Set();
+  sessions: Map<WebSocket, SessionData> = new Map();
   debugLogs: string[] = [];
   
   log(msg: string) {
@@ -19,21 +25,16 @@ export class BughouseMatch {
     if (this.debugLogs.length > 100) this.debugLogs.shift();
   }
   
-  // Two engines for the two boards
   engine0 = new Chess();
   engine1 = new Chess();
   promotedSquares0: Set<string> = new Set();
   promotedSquares1: Set<string> = new Set();
   
-  // Piece Banks for each player
-  // Board 0
-  bank0w: string[] = []; // Pieces White 0 can drop
-  bank0b: string[] = []; // Pieces Black 0 can drop
-  // Board 1
-  bank1w: string[] = []; // Pieces White 1 can drop
-  bank1b: string[] = []; // Pieces Black 1 can drop
+  bank0w: string[] = [];
+  bank0b: string[] = [];
+  bank1w: string[] = [];
+  bank1b: string[] = [];
 
-  // Player sockets
   sockets: {
     w0: WebSocket | null;
     b0: WebSocket | null;
@@ -48,8 +49,6 @@ export class BughouseMatch {
   result = "";
   reason = "";
   private disconnectTimer: any = null;
-  private botDecisionAt: Record<string, number> = {};
-  private botSelectedMove: Record<string, string | null> = {};
   dbInserted: boolean = false;
   db: any;
 
@@ -61,10 +60,12 @@ export class BughouseMatch {
       b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
     },
     isAllReady: false,
-    timeControlMs: 3 * 60 * 1000
+    timeControlMs: 3 * 60 * 1000,
+    team0Name: "Team White",
+    team1Name: "Team Black",
+    adminSessionId: ""
   };
 
-  // Clocks
   time0w = 3 * 60 * 1000;
   time0b = 3 * 60 * 1000;
   time1w = 3 * 60 * 1000;
@@ -75,13 +76,11 @@ export class BughouseMatch {
   moveCount1 = 0;
 
   rematchOffers: Set<string> = new Set();
-  botTimer: any = null;
   messageCounts: WeakMap<WebSocket, { count: number; lastReset: number }> = new WeakMap();
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
     this.env = env;
-
     const url = this.env.TURSO_URL || this.env.LIBSQL_URL;
     const token = this.env.TURSO_AUTH_TOKEN || this.env.LIBSQL_AUTH_TOKEN;
     if (url && token) {
@@ -97,7 +96,7 @@ export class BughouseMatch {
        const enabled = url.searchParams.get("enabled") === "true";
        this.videoEnabled = enabled;
        const msg = JSON.stringify({ type: "video_enabled", enabled });
-       this.sessions.forEach(s => s.send(msg));
+       this.sessions.forEach((_, s) => s.send(msg));
        return new Response("OK");
     }
 
@@ -105,23 +104,13 @@ export class BughouseMatch {
       return new Response("Expected Upgrade: websocket", { status: 426 });
     }
 
-    const tc = url.searchParams.get("tc");
-    if (tc && !this.isStarted) {
-       const minutes = parseInt(tc, 10);
-       if (!isNaN(minutes)) {
-          this.time0w = minutes * 60 * 1000;
-          this.time0b = minutes * 60 * 1000;
-          this.time1w = minutes * 60 * 1000;
-          this.time1b = minutes * 60 * 1000;
-       }
-    }
-
     if (!this.dbInserted && this.db) {
        this.dbInserted = true;
+       const tc = url.searchParams.get("tc") || "3m";
        const p = this.db.insert(matches).values({
           id: this.matchId,
           whiteName: "White Team", blackName: "Black Team",
-          timeControl: tc || "3m",
+          timeControl: tc,
           status: 'active',
           videoEnabled: true,
           createdAt: new Date(), updatedAt: new Date()
@@ -132,823 +121,290 @@ export class BughouseMatch {
  
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
-
-    if (this.matchId.includes("test-logic")) {
-       this.isStarted = true;
-    }
-
     this.handleSession(server, url.searchParams.get("role") || "spectator", url);
-
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  handleSession(server: WebSocket, role: string, url: URL) {
+  handleSession(server: WebSocket, initialRole: string, url: URL) {
     server.accept();
-    this.sessions.add(server);
+    const sessionId = crypto.randomUUID();
+    const name = url.searchParams.get("name") || "Player";
+    this.sessions.set(server, { id: sessionId, name, role: initialRole });
 
     if (this.disconnectTimer) {
-       console.log("[BUGHOUSE] Human returned. Clearing disconnect timer.");
        clearTimeout(this.disconnectTimer);
        this.disconnectTimer = null;
     }
-    const sessionId = crypto.randomUUID();
+
     server.send(JSON.stringify({ type: "session_id", id: sessionId }));
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
-    // Initial assignment from URL params
-    const nameParam = url.searchParams.get("name");
-    if (["w0", "b0", "w1", "b1"].includes(role)) {
-       (this.sockets as any)[role] = server;
-       const slot = (this.lobby.slots as any)[role];
-       if (slot) {
+    // Auto-claim if role provided in URL
+    if (["w0", "b0", "w1", "b1"].includes(initialRole)) {
+       const slot = (this.lobby.slots as any)[initialRole];
+       if (slot && !slot.isClaimed) {
           slot.isClaimed = true;
           slot.isReady = true;
-          if (nameParam) slot.playerName = nameParam;
-          else if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
+          slot.playerName = name;
+          slot.sessionId = sessionId;
+          (this.sockets as any)[initialRole] = server;
+          
+          if (!this.lobby.adminSessionId) {
+             this.lobby.adminSessionId = sessionId;
+          }
        }
-       this.log(`[BUGHOUSE] Assigned ${role} to session (${nameParam || 'No name'})`);
     }
 
     this.broadcastStatus();
 
     server.addEventListener("message", (event) => {
-      // Rate Limit: 10 msg/sec
       let ratelimit = this.messageCounts.get(server);
       const now = Date.now();
-      if (!ratelimit || now - ratelimit.lastReset > 1000) {
-        ratelimit = { count: 0, lastReset: now };
-      }
+      if (!ratelimit || now - ratelimit.lastReset > 1000) ratelimit = { count: 0, lastReset: now };
       ratelimit.count++;
       this.messageCounts.set(server, ratelimit);
-      if (ratelimit.count > 10) return;
+      if (ratelimit.count > 20) return;
 
       if (!(event.data instanceof ArrayBuffer)) return;
       const buffer = new Uint8Array(event.data);
       try {
         const update = fromBinary(MatchUpdateSchema, buffer);
-        if (update.event.case === "move" && this.isActive && this.isStarted) {
-           this.handleMove(update.event.value.uci, server);
-        } else if (update.event.case === "lobby") {
-           this.handleLobbyAction(update.event.value, server);
-        } else if (update.event.case === "action") {
-           this.handleAction(update.event.value, server);
-        } else if (update.event.case === "chat") {
-           this.handleChat(update.event.value, server);
-        }
-      } catch (e) {
-        console.error("Protobuf decode error:", e);
-      }
+        if (update.event.case === "move") this.handleMove(update.event.value.uci, server);
+        else if (update.event.case === "lobby") this.handleLobbyAction(update.event.value, server);
+        else if (update.event.case === "action") this.handleAction(update.event.value, server);
+        else if (update.event.case === "chat") this.handleChat(update.event.value, server);
+      } catch (e) { console.error("Proto decode error", e); }
     });
 
-    // Start bot loop periodically just in case
-    if (!this.botTimer) {
-      this.botTimer = setInterval(() => this.tickBots(), 500);
-    }
-
     server.addEventListener("close", () => {
-      console.log(`[BUGHOUSE] Session Closed`);
       this.sessions.delete(server);
-      // If a player leaves, unclaim their slot
-      let roleRemoved: string | null = null;
-      for (const role of ["w0", "b0", "w1", "b1"] as const) {
-        if ((this.sockets as any)[role] === server) {
-          console.log(`[BUGHOUSE] Player ${role} disconnected.`);
-          (this.sockets as any)[role] = null;
-          (this.lobby.slots as any)[role].isClaimed = false;
-          (this.lobby.slots as any)[role].isReady = false;
-          roleRemoved = role;
+      for (const r of ["w0", "b0", "w1", "b1"] as const) {
+        if ((this.sockets as any)[r] === server) {
+          (this.sockets as any)[r] = null;
+          this.lobby.slots[r].isClaimed = false;
+          this.lobby.slots[r].isReady = false;
+          this.lobby.slots[r].sessionId = "";
         }
       }
-
-      // Check if any human players are left
-      let humanPlayersCount = 0;
-      for (const r of ["w0", "b0", "w1", "b1"] as const) {
-         if ((this.sockets as any)[r]) humanPlayersCount++;
-      }
-
-      if (this.isActive && humanPlayersCount === 0) {
-         console.log(`[BUGHOUSE] No human players left. Starting 60s grace period and setting persistence alarm.`);
-         if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
-         this.disconnectTimer = setTimeout(() => {
-            if (this.isActive && this.sessions.size === 0) {
-               console.log("[BUGHOUSE] Memory Grace expired. Performing cleanup.");
-               this.forceCleanup();
-            }
-         }, 60000); 
-         // Persistent alarm for 65s just in case DO is evicted
-         this.state.storage.setAlarm(Date.now() + 65000);
+      if (this.isActive && this.sessions.size === 0) {
+         this.disconnectTimer = setTimeout(() => this.forceCleanup(), 60000);
       } else {
          this.broadcastStatus();
       }
     });
-
-    server.addEventListener("error", (e) => {
-       console.error("[BUGHOUSE] WS Error:", e);
-    });
   }
 
   handleLobbyAction(action: any, server: WebSocket) {
+    const sData = this.sessions.get(server);
+    if (!sData) return;
     const { type, role, name } = action;
-    console.log(`[BUGHOUSE] Lobby Action from server: ${type} ${role} ${name}`);
-    if (this.isStarted) return;
 
-    if (type === "claim") {
-       // Check if role is valid
+    if (type === "claim" && !this.isStarted) {
        if (!["w0", "b0", "w1", "b1"].includes(role)) return;
-       // Unclaim previous role if any
-       for(const r of ["w0", "b0", "w1", "b1"] as const) {
-         if ((this.sockets as any)[r] === server) {
+       // Unclaim previous
+       for(const r in this.lobby.slots) {
+         if (this.lobby.slots[r as keyof typeof this.lobby.slots].sessionId === sData.id) {
+            this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
             (this.sockets as any)[r] = null;
-            this.lobby.slots[r].isClaimed = false;
-            this.lobby.slots[r].isReady = false;
          }
        }
-       // Claim new role
-        const targetSlot = (this.lobby.slots as any)[role];
-        if (targetSlot && (!targetSlot.isClaimed || targetSlot.isBot)) {
-           // Reset bot flag if this is a human claim
-           targetSlot.isBot = false;
-           (this.sockets as any)[role] = server;
-           targetSlot.isClaimed = true;
-           targetSlot.playerName = name || "Player";
-           targetSlot.isReady = true;
-        }
+       const target = (this.lobby.slots as any)[role];
+       if (target && !target.isClaimed) {
+          target.isClaimed = true;
+          target.playerName = name || sData.name;
+          target.isReady = true;
+          target.sessionId = sData.id;
+          target.isBot = false;
+          (this.sockets as any)[role] = server;
+          if (!this.lobby.adminSessionId) this.lobby.adminSessionId = sData.id;
+       }
     } else if (type === "ready") {
-       for(const r of ["w0", "b0", "w1", "b1"] as const) {
-         if ((this.sockets as any)[r] === server) {
-            this.lobby.slots[r].isReady = !this.lobby.slots[r].isReady;
-         }
+       for(const r in this.lobby.slots) {
+         const slot = this.lobby.slots[r as keyof typeof this.lobby.slots];
+         if (slot.sessionId === sData.id) slot.isReady = !slot.isReady;
        }
-    } else if (type === "bot_add") {
-       if (!["w0", "b0", "w1", "b1"].includes(role)) return;
-       const targetSlot = (this.lobby.slots as any)[role];
-       if (targetSlot && !targetSlot.isClaimed) {
-          targetSlot.isClaimed = true;
-          targetSlot.playerName = "Bot Engine";
-          targetSlot.isReady = true;
-          targetSlot.isBot = true;
+    } else if (type === "force_assign" && sData.id === this.lobby.adminSessionId) {
+        this.log(`Admin force assign: ${name} to ${role}`);
+        // Clear target session from any slot
+        for (const r in this.lobby.slots) {
+            if (this.lobby.slots[r as keyof typeof this.lobby.slots].sessionId === name) {
+               this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
+               (this.sockets as any)[r] = null;
+            }
+        }
+        if (role !== "spectator") {
+           const targetSlot = (this.lobby.slots as any)[role];
+           if (targetSlot) {
+              if (name === "bot") {
+                 targetSlot.isClaimed = true;
+                 targetSlot.playerName = "Bot Engine";
+                 targetSlot.isReady = true;
+                 targetSlot.sessionId = "bot-" + Math.random();
+                 targetSlot.isBot = true;
+              } else {
+                 // find session by id
+                 for (const [ws, data] of this.sessions.entries()) {
+                    if (data.id === name) {
+                       targetSlot.isClaimed = true;
+                       targetSlot.playerName = data.name;
+                       targetSlot.isReady = true;
+                       targetSlot.sessionId = data.id;
+                       (this.sockets as any)[role] = ws;
+                       break;
+                    }
+                 }
+              }
+           }
+        }
+    } else if (type === "team_name" && sData.id === this.lobby.adminSessionId) {
+       if (role === "team0") this.lobby.team0Name = name;
+       if (role === "team1") this.lobby.team1Name = name;
+    } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
+       const target = (this.lobby.slots as any)[role];
+       if (target && target.isBot) {
+          target.isClaimed = false;
+          target.playerName = "";
+          target.isReady = false;
+          target.sessionId = "";
+          target.isBot = false;
        }
-    } else if (type === "bot_remove") {
-        if (!["w0", "b0", "w1", "b1"].includes(role)) return;
-        const targetSlot = (this.lobby.slots as any)[role];
-        if (targetSlot && targetSlot.isBot) {
-           targetSlot.isClaimed = false;
-           targetSlot.isBot = false;
-           targetSlot.playerName = "";
-           targetSlot.isReady = false;
-        }
-    } else if (type === "set_time") {
-        if (action.timeControlMs > 0 && action.timeControlMs <= 3600000) {
-           this.lobby.timeControlMs = action.timeControlMs;
-           this.time0w = action.timeControlMs;
-           this.time0b = action.timeControlMs;
-           this.time1w = action.timeControlMs;
-           this.time1b = action.timeControlMs;
-        }
     }
 
-    // Check all ready
-    this.lobby.isAllReady = this.lobby.slots.w0.isReady && this.lobby.slots.b0.isReady && this.lobby.slots.w1.isReady && this.lobby.slots.b1.isReady;
-    if (this.lobby.isAllReady && !this.isStarted) {
-      this.isStarted = true;
-    }
-
+    this.checkAutoStart();
     this.broadcastStatus();
   }
 
+  checkAutoStart() {
+     const slots = Object.values(this.lobby.slots);
+     const allClaimed = slots.every(s => s.isClaimed);
+     const allReady = slots.every(s => s.isReady);
+     if (allClaimed && allReady && !this.isStarted) {
+        this.isStarted = true;
+        this.lastMove0 = Date.now();
+        this.lastMove1 = Date.now();
+     }
+  }
+
   handleAction(action: any, server: WebSocket) {
-    if (!["rematch", "resign"].includes(action.actionType)) return;
-    
-    if (action.actionType === "resign") {
-       if (!this.isActive) return;
-       // Find which team resigned
-       let result = "";
-       let reason = "resignation";
-       if (server === this.sockets.w0 || server === this.sockets.b1) result = "0-1";
-       else if (server === this.sockets.b0 || server === this.sockets.w1) result = "1-0";
-       if (result) this.endGame(result, reason);
-       return;
-    }
-
-    if (action.actionType === "rematch") {
-       // Identify role of server
-       let role = "";
-       for(const r of ["w0", "b0", "w1", "b1"] as const) {
-          if ((this.sockets as any)[r] === server) {
-             role = r;
-             break;
-          }
-       }
-       if (!role) return;
-       this.rematchOffers.add(role);
-       
-       // Broadcast the offer
-       const offerUpdate = create(MatchUpdateSchema, {
-          event: { case: "action", value: { matchId: this.matchId, actionType: "rematch", playerColor: role } }
-       });
-       const binary = toBinary(MatchUpdateSchema, offerUpdate);
-       this.sessions.forEach(s => { if (s !== server) s.send(binary); });
-
-       // Check if all human players have offered
-       const humanPlayers = Object.entries(this.lobby.slots).filter(([r, s]) => s.isClaimed && !s.isBot).map(([r]) => r);
-       const allOffered = humanPlayers.every(r => this.rematchOffers.has(r));
-
-       if (allOffered && humanPlayers.length > 0) {
-          const newMatchId = crypto.randomUUID();
-          this.rematchOffers.clear();
-          const response = create(MatchUpdateSchema, {
-             event: { case: "action", value: { matchId: newMatchId, actionType: "rematch_accept", playerColor: "" } }
-          });
-          const acceptBinary = toBinary(MatchUpdateSchema, response);
-          this.sessions.forEach(s => s.send(acceptBinary));
-       }
+    const sData = this.sessions.get(server);
+    if (!sData) return;
+    if (action.actionType === "resign" && this.isActive) {
+       if (server === this.sockets.w0 || server === this.sockets.b1) this.endGame("0-1", "resignation");
+       else if (server === this.sockets.b0 || server === this.sockets.w1) this.endGame("1-0", "resignation");
     }
   }
 
   handleChat(content: any, server: WebSocket) {
-    let sender = "Spectator";
-    for (const r of ["w0", "b0", "w1", "b1"] as const) {
-      if ((this.sockets as any)[r] === server) {
-        sender = this.lobby.slots[r].playerName || r.toUpperCase();
-        break;
-      }
-    }
-
+    const sData = this.sessions.get(server);
     const chatUpdate = create(MatchUpdateSchema, {
-      event: { 
-        case: "chat", 
-        value: { 
-          sender, 
-          text: String(content.text).substring(0, 500), 
-          timestamp: BigInt(Date.now()) 
-        } 
-      }
+      event: { case: "chat", value: { sender: sData?.name || "Guest", text: String(content.text).substring(0, 500), timestamp: BigInt(Date.now()) } }
     });
-
     const binary = toBinary(MatchUpdateSchema, chatUpdate);
-    this.sessions.forEach(s => {
-      try { s.send(binary); } catch (e) {}
-    });
+    this.sessions.forEach((_, s) => s.send(binary));
   }
 
-  deductTime(boardIdx: number) {
-    if (!this.isActive || !this.isStarted) return false;
-    const count = boardIdx === 0 ? this.moveCount0 : this.moveCount1;
-    if (count === 0) return false;
-
-    const now = Date.now();
-    const last = boardIdx === 0 ? this.lastMove0 : this.lastMove1;
-    const elapsed = now - last;
-    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-    const turn = engine.turn();
-
-    if (boardIdx === 0) {
-      if (turn === 'w') {
-        this.time0w -= elapsed;
-        if (this.time0w <= 0) { this.time0w = 0; this.endGame("0-1", "timeout_board0"); return true; }
-      } else {
-        this.time0b -= elapsed;
-        if (this.time0b <= 0) { this.time0b = 0; this.endGame("1-0", "timeout_board0"); return true; }
-      }
-      this.lastMove0 = now;
-    } else {
-      if (turn === 'w') {
-        this.time1w -= elapsed;
-        if (this.time1w <= 0) { this.time1w = 0; this.endGame("1-0", "timeout_board1"); return true; }
-      } else {
-        this.time1b -= elapsed;
-        if (this.time1b <= 0) { this.time1b = 0; this.endGame("0-1", "timeout_board1"); return true; }
-      }
-      this.lastMove1 = now;
-    }
-    return false;
-  }
-
-  endGame(result: string, reason: string) {
-    this.isActive = false;
-    this.result = result;
-    this.reason = reason;
-    
-    if (this.db) {
-       const p = this.db.update(matches).set({
-          status: 'finished',
-          result: this.result,
-          reason: this.reason,
-          updatedAt: new Date()
-       }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-       this.state.waitUntil(p);
-    }
-    
-    this.broadcastStatus();
-  }
-
-  forceCleanup() {
-     if (!this.isActive || this.sessions.size > 0) return;
-     console.log(`[BUGHOUSE] Force cleanup for ${this.matchId}`);
-     if (!this.isStarted && this.db) {
-        const p = this.db.delete(matches).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-        this.state.waitUntil(p);
-     } else {
-        this.endGame("Aborted", "all_players_disconnected_timeout");
-     }
-  }
-
-  async alarm() {
-     console.log(`[BUGHOUSE] Alarm triggered for ${this.matchId}`);
-     this.forceCleanup();
-  }
-
-  handleMove(uci: string, server: WebSocket | null, botRole?: string) {
-    this.log(`[BUGHOUSE] handleMove: ${uci} (botRole: ${botRole})`);
-    if (!this.isActive || !this.isStarted) {
-       this.log(`[BUGHOUSE] Move rejected: isActive=${this.isActive}, isStarted=${this.isStarted}`);
-       return;
-    }
-    
-    // Determine which player moved
-    let boardIdx = -1;
-    let player = "";
-    if (server) {
-      if (server === this.sockets.w0) { boardIdx = 0; player = "w"; }
-      else if (server === this.sockets.b0) { boardIdx = 0; player = "b"; }
-      else if (server === this.sockets.w1) { boardIdx = 1; player = "w"; }
-      else if (server === this.sockets.b1) { boardIdx = 1; player = "b"; }
-    } else if (botRole) {
-      boardIdx = botRole.endsWith('0') ? 0 : 1;
-      player = botRole.startsWith('w') ? 'w' : 'b';
-    }
-
-    if (boardIdx === -1) return; // Spectator cannot move
+  handleMove(uci: string, server: WebSocket) {
+    if (!this.isActive || !this.isStarted) return;
+    let boardIdx = -1, player = "";
+    if (server === this.sockets.w0) { boardIdx = 0; player = "w"; }
+    else if (server === this.sockets.b0) { boardIdx = 0; player = "b"; }
+    else if (server === this.sockets.w1) { boardIdx = 1; player = "w"; }
+    else if (server === this.sockets.b1) { boardIdx = 1; player = "b"; }
+    if (boardIdx === -1) return;
 
     const engine = boardIdx === 0 ? this.engine0 : this.engine1;
     if (engine.turn() !== player) return;
 
-    // Check if it's a drop (e.g. "P@e4")
+    this.deductTimeThroughMove(boardIdx);
+
     if (uci.includes("@")) {
-       this.log(`[BUGHOUSE] Piece drop requested: ${uci} on Board ${boardIdx} by ${player}`);
-       const [pieceChar, target] = uci.split("@");
-       const pieceType = pieceChar.toLowerCase();
-       
-       // Verify bank
-       let bank: string[];
-       if (boardIdx === 0) bank = (player === "w" ? this.bank0w : this.bank0b);
-       else bank = (player === "w" ? this.bank1w : this.bank1b);
-
-       const pieceIdx = bank.findIndex(p => p.toLowerCase() === pieceType);
-       if (pieceIdx === -1) return; // Not in bank
-
-       // Verify square is empty
-       if (engine.get(target as any)) return;
-
-       // Pawns cannot be dropped on the 1st or 8th rank
-       if (pieceType === "p") {
-          const rank = target[1];
-          if (rank === "1" || rank === "8") return;
+       const [pChar, target] = uci.split("@");
+       const pieceType = pChar.toLowerCase();
+       let bank = (boardIdx===0) ? (player==="w"?this.bank0w:this.bank0b) : (player==="w"?this.bank1w:this.bank1b);
+       const idx = bank.findIndex(p => p.toLowerCase() === pieceType);
+       if (idx === -1) return;
+       if (engine.put({ type: pieceType as any, color: player as any }, target as any)) {
+          if (engine.isCheck()) { engine.remove(target as any); return; }
+          bank.splice(idx, 1);
+          const f = engine.fen().split(" ");
+          f[1] = f[1]==="w"?"b":"w"; f[3]="-"; f[4]="0";
+          engine.load(f.join(" "));
        }
-
-       // Execute drop
-       try {
-         if (this.deductTime(boardIdx)) return;
-
-         // Try the drop
-         if (!engine.put({ type: pieceType as any, color: player as any }, target as any)) {
-            this.log(`[BUGHOUSE] engine.put failed (Target square: ${target})`);
-            return;
-         }
-         
-         // Illegal: if the player who just dropped is STILL in check (standard chess rules)
-         if (engine.isCheck()) {
-            engine.remove(target as any);
-            this.log(`[BUGHOUSE] engine.isCheck returned true after drop (Illegal move)`);
-            return;
-         }
-
-         // Success: apply move counts and toggle turn
-         if (boardIdx === 0) {
-            this.moveCount0++;
-            if (this.moveCount0 === 1) this.lastMove0 = Date.now();
-         } else {
-            this.moveCount1++;
-            if (this.moveCount1 === 1) this.lastMove1 = Date.now();
-         }
-
-         // Toggle turn manually since put doesn't do it
-         const fen = engine.fen();
-         const parts = fen.split(" ");
-         if (parts[1] === "b") {
-            // If black just moved, increment fullmove number
-            parts[5] = (parseInt(parts[5], 10) + 1).toString();
-         }
-         parts[1] = parts[1] === "w" ? "b" : "w";
-         // Drops reset the halfmove clock and clear en-passant square
-         parts[3] = "-";
-         parts[4] = "0";
-
-         engine.load(parts.join(" "));
-         
-         bank.splice(pieceIdx, 1);
-       } catch (e) { return; }
     } else {
-       // Normal move
-       try {
-         // Deduct time BEFORE move to use correct turn
-         if (this.deductTime(boardIdx)) return;
-
-         const from = uci.substring(0, 2);
-         const to = uci.substring(2, 4);
-         const promotion = uci.length > 4 ? uci[4] : undefined;
-         
-         const targetPiece = engine.get(to as any);
-         this.log(`[BUGHOUSE] Board ${boardIdx} pre-move target at ${to}: ${JSON.stringify(engine.get(to as any))}`);
-         const promotedSquares = boardIdx === 0 ? this.promotedSquares0 : this.promotedSquares1;
-         const isOriginallyPromoted = promotedSquares.has(from);
-         
-         const move = engine.move({ from, to, promotion });
-         if (!move) {
-            this.log(`[BUGHOUSE] Board ${boardIdx} move engine.move returned null for UCI: ${uci}`);
-            return;
-         }
-         this.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
-         
-         if (boardIdx === 0) {
-           this.moveCount0++;
-           if (this.moveCount0 === 1) this.lastMove0 = Date.now();
-         } else {
-           this.moveCount1++;
-           if (this.moveCount1 === 1) this.lastMove1 = Date.now();
-         }
-
-         // Update promoted squares set
-         promotedSquares.delete(from);
-         if (promotion) {
-            promotedSquares.add(to);
-         } else if (isOriginallyPromoted) {
-            // Keep the "promoted" status if the promoted piece just moved
-            promotedSquares.add(to);
-         }
-
-         if (move.captured) {
-            // Captured piece goes to PARTNER'S bank on OTHER board
-            // IF it was a promoted piece, it reverts to PAWN
-            const targetOriginallyPromoted = promotedSquares.has(to);
-            const actualPieceType = targetOriginallyPromoted ? "p" : move.captured;
-            if (targetOriginallyPromoted) promotedSquares.delete(to); 
-            this.transferCapture(actualPieceType, boardIdx, player);
-         }
-       } catch(e: any) { 
-         this.log(`[BUGHOUSE] Move Failed UCI: ${uci} - ${e.message}`);
-         return; 
+       const move = engine.move({ from: uci.substring(0,2), to: uci.substring(2,4), promotion: uci[4] });
+       if (!move) return;
+       const promotedSquares = boardIdx===0?this.promotedSquares0:this.promotedSquares1;
+       promotedSquares.delete(uci.substring(0,2));
+       if (uci[4]) promotedSquares.add(uci.substring(2,4));
+       if (move.captured) {
+          const actualCaptured = promotedSquares.has(uci.substring(2,4)) ? "p" : move.captured;
+          promotedSquares.delete(uci.substring(2,4));
+          this.transferCapture(actualCaptured, boardIdx, player);
        }
     }
-
+    if (boardIdx===0) this.moveCount0++; else this.moveCount1++;
     this.checkGameOver();
     this.broadcastStatus();
-
-    // Update DB updatedAt to keep it alive in the Live list
-    // Throttle: only update DB every 30s
-    const nowMs = Date.now();
-    (this as any).lastDbUpdate = (this as any).lastDbUpdate || 0;
-    if (this.db && nowMs - (this as any).lastDbUpdate > 30000) {
-        (this as any).lastDbUpdate = nowMs;
-        const p = this.db.update(matches).set({ updatedAt: new Date() }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-        this.state.waitUntil(p);
-    }
   }
 
-  transferCapture(pieceType: string, boardIdx: number, playerColor: string) {
-    this.log(`[BUGHOUSE] transferCapture: ${pieceType} from Board ${boardIdx} player ${playerColor}`);
-    const partnerBoardIdx = 1 - boardIdx;
-    const pieceChar = pieceType.toUpperCase();
-    
-    // Team 1: w0 & b1. Team 2: b0 & w1.
-    if (boardIdx === 0) {
-       if (playerColor === "w") { // w0 captured, give to b1
-          this.bank1b.push(pieceChar);
-       } else { // b0 captured, give to w1
-          this.bank1w.push(pieceChar);
-       }
-    } else {
-       if (playerColor === "w") { // w1 captured, give to b0
-          this.bank0b.push(pieceChar);
-       } else { // b1 captured, give to w0
-          this.bank0w.push(pieceChar);
-       }
-    }
+  deductTimeThroughMove(boardIdx: number) {
+     const now = Date.now();
+     const last = boardIdx===0?this.lastMove0:this.lastMove1;
+     const elapsed = now - last;
+     const engine = boardIdx===0?this.engine0:this.engine1;
+     const turn = engine.turn();
+     if (boardIdx===0) {
+        if (turn==='w') this.time0w-=elapsed; else this.time0b-=elapsed;
+        this.lastMove0=now;
+     } else {
+        if (turn==='w') this.time1w-=elapsed; else this.time1b-=elapsed;
+        this.lastMove1=now;
+     }
+  }
+
+  transferCapture(piece: string, bIdx: number, pCol: string) {
+    const p = piece.toUpperCase();
+    if (bIdx===0) { if (pCol==='w') this.bank1b.push(p); else this.bank1w.push(p); }
+    else { if (pCol==='w') this.bank0b.push(p); else this.bank0w.push(p); }
   }
 
   checkGameOver() {
-    if (this.isBughouseMate(0) || this.isBughouseMate(1)) {
-       const boardIdx = this.isBughouseMate(0) ? 0 : 1;
-       const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-       const result = engine.turn() === 'w' ? "0-1" : "1-0";
-       this.endGame(result, "checkmate");
-    }
+    [0,1].forEach(i => {
+       const e = i===0?this.engine0:this.engine1;
+       if (e.isCheckmate() || e.isStalemate() || e.isThreefoldRepetition()) this.endGame(e.turn()==='w'?"0-1":"1-0", "checkmate_or_draw");
+    });
   }
 
-  private isBughouseMate(boardIdx: number): boolean {
-    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-    if (!engine.isCheckmate()) return false;
-    
-    // Check if any piece in the bank can save the king
-    const bank = boardIdx === 0 
-      ? (engine.turn() === 'w' ? this.bank0w : this.bank0b)
-      : (engine.turn() === 'w' ? this.bank1w : this.bank1b);
-
-    if (bank.length === 0) return true;
-
-    // Simulate all possible drops to see if any escapes check
-    const pieces = [...new Set(bank)];
-    for (const pChar of pieces) {
-        const type = pChar.toLowerCase();
-        for (let r = 1; r <= 8; r++) {
-            for (let f = 0; f < 8; f++) {
-                const square = String.fromCharCode(97 + f) + r;
-                if (!engine.get(square as any)) {
-                    if (type === 'p' && (r === 1 || r === 8)) continue;
-                    
-                    // Use a temporary put to check for safety
-                    if (engine.put({ type: type as any, color: engine.turn() }, square as any)) {
-                        const isSafe = !engine.isCheck();
-                        engine.remove(square as any);
-                        if (isSafe) return false;
-                    }
-                }
-            }
-        }
-    }
-
-    return true;
-  }
+  endGame(res: string, reas: string) { this.isActive = false; this.result = res; this.reason = reas; this.broadcastStatus(); }
 
   broadcastStatus() {
-    const status0 = create(MatchStatusSchema, {
-       fen: this.engine0.fen(),
-       isActive: this.isActive,
-       result: this.result,
-       reason: this.reason,
-       whiteName: "Board 0 White",
-       blackName: "Board 0 Black",
-       whiteTimeMs: Math.max(0, this.time0w),
-       blackTimeMs: Math.max(0, this.time0b)
+    const createStatus = (e: Chess, tW: number, tB: number) => create(MatchStatusSchema, {
+       fen: e.fen(), isActive: this.isActive, result: this.result, reason: this.reason,
+       whiteTimeMs: Math.max(0, tW), blackTimeMs: Math.max(0, tB)
     });
-    const status1 = create(MatchStatusSchema, {
-       fen: this.engine1.fen(),
-       isActive: this.isActive,
-       result: this.result,
-       reason: this.reason,
-       whiteName: "Board 1 White",
-       blackName: "Board 1 Black",
-       whiteTimeMs: Math.max(0, this.time1w),
-       blackTimeMs: Math.max(0, this.time1b)
+    
+    // Build spectator list for admin
+    const connectedSpecs: {id: string, name: string}[] = [];
+    this.sessions.forEach((data) => {
+       // check if this session is NOT in any slot
+       const inSlot = Object.values(this.lobby.slots).some(s => s.sessionId === data.id);
+       if (!inSlot) connectedSpecs.push({id: data.id, name: data.name});
     });
 
-     const bughouseStatus = create(BughouseStatusSchema, {
-        board0: status0,
-        board1: status1,
-        bank0w: this.bank0w,
-        bank0b: this.bank0b,
-        bank1w: this.bank1w,
-        bank1b: this.bank1b,
-        lobby: {
-          w0: this.lobby.slots.w0,
-          b0: this.lobby.slots.b0,
-          w1: this.lobby.slots.w1,
-          b1: this.lobby.slots.b1,
-          isAllReady: this.lobby.isAllReady,
-          timeControlMs: this.lobby.timeControlMs
-        }
-     } as any);
+    const bughouseStatus = create(BughouseStatusSchema, {
+       board0: createStatus(this.engine0, this.time0w, this.time0b),
+       board1: createStatus(this.engine1, this.time1w, this.time1b),
+       bank0w: this.bank0w, bank0b: this.bank0b, bank1w: this.bank1w, bank1b: this.bank1b,
+       lobby: {
+          ...this.lobby,
+          spectators: connectedSpecs as any // injection for admin
+       } as any
+    });
 
-     const update = create(MatchUpdateSchema, {
-        event: { 
-          case: "bughouse", 
-          value: { 
-            matchId: this.matchId, 
-            event: { 
-              case: "status", 
-              value: bughouseStatus
-            } 
-          } 
-        }
-     });
-
-     const binary = toBinary(MatchUpdateSchema, update);
-     this.sessions.forEach(s => {
-       try {
-         s.send(binary);
-         s.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
-       } catch (e: any) {
-         this.sessions.delete(s);
-       }
-     });
+    const update = create(MatchUpdateSchema, { event: { case: "bughouse", value: { matchId: this.matchId, event: { case: "status", value: bughouseStatus } } } });
+    const binary = toBinary(MatchUpdateSchema, update);
+    this.sessions.forEach((_, s) => s.send(binary));
   }
 
-
-  tickBots() {
-    if (!this.isActive || !this.isStarted) return;
-    const roles = ["w0", "b0", "w1", "b1"] as const;
-    const now = Date.now();
-    for (const role of roles) {
-      const slot = this.lobby.slots[role];
-      if (slot.isBot) {
-        const boardIdx = role.endsWith('0') ? 0 : 1;
-        const player = role.startsWith('w') ? 'w' : 'b';
-        const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-
-        if (engine.turn() === player) {
-          if (!this.botDecisionAt[role]) {
-             // Start "thinking"
-             const selected = this.calculateBestBotMove(role);
-             if (selected) {
-                this.botSelectedMove[role] = selected;
-                // Hyperbullet: think between 0.4 and 1.2 seconds
-                this.botDecisionAt[role] = now + 400 + Math.random() * 800;
-             }
-          } else if (now >= this.botDecisionAt[role]) {
-             // Execute thought
-             const move = this.botSelectedMove[role];
-             if (move) this.handleMove(move, null, role);
-             delete this.botDecisionAt[role];
-             delete this.botSelectedMove[role];
-          }
-        } else {
-           // Clear it if it's no longer our turn
-           delete this.botDecisionAt[role];
-           delete this.botSelectedMove[role];
-        }
-      }
-    }
-  }
-
-  private calculateBestBotMove(role: "w0" | "b0" | "w1" | "b1"): string | null {
-    const boardIdx = role.endsWith('0') ? 0 : 1;
-    const player = role.startsWith('w') ? 'w' : 'b';
-    const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-
-    const pieceValues: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
-    const pst: Record<string, number[]> = {
-        p: [
-            0,  0,  0,  0,  0,  0,  0,  0,
-            50, 50, 50, 50, 50, 50, 50, 50,
-            10, 10, 20, 30, 30, 20, 10, 10,
-             5,  5, 10, 25, 25, 10,  5,  5,
-             0,  0,  0, 20, 20,  0,  0,  0,
-             5, -5,-10,  0,  0,-10, -5,  5,
-             5, 10, 10,-20,-20, 10, 10,  5,
-             0,  0,  0,  0,  0,  0,  0,  0
-        ],
-        n: [
-            -50,-40,-30,-30,-30,-30,-40,-50,
-            -40,-20,  0,  0,  0,  0,-20,-40,
-            -30,  0, 10, 15, 15, 10,  0,-30,
-            -30,  5, 15, 20, 20, 15,  5,-30,
-            -30,  0, 15, 20, 20, 15,  0,-30,
-            -30,  5, 10, 15, 15, 10,  5,-30,
-            -40,-20,  0,  5,  5,  0,-20,-40,
-            -50,-40,-30,-30,-30,-30,-40,-50
-        ],
-        b: [
-            -20,-10,-10,-10,-10,-10,-10,-20,
-            -10,  0,  0,  0,  0,  0,  0,-10,
-            -10,  0,  5, 10, 10,  5,  0,-10,
-            -10,  5,  5, 10, 10,  5,  5,-10,
-            -10,  0, 10, 10, 10, 10,  0,-10,
-            -10, 10, 10, 10, 10, 10, 10,-10,
-            -10,  5,  0,  0,  0,  0,  5,-10,
-            -20,-10,-10,-10,-10,-10,-10,-20
-        ],
-        r: [
-              0,  0,  0,  0,  0,  0,  0,  0,
-              5, 10, 10, 10, 10, 10, 10,  5,
-             -5,  0,  0,  0,  0,  0,  0, -5,
-             -5,  0,  0,  0,  0,  0,  0, -5,
-             -5,  0,  0,  0,  0,  0,  0, -5,
-             -5,  0,  0,  0,  0,  0,  0, -5,
-             -5,  0,  0,  0,  0,  0,  0, -5,
-              0,  0,  0,  5,  5,  0,  0,  0
-        ],
-        q: [
-            -20,-10,-10, -5, -5,-10,-10,-20,
-            -10,  0,  0,  0,  0,  0,  0,-10,
-            -10,  0,  5,  5,  5,  5,  0,-10,
-             -5,  0,  5,  5,  5,  5,  0, -5,
-              0,  0,  5,  5,  5,  5,  0, -5,
-            -10,  5,  5,  5,  5,  5,  0,-10,
-            -10,  0,  5,  0,  0,  0,  0,-10,
-            -20,-10,-10, -5, -5,-10,-10,-20
-        ],
-        k: [
-            -30,-40,-40,-50,-50,-40,-40,-30,
-            -30,-40,-40,-50,-50,-40,-40,-30,
-            -30,-40,-40,-50,-50,-40,-40,-30,
-            -30,-40,-40,-50,-50,-40,-40,-30,
-            -20,-30,-30,-40,-40,-30,-30,-20,
-            -10,-20,-20,-20,-20,-20,-20,-10,
-             20, 20,  0,  0,  0,  0, 20, 20,
-             20, 30, 10,  0,  0, 10, 30, 20
-        ]
-    };
-
-    const moves = engine.moves({ verbose: true });
-    let bank: string[];
-    if (boardIdx === 0) bank = (player === "w" ? this.bank0w : this.bank0b);
-    else bank = (player === "w" ? this.bank1w : this.bank1b);
-
-    const scoredMoves: { uci: string; score: number }[] = [];
-
-    for (const move of moves) {
-        let score = 0;
-        
-        // Piece-Square table bonus (simple center control)
-        const type = move.piece;
-        const targetSquareIdx = (8 - parseInt(move.to[1])) * 8 + (move.to.charCodeAt(0) - 97);
-        const correctedIdx = player === 'w' ? targetSquareIdx : 63 - targetSquareIdx;
-        if (pst[type]) score += pst[type][correctedIdx];
-
-        // Material bonus
-        if (move.captured) score += pieceValues[move.captured] * 12;
-
-        // Threat simulation
-        const testEngine = new Chess(engine.fen());
-        testEngine.move(move);
-        if (testEngine.isCheckmate()) score += 10000;
-        else if (testEngine.isCheck()) score += 80;
-
-        // Mobility
-        score += testEngine.moves().length * 2;
-
-        // Safety check (very simplified: don't move back into check)
-        // Since testEngine.move() was successful, it must be a legal move.
-        // We just need to check if it's generally safe.
-        if (testEngine.attackers(move.to, player === 'w' ? 'b' : 'w').length > 0) {
-            score -= pieceValues[type] * 5; 
-        }
-
-        scoredMoves.push({ uci: move.lan || (move.from + move.to), score });
-    }
-
-    // Drops are even stronger at 1800 level
-    if (bank.length > 0) {
-        const uniquePieces = [...new Set(bank)];
-        for (const piece of uniquePieces) {
-            const pieceType = piece.toLowerCase();
-            for (let i = 0; i < 8; i++) {
-                for (let j = 0; j < 8; j++) {
-                    const square = String.fromCharCode(97 + i) + (j + 1);
-                    if (!engine.get(square as any)) {
-                        // Pawn restrictions
-                        if (pieceType === 'p' && (j === 0 || j === 7)) continue;
-
-                        let score = 50; // Drop is valuable
-                        const dropUci = `${piece.toUpperCase()}@${square}`;
-
-                        // Optimized: use a single put/remove instead of new Chess()
-                        if (engine.put({ type: pieceType as any, color: player }, square as any)) {
-                           const inCheck = engine.isCheck();
-                           if (inCheck) {
-                               engine.remove(square as any);
-                               continue;
-                           }
-                           
-                           try {
-                                const enemyKingPos = this.findKing(engine, player === 'w' ? 'b' : 'w');
-                                const dx = Math.abs(i - (enemyKingPos.charCodeAt(0) - 97));
-                                const dy = Math.abs(j - (parseInt(enemyKingPos[1]) - 1));
-                                
-                                // Tactical drops near king
-                                if (dx <= 1 && dy <= 1) score += 250;
-                                else if (dx <= 2 && dy <= 2) score += 100;
-                                
-                                // Center control drops
-                                if (i >= 2 && i <= 5 && j >= 2 && j <= 5) score += 40;
-
-                                scoredMoves.push({ uci: dropUci, score });
-                            } catch (e) {}
-                            engine.remove(square as any);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (scoredMoves.length === 0) return null;
-    scoredMoves.sort((a, b) => b.score - a.score);
-    return scoredMoves[0].uci; // Take the definitely best move for 1800 feel
-  }
-
-  handleBotTurn(role: "w0" | "b0" | "w1" | "b1") {
-     // No-op, integrated into tickBots for timing
-  }
-
-  private findKing(chess: Chess, color: 'w' | 'b'): string {
-    for (let i = 0; i < 8; i++) {
-        for (let j = 1; j <= 8; j++) {
-            const square = String.fromCharCode(97 + i) + j;
-            const piece = chess.get(square as any);
-            if (piece && piece.type === 'k' && piece.color === color) return square;
-        }
-    }
-    return "e1";
-  }
+  forceCleanup() { if (this.sessions.size===0) this.isActive=false; }
 }
