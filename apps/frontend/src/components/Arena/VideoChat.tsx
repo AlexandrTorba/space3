@@ -26,16 +26,22 @@ function VideoTile({ id, isLocal = false }: { id: string; isLocal?: boolean }) {
   const isAudioOff = !audioTrack || audioTrack.state === "off" || audioTrack.state === "blocked";
 
   useEffect(() => {
-    if (videoElement.current && videoTrack?.track) {
-      videoElement.current.srcObject = new MediaStream([videoTrack.track]);
+    const track = videoTrack?.track;
+    if (videoElement.current && track) {
+      const currentStream = videoElement.current.srcObject as MediaStream;
+      if (currentStream && currentStream.getTracks()[0] === track) return;
+      videoElement.current.srcObject = new MediaStream([track]);
     }
-  }, [videoTrack]);
+  }, [videoTrack?.track]);
 
   useEffect(() => {
-    if (audioElement.current && audioTrack?.track && !isLocal) {
-      audioElement.current.srcObject = new MediaStream([audioTrack.track]);
+    const track = audioTrack?.track;
+    if (audioElement.current && track && !isLocal) {
+      const currentStream = audioElement.current.srcObject as MediaStream;
+      if (currentStream && currentStream.getTracks()[0] === track) return;
+      audioElement.current.srcObject = new MediaStream([track]);
     }
-  }, [audioTrack, isLocal]);
+  }, [audioTrack?.track, isLocal]);
 
   return (
     <div className="relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-white/10 shadow-lg group">
@@ -283,7 +289,14 @@ export default function VideoChat({ matchId }: Props) {
         } else {
            call = DailyIframe.createCallObject({ 
              url: data.roomUrl,
-             token: data.token
+             token: data.token,
+             dailyConfig: {
+                userMediaVideoConstraints: {
+                   width: { ideal: 640 },
+                   height: { ideal: 360 },
+                   frameRate: { ideal: 24 }
+                }
+             } as any
            });
         }
         
@@ -295,6 +308,7 @@ export default function VideoChat({ matchId }: Props) {
         setCallObject(call);
         
         await call.join();
+        // Default to off to give user control and save bandwidth on join
         await call.setLocalVideo(false);
         await call.setLocalAudio(false);
       } catch (e) {
@@ -305,15 +319,18 @@ export default function VideoChat({ matchId }: Props) {
     };
 
     init();
-
-    return () => {
-      aborted = true;
-      if (call) {
-        call.destroy();
-        setCallObject(null);
-      }
-    };
-  }, [matchId]);
+ 
+     return () => {
+       aborted = true;
+       if (call) {
+         const c = call;
+         c.leave().then(() => {
+           c.destroy();
+         });
+         setCallObject(null);
+       }
+     };
+   }, [matchId]);
 
   if (loading) return (
      <div className="p-8 flex flex-col items-center justify-center gap-3 text-slate-500">

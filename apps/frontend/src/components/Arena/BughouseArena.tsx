@@ -376,6 +376,15 @@ export default function BughouseArena() {
                  </button>
               </div>
            )}
+           {mounted && (
+                <button 
+                  onClick={flipBoards} 
+                  className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400"
+                  title="Flip Boards"
+                >
+                  <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
+                </button>
+           )}
            {videoAuthorized && (
                 <button onClick={() => setShowVideo(!showVideo)} className={`p-2 rounded-full transition-all border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}>
                    {showVideo ? <Video className="w-4 h-4 md:w-6 md:h-6" /> : <VideoOff className="w-4 h-4 md:w-6 md:h-6" />}
