@@ -131,6 +131,16 @@ export default function BughouseArena() {
     wsRef.current = ws;
 
     ws.onmessage = async (ev) => {
+       if (typeof ev.data === 'string') {
+          try {
+             const data = JSON.parse(ev.data);
+             if (data.type === 'video_enabled') {
+                setVideoAuthorized(data.enabled);
+             }
+          } catch(e) {}
+          return;
+       }
+       if (!(ev.data instanceof ArrayBuffer)) return;
        const update = fromBinary(MatchUpdateSchema, new Uint8Array(ev.data));
        if (update.event.case === "bughouse") {
           const val = update.event.value as any;
@@ -289,6 +299,14 @@ export default function BughouseArena() {
                 </button>
             )}
             <div className="flex items-center bg-white/5 rounded-[1.5rem] p-1 border border-white/5 shadow-inner">
+                <div className="flex items-center gap-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-white/5">
+                    {t("arena_title").split(' ')[0]}
+                    <input 
+                      type="range" min="50" max="150" value={boardScale} 
+                      onChange={(e) => setBoardScale(parseInt(e.target.value))}
+                      className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500" 
+                    />
+                </div>
                 {(videoAuthorized || id === 'local-test') && (
                     <div className="flex items-center gap-1 border-r border-white/5 pr-2 mr-2">
                          <div className="flex items-center gap-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-white/5 mr-1">
@@ -297,14 +315,6 @@ export default function BughouseArena() {
                                 type="range" min="100" max="400" value={videoHeight} 
                                 onChange={(e) => setVideoHeight(parseInt(e.target.value))}
                                 className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500" 
-                             />
-                         </div>
-                         <div className="flex items-center gap-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                             Board
-                             <input 
-                                type="range" min="50" max="150" value={boardScale} 
-                                onChange={(e) => setBoardScale(parseInt(e.target.value))}
-                                className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500" 
                              />
                          </div>
                        <button 
