@@ -308,7 +308,7 @@ export default function BughouseArena() {
 
   const addBot = (r: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "bot_add", role: r } as any } });
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "force_assign", role: r, name: "bot" } as any } });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
