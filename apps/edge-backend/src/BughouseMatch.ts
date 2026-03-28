@@ -407,6 +407,13 @@ export class BughouseMatch {
        if (!inSlot) connectedSpecs.push({id: data.id, name: data.name});
     });
 
+    // Safety check for adminSessionId: ensure it points to a valid connected session
+    const currentSessionsIds = Array.from(this.sessions.values()).map(s => s.id);
+    if (!this.lobby.adminSessionId || !currentSessionsIds.includes(this.lobby.adminSessionId)) {
+       const firstSession = Array.from(this.sessions.values())[0];
+       this.lobby.adminSessionId = firstSession ? firstSession.id : "";
+    }
+
     const bughouseStatus = create(BughouseStatusSchema, {
        board0: createStatus(this.engine0, this.time0w, this.time0b),
        board1: createStatus(this.engine1, this.time1w, this.time1b),
