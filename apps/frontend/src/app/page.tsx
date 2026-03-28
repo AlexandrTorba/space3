@@ -120,7 +120,8 @@ export default function Home() {
 
   const handleCreateChallengeInSetup = () => {
     const isBh = setupMode === "bughouse";
-    handleCreateChallenge(isBh);
+    const vsBots = (window as any).__ag_vs_bots || false;
+    handleCreateChallenge(isBh, vsBots);
     setIsSetupOpen(false);
   };
 
