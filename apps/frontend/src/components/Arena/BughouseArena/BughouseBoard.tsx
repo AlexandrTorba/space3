@@ -1,5 +1,8 @@
 import React from "react";
-import { Chessboard } from "react-chessboard";
+import * as ReactChessboard from "react-chessboard";
+
+// Flexible import to handle different module versions
+const Chessboard = (ReactChessboard as any).Chessboard || (ReactChessboard as any).default || ReactChessboard;
 
 interface BughouseBoardProps {
   boardIdx: number;
@@ -21,8 +24,24 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   onDrop, onSquareClick, formatTime, getPlayerLabel
 }) => {
   const isWhite = orientation === "white";
-  const myClock = isWhite ? (boardIdx === 0 ? clocks.w0 : clocks.w1) : (boardIdx === 0 ? clocks.b0 : clocks.b1);
-  const oppClock = isWhite ? (boardIdx === 0 ? clocks.b0 : clocks.b1) : (boardIdx === 0 ? clocks.w0 : clocks.w1);
+  
+  // Real clocks logic from BughouseArena needs careful mapping
+  const b0clock_w = clocks.w0;
+  const b0clock_b = clocks.b0;
+  const b1clock_w = clocks.w1;
+  const b1clock_b = clocks.b1;
+
+  const currentMyClock = boardIdx === 0 
+    ? (isWhite ? b0clock_w : b0clock_b)
+    : (isWhite ? b1clock_w : b1clock_b);
+    
+  const currentOppClock = boardIdx === 0 
+    ? (isWhite ? b0clock_b : b0clock_w)
+    : (isWhite ? b1clock_b : b1clock_w);
+
+  if (!Chessboard || typeof Chessboard !== 'function') {
+    return <div className="p-8 text-white bg-red-500/20 rounded-2xl border border-red-500/50">Chessboard Error</div>;
+  }
 
   return (
     <div className={`flex flex-col gap-4 ${isMain ? 'w-full max-w-[700px]' : 'w-full max-w-[500px]'}`}>
@@ -31,23 +50,20 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
               {getPlayerLabel(orientation === 'white' ? 'b' + boardIdx : 'w' + boardIdx)}
             </div>
             <div className="text-2xl font-mono font-bold text-white">
-              {formatTime(oppClock)}
+              {formatTime(currentOppClock)}
             </div>
         </div>
 
         <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative">
             <Chessboard 
-               options={{
-                  id: `board-${boardIdx}`,
-                  position: fen,
-                  boardOrientation: orientation,
-                  pieces: customPieces as any,
-                  darkSquareStyle: { backgroundColor: theme.dark },
-                  lightSquareStyle: { backgroundColor: theme.light },
-                  onPieceDrop: ((s: string, t: string, p: string) => onDrop(boardIdx, s, t, p)) as any,
-                  onSquareClick: ( ({ square }: any) => onSquareClick(boardIdx, square) ) as any,
-                  animationDurationInMs: 300
-               }}
+               position={fen}
+               boardOrientation={orientation}
+               customPieces={customPieces}
+               customDarkSquareStyle={{ backgroundColor: theme.dark }}
+               customLightSquareStyle={{ backgroundColor: theme.light }}
+               onPieceDrop={(s: string, t: string, p: string) => onDrop(boardIdx, s, t, p)}
+               onSquareClick={( { square }: any ) => onSquareClick(boardIdx, square)}
+               animationDuration={300}
             />
         </div>
 
@@ -56,7 +72,7 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
               {getPlayerLabel(orientation === 'white' ? 'w' + boardIdx : 'b' + boardIdx)}
             </div>
             <div className="text-2xl font-mono font-bold text-white">
-              {formatTime(myClock)}
+              {formatTime(currentMyClock)}
             </div>
         </div>
     </div>
