@@ -189,6 +189,8 @@ export class BughouseMatch {
     });
 
     server.addEventListener("close", () => {
+      const sData = this.sessions.get(server);
+      const closedId = sData?.id;
       this.sessions.delete(server);
       for (const r of ["w0", "b0", "w1", "b1"] as const) {
         if ((this.sockets as any)[r] === server) {
@@ -198,6 +200,12 @@ export class BughouseMatch {
           this.lobby.slots[r].sessionId = "";
         }
       }
+      // Reassign admin if left
+      if (this.lobby.adminSessionId === closedId) {
+         const nextSession = Array.from(this.sessions.values())[0];
+         this.lobby.adminSessionId = nextSession ? nextSession.id : "";
+      }
+
       if (this.isActive && this.sessions.size === 0) {
          this.disconnectTimer = setTimeout(() => this.forceCleanup(), 60000);
       } else {
