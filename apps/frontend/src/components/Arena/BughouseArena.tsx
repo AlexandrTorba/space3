@@ -115,7 +115,7 @@ export default function BughouseArena() {
     setPlayerName(name);
 
     const isProd = window.location.protocol === "https:";
-    const wsUrl = isProd ? `wss://${window.location.host}/ws/bughouse/${id}?name=${encodeURIComponent(name)}` : `ws://${window.location.hostname}:8787/ws/bughouse/${id}?name=${encodeURIComponent(name)}`;
+    const wsUrl = isProd ? `wss://${window.location.host}/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}` : `ws://${window.location.hostname}:8787/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}`;
     
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -212,6 +212,30 @@ export default function BughouseArena() {
      if (slot?.isClaimed) return slot.playerName;
      return r.toUpperCase();
   };
+  
+  const claimRole = (r: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "claim", role: r, name: playerName } as any } });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
+  const toggleReady = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "ready", role, name: playerName } as any } });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
+  const addBot = (r: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "bot_add", role: r } as any } });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
+  const removeBot = (r: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "bot_remove", role: r } as any } });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
 
   const formatTime = (ms: number) => {
      const totalSec = Math.floor(ms / 1000);
@@ -293,6 +317,118 @@ export default function BughouseArena() {
             </div>
         </div>
       </header>
+      
+      {/* Lobby Overlay */}
+      {(!state || !state.lobby?.isAllReady) && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+           {!state ? (
+               <div className="flex flex-col items-center gap-6">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                  <p className="text-blue-500 font-black uppercase tracking-[0.2em] animate-pulse">Connecting to Match...</p>
+               </div>
+           ) : (
+             <div className="max-w-4xl w-full bg-slate-900/50 border border-white/10 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+              <div className="text-center mb-12">
+                 <Swords className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-bounce" />
+                 <h2 className="text-4xl font-black uppercase tracking-tighter text-white">Assemble Teams</h2>
+                 <p className="text-slate-400 mt-2 font-medium">Bughouse requires 4 players to start. Claim your seat.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 mb-12">
+                 {/* Team White */}
+                 <div className="space-y-4">
+                    <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest text-center">Team 0 (White/Black)</h3>
+                    {["w0", "b0"].map(r => {
+                       const slot = state.lobby?.[r];
+                       if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
+                       return (
+                          <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-blue-500/5 border-blue-500/20 hover:border-blue-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
+                                      {r.slice(0,1).toUpperCase()}
+                                   </div>
+                                   <div>
+                                      <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'w0' ? 'Board 0 White' : 'Board 0 Black'}</div>
+                                      <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : 'EMPTY SLOT'}</div>
+                                   </div>
+                                </div>
+                                {slot.isClaimed ? (
+                                   <div className="flex items-center gap-2">
+                                      {slot.isReady ? <CheckCircle className="w-6 h-6 text-emerald-500" /> : <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />}
+                                      {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[10px] font-black p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase">Kick Bot</button>}
+                                   </div>
+                                ) : (
+                                   <button onClick={(e) => { e.stopPropagation(); addBot(r); }} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
+                                      <UserPlus className="w-5 h-5" />
+                                   </button>
+                                )}
+                             </div>
+                             {slot.isClaimed && slot.sessionId === (state?.mySessionId || '') && (
+                                <div className="absolute inset-0 border-2 border-blue-500 rounded-3xl pointer-events-none shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
+                             )}
+                          </div>
+                       );
+                    })}
+                 </div>
+
+                 {/* Team Black */}
+                 <div className="space-y-4">
+                    <h3 className="text-sm font-black text-emerald-500 uppercase tracking-widest text-center">Team 1 (Black/White)</h3>
+                    {["b1", "w1"].map(r => {
+                       const slot = state.lobby?.[r];
+                       if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
+                       return (
+                          <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${r.startsWith('w') ? 'bg-white text-black' : 'bg-slate-800 text-white'}`}>
+                                      {r.slice(0,1).toUpperCase()}
+                                   </div>
+                                   <div>
+                                      <div className="text-xs font-black text-slate-500 uppercase tracking-widest">{r === 'b1' ? 'Board 1 Black' : 'Board 1 White'}</div>
+                                      <div className="text-lg font-bold text-white">{slot.isClaimed ? slot.playerName : 'EMPTY SLOT'}</div>
+                                   </div>
+                                </div>
+                                {slot.isClaimed ? (
+                                   <div className="flex items-center gap-2">
+                                      {slot.isReady ? <CheckCircle className="w-6 h-6 text-emerald-500" /> : <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />}
+                                      {slot.isBot && <button onClick={(e) => { e.stopPropagation(); removeBot(r); }} className="text-[10px] font-black p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase">Kick Bot</button>}
+                                   </div>
+                                ) : (
+                                   <button onClick={(e) => { e.stopPropagation(); addBot(r); }} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
+                                      <UserPlus className="w-5 h-5" />
+                                   </button>
+                                )}
+                             </div>
+                          </div>
+                       );
+                    })}
+                 </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-6">
+                 {state.lobby?.[role]?.isClaimed ? (
+                    <button 
+                      onClick={toggleReady}
+                      className={`px-12 py-4 rounded-2xl font-black uppercase tracking-widest transition-all scale-100 hover:scale-105 active:scale-95 ${state.lobby?.[role]?.isReady ? 'bg-emerald-500 text-white shadow-[0_0_30px_rgba(16,185,129,0.4)]' : 'bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]'}`}
+                    >
+                       {state.lobby?.[role]?.isReady ? 'Ready to Start' : 'Mark as Ready'}
+                    </button>
+                 ) : (
+                    <p className="text-amber-500 font-bold animate-pulse text-sm">Select a role to enable Ready button</p>
+                 )}
+                 <div className="text-slate-500 text-[10px] uppercase font-black space-x-4">
+                    <span>Waiting for: {Object.values(state.lobby || {}).filter((s:any) => !s.isReady).length} Players</span>
+                    <span>•</span>
+                    <span>Match ID: {id}</span>
+                 </div>
+              </div>
+           </div>
+           )}
+        </div>
+      )}
 
       <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-8 flex-1">
         {/* Top Video Ribbon - Visible if Cam is on, but VideoChat loads if either is on */}
