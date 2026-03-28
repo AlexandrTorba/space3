@@ -137,12 +137,12 @@ export class BughouseMatch {
        this.isStarted = true;
     }
 
-    this.handleSession(server, url.searchParams.get("role") || "spectator");
+    this.handleSession(server, url.searchParams.get("role") || "spectator", url);
 
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  handleSession(server: WebSocket, role: string) {
+  handleSession(server: WebSocket, role: string, url: URL) {
     server.accept();
     this.sessions.add(server);
 
@@ -154,14 +154,16 @@ export class BughouseMatch {
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
     // Initial assignment from URL params
+    const nameParam = url.searchParams.get("name");
     if (["w0", "b0", "w1", "b1"].includes(role)) {
        (this.sockets as any)[role] = server;
        const slot = (this.lobby.slots as any)[role];
        if (slot) {
          slot.isClaimed = true;
-         if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
+         if (nameParam) slot.playerName = nameParam;
+         else if (!slot.playerName) slot.playerName = `Player ${role.toUpperCase()}`;
        }
-       this.log(`[BUGHOUSE] Assigned ${role} to session`);
+       this.log(`[BUGHOUSE] Assigned ${role} to session (${nameParam || 'No name'})`);
     }
 
     this.broadcastStatus();
