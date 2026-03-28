@@ -134,14 +134,11 @@ export default function MatchSetupModal({
                                     }`}
                                 >
                                     <Swords className="w-5 h-5 text-current" />
-                                    {isBughouse ? 'Wait for Humans' : t("create_match")}
+                                    {isBughouse ? t("bh_wait_humans") : t("create_match")}
                                 </button>
                                 {isBughouse && (
                                     <button 
                                         onClick={() => {
-                                            // Handle vs Bots by passing a custom parameter if needed, 
-                                            // but for now onCreate uses page.tsx logic.
-                                            // I'll update it to handle bots.
                                             (window as any).__ag_vs_bots = true;
                                             onCreate();
                                             delete (window as any).__ag_vs_bots;
@@ -149,7 +146,7 @@ export default function MatchSetupModal({
                                         className="w-full h-16 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 bg-white/5 hover:bg-emerald-600 border border-white/10 text-white shadow-emerald-600/10"
                                     >
                                         <Zap className="w-5 h-5 text-emerald-400" />
-                                        Practice vs Bots
+                                        {t("bh_practice_bots")}
                                     </button>
                                 )}
                             </div>
