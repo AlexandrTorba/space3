@@ -339,6 +339,7 @@ export default {
               });
 
               // 2. Generate Meeting Token with role
+              const isPlayer = role && role !== 'spectator';
               const tokenRes = await fetch("https://api.daily.co/v1/meeting-tokens", {
                 method: "POST",
                 headers: {
@@ -348,7 +349,7 @@ export default {
                 body: JSON.stringify({
                   properties: {
                     room_name: matchId,
-                    is_owner: false,
+                    is_owner: isPlayer, // Owners have full permissions
                     exp: Math.round(Date.now() / 1000) + 7200,
                     user_name: role // Set user_name as the role
                   }
