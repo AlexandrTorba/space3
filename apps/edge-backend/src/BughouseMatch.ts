@@ -554,12 +554,15 @@ export class BughouseMatch {
          const promotion = uci.length > 4 ? uci[4] : undefined;
          
          const targetPiece = engine.get(to as any);
-         this.log(`[BUGHOUSE] Board ${boardIdx} pre-move target at ${to}: ${JSON.stringify(targetPiece)}`);
+         this.log(`[BUGHOUSE] Board ${boardIdx} pre-move target at ${to}: ${JSON.stringify(engine.get(to as any))}`);
          const promotedSquares = boardIdx === 0 ? this.promotedSquares0 : this.promotedSquares1;
          const isOriginallyPromoted = promotedSquares.has(from);
-         const targetOriginallyPromoted = promotedSquares.has(to);
          
          const move = engine.move({ from, to, promotion });
+         if (!move) {
+            this.log(`[BUGHOUSE] Board ${boardIdx} move engine.move returned null for UCI: ${uci}`);
+            return;
+         }
          this.log(`[BUGHOUSE] Board ${boardIdx} move successful: ${uci}. New FEN: ${engine.fen().substring(0,30)}`);
          
          if (boardIdx === 0) {
@@ -579,10 +582,11 @@ export class BughouseMatch {
             promotedSquares.add(to);
          }
 
-         if (targetPiece) {
+         if (move.captured) {
             // Captured piece goes to PARTNER'S bank on OTHER board
             // IF it was a promoted piece, it reverts to PAWN
-            const actualPieceType = targetOriginallyPromoted ? "p" : targetPiece.type;
+            const targetOriginallyPromoted = promotedSquares.has(to);
+            const actualPieceType = targetOriginallyPromoted ? "p" : move.captured;
             if (targetOriginallyPromoted) promotedSquares.delete(to); 
             this.transferCapture(actualPieceType, boardIdx, player);
          }

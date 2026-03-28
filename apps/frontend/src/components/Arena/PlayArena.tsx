@@ -530,7 +530,7 @@ function PlayArenaContent() {
                         options={{
                             id: `board-main-${boardOrientation}`,
                             position: fen,
-                            onPieceDrop: onDrop as any,
+                            onPieceDrop: ((source: string, target: string, piece: string) => onDrop({ sourceSquare: source, targetSquare: target, piece })) as any,
                             boardOrientation: boardOrientation,
                             darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                             lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
