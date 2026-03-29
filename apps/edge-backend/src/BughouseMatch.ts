@@ -188,7 +188,9 @@ export class BughouseMatch {
          try {
             const json = JSON.parse(event.data as string);
             if (json.type === "lobby") {
-               this.handleLobbyAction(json, server);
+               // Handle both {type: "lobby", action: {...}} and flat structure
+               const lobbyAction = json.action || json;
+               this.handleLobbyAction(lobbyAction, server);
             }
          } catch(e){}
          return;

@@ -88,18 +88,6 @@ export default function BughouseArena() {
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
-  const startMatch = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { 
-        event: { 
-            case: "lobby", 
-            value: { 
-                type: "start"
-            } as any 
-        } 
-    });
-    wsRef.current.send(toBinary(MatchUpdateSchema, u));
-  };
 
   const assignRole = (targetSessionId: string, targetRole: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
@@ -296,25 +284,56 @@ export default function BughouseArena() {
   
   const claimRole = (r: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "claim", role: r, name: playerName } as any } });
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "claim", role: r, name: playerName } as any 
+        } 
+    });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
   const toggleReady = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "ready", role, name: playerName } as any } });
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "ready" } as any 
+        } 
+    });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
   const addBot = (r: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "force_assign", role: r, name: "bot" } as any } });
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "force_assign", role: r, name: "bot" } as any 
+        } 
+    });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
   const removeBot = (r: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const u = create(MatchUpdateSchema, { event: { case: "lobby", value: { type: "bot_remove", role: r } as any } });
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "bot_remove", role: r } as any 
+        } 
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
+  const startMatch = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "start" } as any 
+        } 
+    });
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
