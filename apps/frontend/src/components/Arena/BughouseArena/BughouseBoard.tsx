@@ -1,8 +1,7 @@
 import React from "react";
-import * as ReactChessboard from "react-chessboard";
+import { Chessboard } from "react-chessboard";
 
-// Flexible import to handle different module versions
-const Chessboard = (ReactChessboard as any).Chessboard || (ReactChessboard as any).default || ReactChessboard;
+const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 interface BughouseBoardProps {
   boardIdx: number;
@@ -66,13 +65,13 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
         <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative">
             <Chessboard 
                options={{
-                 position: fen,
+                 position: (!fen || fen === "start") ? START_FEN : fen,
                  boardOrientation: orientation,
                  pieces: customPieces,
                  darkSquareStyle: { backgroundColor: theme.dark },
                  lightSquareStyle: { backgroundColor: theme.light },
                  onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
-                    onDrop(boardIdx, sourceSquare, targetSquare, piece),
+                    onDrop(boardIdx, sourceSquare || piece?.position, targetSquare, piece?.pieceType || piece),
                  onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),
                  animationDurationInMs: 300,
                }}

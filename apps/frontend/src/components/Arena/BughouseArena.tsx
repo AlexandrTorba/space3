@@ -271,14 +271,15 @@ export default function BughouseArena() {
   const onSquareClick = (boardIdx: number, square: string) => {
      if (!selectedPiece || selectedPiece.board !== boardIdx) return;
      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+     // Send as UCI drop notation: "P@e4" means drop a pawn on e4
+     // The backend handleMove already supports this format
+     const uci = `${selectedPiece.char}@${square}`;
      const update = create(MatchUpdateSchema, {
         event: { 
-          case: "bughouse", 
+          case: "move", 
           value: { 
-            type: "drop", 
-            boardIdx, 
-            square, 
-            piece: selectedPiece.char 
+            uci, 
+            promotion: "" 
           } as any
         }
      });
@@ -519,6 +520,8 @@ export default function BughouseArena() {
                      <BughouseBank 
                          bank={myBankW || []} 
                          boardIdx={myBoardIdx} 
+                         playerColor="w"
+                         selectedPiece={selectedPiece}
                          setSelectedPiece={setSelectedPiece} 
                          getPieceUrl={getPieceUrl} 
                      />
@@ -546,6 +549,8 @@ export default function BughouseArena() {
                      <BughouseBank 
                          bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
                          boardIdx={partnerBoardIdx} 
+                         playerColor="b"
+                         selectedPiece={selectedPiece}
                          setSelectedPiece={setSelectedPiece} 
                          getPieceUrl={getPieceUrl} 
                      />

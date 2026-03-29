@@ -56,6 +56,7 @@ export class BughouseMatch {
   reason = "";
   private disconnectTimer: any = null;
   private tickInterval: any = null;
+  private botTimer: any = null;
   dbInserted: boolean = false;
   db: any;
 
@@ -422,6 +423,167 @@ export class BughouseMatch {
             this.tickInterval = null;
         }
     }, 1000);
+
+    // Start bot AI timer
+    this.startBotTimer();
+  }
+
+  startBotTimer() {
+    if (this.botTimer) clearInterval(this.botTimer);
+    const hasBots = this.lobby.w0.isBot || this.lobby.b0.isBot || this.lobby.w1.isBot || this.lobby.b1.isBot;
+    if (!hasBots) return;
+    this.log("Bot timer started", true);
+    // Bots move every 1.5-3 seconds per tick check
+    this.botTimer = setInterval(() => {
+      if (!this.isActive) {
+        clearInterval(this.botTimer);
+        this.botTimer = null;
+        return;
+      }
+      this.handleBotTurns();
+    }, 1500);
+    // First bot move after a short delay
+    setTimeout(() => this.handleBotTurns(), 800);
+  }
+
+  handleBotTurns() {
+    if (!this.isActive || !this.isStarted) return;
+    for (const boardIdx of [0, 1] as const) {
+      const engine = boardIdx === 0 ? this.engine0 : this.engine1;
+      const turn = engine.turn(); // 'w' or 'b'
+      const role = (turn + boardIdx) as "w0" | "b0" | "w1" | "b1";
+      const slot = (this.lobby as any)[role];
+      if (!slot?.isBot) continue;
+
+      // Add random delay variance — skip ~40% of ticks for realism
+      if (Math.random() < 0.4) continue;
+
+      const moveCount = boardIdx === 0 ? this.moveCount0 : this.moveCount1;
+      // Don't let bot move on black's first turn if no moves made yet
+      if (moveCount === 0 && turn === 'b') continue;
+
+      // Try to make a move
+      const moved = this.makeBotMove(boardIdx, engine, turn);
+      if (moved) {
+        if (boardIdx === 0) this.moveCount0++; else this.moveCount1++;
+        this.deductTimeThroughMove(boardIdx);
+        this.checkGameOver();
+        this.broadcastStatus();
+      }
+    }
+  }
+
+  makeBotMove(boardIdx: number, engine: Chess, color: string): boolean {
+    // First, try to drop a piece from bank if available (20% of the time)
+    const bank = (boardIdx === 0)
+      ? (color === 'w' ? this.bank0w : this.bank0b)
+      : (color === 'w' ? this.bank1w : this.bank1b);
+
+    if (bank.length > 0 && Math.random() < 0.2 && !engine.isCheck()) {
+      const dropped = this.tryBotDrop(engine, bank, color);
+      if (dropped) return true;
+    }
+
+    // Make a regular move
+    const moves = engine.moves({ verbose: true });
+    if (moves.length === 0) return false;
+
+    // Weighted move selection: prefer captures and checks
+    const scored = moves.map(m => {
+      let score = 1;
+      if (m.captured) score += 5;
+      // Temporarily apply move to check if it leads to check
+      const testEngine = new Chess(engine.fen());
+      try {
+        testEngine.move({ from: m.from, to: m.to, promotion: m.promotion });
+        if (testEngine.isCheck()) score += 3;
+        if (testEngine.isCheckmate()) score += 100;
+      } catch(e) {}
+      return { move: m, score };
+    });
+
+    // Weighted random selection
+    const totalScore = scored.reduce((a, b) => a + b.score, 0);
+    let r = Math.random() * totalScore;
+    let chosen = scored[0].move;
+    for (const s of scored) {
+      r -= s.score;
+      if (r <= 0) { chosen = s.move; break; }
+    }
+
+    try {
+      const result = engine.move({ from: chosen.from, to: chosen.to, promotion: chosen.promotion || 'q' });
+      if (!result) return false;
+
+      // Handle promoted squares tracking
+      const promotedSquares = boardIdx === 0 ? this.promotedSquares0 : this.promotedSquares1;
+      promotedSquares.delete(chosen.from);
+      if (chosen.promotion) promotedSquares.add(chosen.to);
+
+      // Handle captures — transfer to partner's bank
+      if (result.captured) {
+        const actualCaptured = promotedSquares.has(chosen.to) ? 'p' : result.captured;
+        promotedSquares.delete(chosen.to);
+        this.transferCapture(actualCaptured, boardIdx, color);
+      }
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  tryBotDrop(engine: Chess, bank: string[], color: string): boolean {
+    // Find empty squares to drop a piece
+    const board = engine.board();
+    const emptySquares: string[] = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (!board[r][c]) {
+          const sq = String.fromCharCode(97 + c) + (8 - r);
+          emptySquares.push(sq);
+        }
+      }
+    }
+    if (emptySquares.length === 0) return false;
+
+    // Pick a random piece from bank and a random square
+    const shuffledBank = [...bank].sort(() => Math.random() - 0.5);
+    for (const piece of shuffledBank) {
+      const pieceType = piece.toLowerCase();
+      // Don't drop pawns on rank 1 or 8
+      const validSquares = emptySquares.filter(sq => {
+        if (pieceType === 'p') {
+          const rank = parseInt(sq[1]);
+          return rank > 1 && rank < 8;
+        }
+        return true;
+      });
+      if (validSquares.length === 0) continue;
+
+      // Shuffle and try squares
+      const shuffledSq = validSquares.sort(() => Math.random() - 0.5);
+      for (const target of shuffledSq.slice(0, 5)) { // Try up to 5 random squares
+        const fen = engine.fen();
+        if (engine.put({ type: pieceType as any, color: color as any }, target as any)) {
+          // Check if the drop doesn't put yourself in check
+          if (engine.isCheck()) {
+            engine.remove(target as any);
+            continue;
+          }
+          // Successfully placed — now flip the turn
+          const idx = bank.indexOf(piece);
+          if (idx !== -1) bank.splice(idx, 1);
+          const f = engine.fen().split(' ');
+          f[1] = f[1] === 'w' ? 'b' : 'w';
+          f[3] = '-';
+          f[4] = '0';
+          engine.load(f.join(' '));
+          this.log(`Bot dropped ${piece} on ${target} (board ${engine === this.engine0 ? 0 : 1})`);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   handleAction(action: any, server: WebSocket) {
@@ -520,6 +682,13 @@ export class BughouseMatch {
         if (turn==='w') this.time1w-=elapsed; else this.time1b-=elapsed;
         this.lastMove1=now;
      }
+     // Check for timeout
+     if (this.isActive) {
+        if (this.time0w <= 0) { this.time0w = 0; this.endGame("0-1", "timeout (w0)"); }
+        else if (this.time0b <= 0) { this.time0b = 0; this.endGame("1-0", "timeout (b0)"); }
+        else if (this.time1w <= 0) { this.time1w = 0; this.endGame("0-1", "timeout (w1)"); }
+        else if (this.time1b <= 0) { this.time1b = 0; this.endGame("1-0", "timeout (b1)"); }
+     }
   }
 
   transferCapture(piece: string, bIdx: number, pCol: string) {
@@ -535,7 +704,14 @@ export class BughouseMatch {
     });
   }
 
-  endGame(res: string, reas: string) { this.isActive = false; this.result = res; this.reason = reas; this.broadcastStatus(); }
+  endGame(res: string, reas: string) {
+    this.isActive = false;
+    this.result = res;
+    this.reason = reas;
+    if (this.botTimer) { clearInterval(this.botTimer); this.botTimer = null; }
+    if (this.tickInterval) { clearInterval(this.tickInterval); this.tickInterval = null; }
+    this.broadcastStatus();
+  }
 
   broadcastStatus() {
     const createStatus = (e: Chess, tW: number, tB: number) => create(MatchStatusSchema, {

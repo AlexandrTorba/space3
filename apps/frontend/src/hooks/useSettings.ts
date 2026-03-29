@@ -106,6 +106,12 @@ export function useSettings() {
 
   const getPieceUrl = (piece: string) => {
     // piece is like 'wP', 'bK'
+    if (!piece || piece.length < 2) {
+      // Fallback for invalid piece codes
+      const setBase = PIECE_URLS[settings.pieceSet];
+      const ext = settings.pieceSet === "wikipedia" ? ".png" : ".svg";
+      return `${setBase}wP${ext}`;
+    }
     const color = piece[0];
     const type = piece[1].toUpperCase();
     const setBase = PIECE_URLS[settings.pieceSet];
