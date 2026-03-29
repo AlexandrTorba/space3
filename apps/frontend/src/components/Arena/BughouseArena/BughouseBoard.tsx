@@ -65,16 +65,17 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
 
         <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative">
             <Chessboard 
-               position={fen}
-               boardOrientation={orientation}
-               pieces={customPieces}
-               darkSquareStyle={{ backgroundColor: theme.dark }}
-               lightSquareStyle={{ backgroundColor: theme.light }}
-               onPieceDrop={({ piece, sourceSquare, targetSquare }: any) => 
-                  onDrop(boardIdx, sourceSquare, targetSquare, piece)
-               }
-               onSquareClick={({ square }: any) => onSquareClick(boardIdx, square)}
-               animationDurationInMs={300}
+               options={{
+                 position: fen,
+                 boardOrientation: orientation,
+                 pieces: customPieces,
+                 darkSquareStyle: { backgroundColor: theme.dark },
+                 lightSquareStyle: { backgroundColor: theme.light },
+                 onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
+                    onDrop(boardIdx, sourceSquare, targetSquare, piece),
+                 onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),
+                 animationDurationInMs: 300,
+               }}
             />
         </div>
 
