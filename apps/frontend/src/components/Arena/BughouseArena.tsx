@@ -470,20 +470,21 @@ export default function BughouseArena() {
                  <div className="flex items-center justify-between gap-4 px-2">
                     <h3 className="text-xl font-bold text-blue-400">{team0Name}</h3>
                  </div>
-                 <BughouseBoard 
+                  <BughouseBoard 
                      boardIdx={myBoardIdx}
                      orientation={boardOrientation}
                      fen={myBoard?.fen || "start"}
                      clocks={clocks}
                      playerName={playerName}
                      isMain={true}
+                     scale={boardScale}
                      theme={boardThemes[settings.boardTheme] || boardThemes.classic}
                      customPieces={stableCustomPieces}
                      onDrop={onDrop}
                      onSquareClick={onSquareClick}
                      formatTime={formatTime}
                      getPlayerLabel={getPlayerLabel}
-                 />
+                  />
                  <BughouseBank 
                      bank={myBankW || []} 
                      boardIdx={myBoardIdx} 
@@ -496,20 +497,21 @@ export default function BughouseArena() {
                  <div className="flex items-center justify-between gap-4 px-2">
                     <h3 className="text-xl font-bold text-emerald-400">{team1Name}</h3>
                  </div>
-                 <BughouseBoard 
+                  <BughouseBoard 
                      boardIdx={partnerBoardIdx}
                      orientation={partnerOrientation}
                      fen={partnerBoard?.fen || "start"}
                      clocks={clocks}
                      playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
                      isMain={false}
+                     scale={boardScale}
                      theme={boardThemes[settings.boardTheme] || boardThemes.classic}
                      customPieces={stableCustomPieces}
                      onDrop={onDrop}
                      onSquareClick={onSquareClick}
                      formatTime={formatTime}
                      getPlayerLabel={getPlayerLabel}
-                 />
+                  />
                  <BughouseBank 
                      bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
                      boardIdx={partnerBoardIdx} 
