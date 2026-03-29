@@ -42,7 +42,7 @@ export class BughouseMatch {
     b1: WebSocket | null;
   } = { w0: null, b0: null, w1: null, b1: null };
 
-  isActive = true;
+  isActive = false;
   isStarted = false;
   private videoEnabled: boolean = true;
   private matchId: string = "unknown";
@@ -129,7 +129,9 @@ export class BughouseMatch {
     server.accept();
     const sessionId = crypto.randomUUID();
     const name = url.searchParams.get("name") || "Player";
-    this.sessions.set(server, { id: sessionId, name, role: initialRole });
+    this.log(`New session: ${sessionId} (${name}), initialRole: ${initialRole}`);
+    
+    this.sessions.set(server, { id: sessionId, name, role: "spectator" }); // default to spec
 
     if (this.disconnectTimer) {
        clearTimeout(this.disconnectTimer);
@@ -139,10 +141,9 @@ export class BughouseMatch {
     server.send(JSON.stringify({ type: "session_id", id: sessionId }));
     server.send(JSON.stringify({ type: "video_enabled", enabled: this.videoEnabled }));
 
-    // Auto-claim if role provided in URL or find free slot
+    // Auto-claim logic
     let finalRole = initialRole;
     if (finalRole === "spectator") {
-       // try to find free slot (or slot with disconnected socket)
        for(const r of ["w0", "b0", "w1", "b1"] as const) {
           const slot = this.lobby.slots[r];
           const hasActiveSocket = (this.sockets as any)[r];
@@ -153,18 +154,22 @@ export class BughouseMatch {
        }
     }
 
+    this.log(`Attempting to seat ${sessionId} in ${finalRole}`);
     if (["w0", "b0", "w1", "b1"].includes(finalRole)) {
        const slot = (this.lobby.slots as any)[finalRole];
-       if (slot && !slot.isClaimed) {
+       if (slot) {
           slot.isClaimed = true;
           slot.isReady = true;
           slot.playerName = name;
           slot.sessionId = sessionId;
+          slot.isBot = false;
           (this.sockets as any)[finalRole] = server;
           this.sessions.get(server)!.role = finalRole;
+          this.log(`Seated ${sessionId} successfully in ${finalRole}`);
           
           if (!this.lobby.adminSessionId) {
              this.lobby.adminSessionId = sessionId;
+             this.log(`Assigned admin to ${sessionId}`);
           }
        }
     }
@@ -179,56 +184,64 @@ export class BughouseMatch {
       this.messageCounts.set(server, ratelimit);
       if (ratelimit.count > 20) return;
 
-      if (!(event.data instanceof ArrayBuffer)) return;
-      const buffer = new Uint8Array(event.data);
-      try {
-        const update = fromBinary(MatchUpdateSchema, buffer);
-        if (update.event.case === "move") this.handleMove(update.event.value.uci, server);
-        else if (update.event.case === "lobby") this.handleLobbyAction(update.event.value, server);
-        else if (update.event.case === "action") this.handleAction(update.event.value, server);
-        else if (update.event.case === "chat") this.handleChat(update.event.value, server);
-      } catch (e) { console.error("Proto decode error", e); }
+      if (!(event.data instanceof ArrayBuffer)) {
+         try {
+            const json = JSON.parse(event.data as string);
+            if (json.type === "lobby") {
+               this.handleLobbyAction(json, server);
+            }
+         } catch(e){}
+         return;
+      }
+      const update = fromBinary(MatchUpdateSchema, new Uint8Array(event.data));
+      this.handleUpdate(update, server);
     });
 
     server.addEventListener("close", () => {
-      const sData = this.sessions.get(server);
-      const closedId = sData?.id;
-      this.sessions.delete(server);
-      for (const r of ["w0", "b0", "w1", "b1"] as const) {
-        if ((this.sockets as any)[r] === server) {
-          (this.sockets as any)[r] = null;
-          this.lobby.slots[r].isClaimed = false;
-          this.lobby.slots[r].isReady = false;
-          this.lobby.slots[r].sessionId = "";
-        }
+      this.log(`Session closed: ${sessionId}`);
+      const s = this.sessions.get(server);
+      if (s) {
+         // if it was admin, reassignment will happen in broadcastStatus
+         this.sessions.delete(server);
       }
-      // Reassign admin if left
-      if (this.lobby.adminSessionId === closedId) {
-         const nextSession = Array.from(this.sessions.values())[0];
-         this.lobby.adminSessionId = nextSession ? nextSession.id : "";
-      }
-
-      if (this.isActive && this.sessions.size === 0) {
+      if (this.sessions.size === 0) {
          this.disconnectTimer = setTimeout(() => this.forceCleanup(), 60000);
       } else {
          this.broadcastStatus();
       }
     });
+
+    server.addEventListener("error", (e) => {
+       this.log(`WebSocket error for ${sessionId}: ${e}`);
+    });
+  }
+
+  handleUpdate(update: any, server: WebSocket) {
+    if (update.event.case === "move") this.handleMove(update.event.value.uci, server);
+    else if (update.event.case === "lobby") this.handleLobbyAction(update.event.value, server);
+    else if (update.event.case === "action") this.handleAction(update.event.value, server);
+    else if (update.event.case === "chat") this.handleChat(update.event.value, server);
   }
 
   handleLobbyAction(action: any, server: WebSocket) {
     const sData = this.sessions.get(server);
-    if (!sData) return;
+    if (!sData) {
+       this.log(`handleLobbyAction: sData not found for socket!`);
+       return;
+    }
     const { type, role, name } = action;
+    this.log(`LobbyAction: ${type} from ${sData.id} (${sData.role})`);
 
     if (type === "claim" && !this.isStarted) {
        if (!["w0", "b0", "w1", "b1"].includes(role)) return;
        // Unclaim previous
        for(const r in this.lobby.slots) {
-         if (this.lobby.slots[r as keyof typeof this.lobby.slots].sessionId === sData.id) {
-            this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
-            (this.sockets as any)[r] = null;
-         }
+          const s = this.lobby.slots[r as keyof typeof this.lobby.slots];
+          if (s.sessionId === sData.id) {
+             this.log(`Clearing old slot ${r} for session ${sData.id}`);
+             this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
+             (this.sockets as any)[r] = null;
+          }
        }
        const target = (this.lobby.slots as any)[role];
        const hasActiveSocket = (this.sockets as any)[role];
@@ -239,12 +252,17 @@ export class BughouseMatch {
           target.sessionId = sData.id;
           target.isBot = false;
           (this.sockets as any)[role] = server;
+          sData.role = role;
+          this.log(`Claimed ${role} for ${sData.id}`);
           if (!this.lobby.adminSessionId) this.lobby.adminSessionId = sData.id;
        }
     } else if (type === "ready") {
        for(const r in this.lobby.slots) {
-         const slot = this.lobby.slots[r as keyof typeof this.lobby.slots];
-         if (slot.sessionId === sData.id) slot.isReady = !slot.isReady;
+          const slot = this.lobby.slots[r as keyof typeof this.lobby.slots];
+          if (slot.sessionId === sData.id) {
+             slot.isReady = !slot.isReady;
+             this.log(`Toggled ready for ${sData.id} on ${r}: ${slot.isReady}`);
+          }
        }
     } else if (type === "force_assign" && sData.id === this.lobby.adminSessionId) {
         this.log(`Admin force assign: ${name} to ${role}`);
@@ -264,8 +282,9 @@ export class BughouseMatch {
                  targetSlot.isReady = true;
                  targetSlot.sessionId = "bot-" + Math.random();
                  targetSlot.isBot = true;
+                 this.log(`Bot added to ${role}`);
               } else {
-                 // find session by id
+                 this.log(`Force assigning player ${name} to ${role}`);
                  for (const [ws, data] of this.sessions.entries()) {
                     if (data.id === name) {
                        targetSlot.isClaimed = true;
@@ -273,6 +292,7 @@ export class BughouseMatch {
                        targetSlot.isReady = true;
                        targetSlot.sessionId = data.id;
                        (this.sockets as any)[role] = ws;
+                       data.role = role;
                        break;
                     }
                  }
@@ -280,9 +300,11 @@ export class BughouseMatch {
            }
         }
     } else if (type === "team_name" && sData.id === this.lobby.adminSessionId) {
-       if (role === "team0") this.lobby.team0Name = name;
-       if (role === "team1") this.lobby.team1Name = name;
-     } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
+        this.log(`Team name update: ${role} to ${name}`);
+        if (role === "team0") this.lobby.team0Name = name;
+        if (role === "team1") this.lobby.team1Name = name;
+    } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
+        this.log(`Removing bot from ${role}`);
         const target = (this.lobby.slots as any)[role];
         if (target && target.isBot) {
            target.isClaimed = false;
@@ -291,17 +313,22 @@ export class BughouseMatch {
            target.sessionId = "";
            target.isBot = false;
         }
-     } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
+    } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
+        this.log(`Match start requested by admin`);
         const slots = Object.values(this.lobby.slots);
         if (slots.every(s => s.isClaimed)) {
            this.lobby.isAllReady = true;
            this.isStarted = true;
+           this.isActive = true;
            this.lastMove0 = Date.now();
            this.lastMove1 = Date.now();
+           this.log(`Match started!`);
+        } else {
+           this.log(`Cannot start: not all slots claimed`);
         }
-     }
+    }
 
-     this.broadcastStatus();
+    this.broadcastStatus();
   }
 
   handleAction(action: any, server: WebSocket) {
