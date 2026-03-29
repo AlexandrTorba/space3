@@ -49,6 +49,7 @@ export class BughouseMatch {
   result = "";
   reason = "";
   private disconnectTimer: any = null;
+  private tickInterval: any = null;
   dbInserted: boolean = false;
   db: any;
 
@@ -324,9 +325,33 @@ export class BughouseMatch {
            this.lobby.isAllReady = true;
            this.isStarted = true;
            this.isActive = true;
+           // Reset engines to start position
+           this.engine0.reset();
+           this.engine1.reset();
+           this.moveCount0 = 0;
+           this.moveCount1 = 0;
+           this.bank0w = []; this.bank0b = []; this.bank1w = []; this.bank1b = [];
+           this.time0w = this.lobby.timeControlMs;
+           this.time0b = this.lobby.timeControlMs;
+           this.time1w = this.lobby.timeControlMs;
+           this.time1b = this.lobby.timeControlMs;
+           
            this.lastMove0 = Date.now();
            this.lastMove1 = Date.now();
            this.log(`Match started!`);
+           
+           if (!this.tickInterval) {
+             this.tickInterval = setInterval(() => {
+               if (this.isActive) {
+                 this.deductTimeThroughMove(0);
+                 this.deductTimeThroughMove(1);
+                 this.broadcastStatus();
+               } else {
+                 clearInterval(this.tickInterval);
+                 this.tickInterval = null;
+               }
+             }, 1000);
+           }
         } else {
            this.log(`Cannot start: not all slots claimed`);
         }

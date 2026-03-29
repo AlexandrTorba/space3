@@ -183,12 +183,12 @@ export default function BughouseArena() {
           if (val.event.case === "status") {
              const status = val.event.value;
              setState(status);
-             if (status.clocks) {
-                setClocks({
-                   w0: Number(status.clocks.w0), b0: Number(status.clocks.b0),
-                   w1: Number(status.clocks.w1), b1: Number(status.clocks.b1)
-                });
-             }
+             setClocks({
+                w0: Number(status.board0?.whiteTimeMs || 0),
+                b0: Number(status.board0?.blackTimeMs || 0),
+                w1: Number(status.board1?.whiteTimeMs || 0),
+                b1: Number(status.board1?.blackTimeMs || 0)
+             });
              if (status.lobby) {
                 setTeam0Name(status.lobby.team0Name || "Team White");
                 setTeam1Name(status.lobby.team1Name || "Team Black");
@@ -449,84 +449,90 @@ export default function BughouseArena() {
         />
       )}
 
-      <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-8 flex-1">
-        {(isMicOn || isCamOn) && (
-            <div 
-              className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top duration-500 overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
-              style={{ height: `${videoHeight}px` }}
-            >
-                <VideoChat 
-                  matchId={id} 
-                  role={role} 
-                  hideControls={true} 
-                  initialMicOn={isMicOn} 
-                  initialCamOn={isCamOn} 
-                />
+      <div className="max-w-[1800px] mx-auto w-full grid grid-cols-1 xl:grid-cols-[1fr,380px] gap-8 flex-1 items-start">
+        {/* Main Game Area */}
+        <div className="flex flex-col gap-8">
+            <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
+                 <div className="flex flex-col gap-6">
+                     <div className="flex items-center justify-between gap-4 px-2">
+                        <h3 className="text-xl font-bold text-blue-400">{team0Name}</h3>
+                     </div>
+                      <BughouseBoard 
+                         boardIdx={myBoardIdx}
+                         orientation={boardOrientation}
+                         fen={myBoard?.fen || "start"}
+                         clocks={clocks}
+                         playerName={playerName}
+                         isMain={true}
+                         scale={boardScale}
+                         theme={boardThemes[settings.boardTheme] || boardThemes.classic}
+                         customPieces={stableCustomPieces}
+                         onDrop={onDrop}
+                         onSquareClick={onSquareClick}
+                         formatTime={formatTime}
+                         getPlayerLabel={getPlayerLabel}
+                      />
+                     <BughouseBank 
+                         bank={myBankW || []} 
+                         boardIdx={myBoardIdx} 
+                         setSelectedPiece={setSelectedPiece} 
+                         getPieceUrl={getPieceUrl} 
+                     />
+                 </div>
+
+                 <div className="flex flex-col gap-6 opacity-90">
+                     <div className="flex items-center justify-between gap-4 px-2">
+                        <h3 className="text-xl font-bold text-emerald-400">{team1Name}</h3>
+                     </div>
+                      <BughouseBoard 
+                         boardIdx={partnerBoardIdx}
+                         orientation={partnerOrientation}
+                         fen={partnerBoard?.fen || "start"}
+                         clocks={clocks}
+                         playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
+                         isMain={false}
+                         scale={boardScale}
+                         theme={boardThemes[settings.boardTheme] || boardThemes.classic}
+                         customPieces={stableCustomPieces}
+                         onDrop={onDrop}
+                         onSquareClick={onSquareClick}
+                         formatTime={formatTime}
+                         getPlayerLabel={getPlayerLabel}
+                      />
+                     <BughouseBank 
+                         bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
+                         boardIdx={partnerBoardIdx} 
+                         setSelectedPiece={setSelectedPiece} 
+                         getPieceUrl={getPieceUrl} 
+                     />
+                 </div>
             </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
-             <div className="flex flex-col gap-6">
-                 <div className="flex items-center justify-between gap-4 px-2">
-                    <h3 className="text-xl font-bold text-blue-400">{team0Name}</h3>
-                 </div>
-                  <BughouseBoard 
-                     boardIdx={myBoardIdx}
-                     orientation={boardOrientation}
-                     fen={myBoard?.fen || "start"}
-                     clocks={clocks}
-                     playerName={playerName}
-                     isMain={true}
-                     scale={boardScale}
-                     theme={boardThemes[settings.boardTheme] || boardThemes.classic}
-                     customPieces={stableCustomPieces}
-                     onDrop={onDrop}
-                     onSquareClick={onSquareClick}
-                     formatTime={formatTime}
-                     getPlayerLabel={getPlayerLabel}
-                  />
-                 <BughouseBank 
-                     bank={myBankW || []} 
-                     boardIdx={myBoardIdx} 
-                     setSelectedPiece={setSelectedPiece} 
-                     getPieceUrl={getPieceUrl} 
-                 />
-             </div>
-
-             <div className="flex flex-col gap-6 opacity-80 hover:opacity-100 transition-opacity duration-500">
-                 <div className="flex items-center justify-between gap-4 px-2">
-                    <h3 className="text-xl font-bold text-emerald-400">{team1Name}</h3>
-                 </div>
-                  <BughouseBoard 
-                     boardIdx={partnerBoardIdx}
-                     orientation={partnerOrientation}
-                     fen={partnerBoard?.fen || "start"}
-                     clocks={clocks}
-                     playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
-                     isMain={false}
-                     scale={boardScale}
-                     theme={boardThemes[settings.boardTheme] || boardThemes.classic}
-                     customPieces={stableCustomPieces}
-                     onDrop={onDrop}
-                     onSquareClick={onSquareClick}
-                     formatTime={formatTime}
-                     getPlayerLabel={getPlayerLabel}
-                  />
-                 <BughouseBank 
-                     bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
-                     boardIdx={partnerBoardIdx} 
-                     setSelectedPiece={setSelectedPiece} 
-                     getPieceUrl={getPieceUrl} 
-                 />
-             </div>
         </div>
 
-        <BughouseActivityLogs 
-            logs={logs}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            handleSubmit={handleChatSubmit}
-        />
+        {/* Sidebar: Video & Chat */}
+        <div className="flex flex-col gap-4 sticky top-8">
+            {(isMicOn || isCamOn) && (
+                <div 
+                  className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
+                  style={{ height: `${videoHeight}px` }}
+                >
+                    <VideoChat 
+                      matchId={id} 
+                      role={role} 
+                      hideControls={true} 
+                      initialMicOn={isMicOn} 
+                      initialCamOn={isCamOn} 
+                    />
+                </div>
+            )}
+            
+            <BughouseActivityLogs 
+                logs={logs}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                handleSubmit={handleChatSubmit}
+            />
+        </div>
       </div>
     </div>
   );
