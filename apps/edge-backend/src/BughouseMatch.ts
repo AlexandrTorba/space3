@@ -18,11 +18,17 @@ export class BughouseMatch {
   env: Env;
   sessions: Map<WebSocket, SessionData> = new Map();
   debugLogs: string[] = [];
+  activityLogs: string[] = [];
   
-  log(msg: string) {
+  log(msg: string, isPublic: boolean = false) {
     console.log(msg);
-    this.debugLogs.push(`[${new Date().toISOString()}] ${msg}`);
+    const stamped = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    this.debugLogs.push(stamped);
     if (this.debugLogs.length > 100) this.debugLogs.shift();
+    if (isPublic) {
+       this.activityLogs.push(msg);
+       if (this.activityLogs.length > 50) this.activityLogs.shift();
+    }
   }
   
   engine0 = new Chess();
@@ -318,8 +324,12 @@ export class BughouseMatch {
            target.sessionId = "";
            target.isBot = false;
         }
-    } else if (type === "fill_bots" && sData.id === this.lobby.adminSessionId) {
-        this.log(`Filling empty slots with bots`);
+    } else if (type === "fill_bots") {
+        this.log(`Attempting to fill bots. User: ${sData.id}, Admin: ${this.lobby.adminSessionId}`, true);
+        if (sData.id !== this.lobby.adminSessionId) {
+             this.log("Fill bots rejected: not admin", true);
+             return;
+        }
         for (const r of ["w0", "b0", "w1", "b1"] as const) {
            const slot = (this.lobby as any)[r];
            const socket = (this.sockets as any)[r];
@@ -332,47 +342,55 @@ export class BughouseMatch {
            }
         }
     } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
-        this.log(`Match start requested by admin`);
+        this.log(`Match start requested by admin`, true);
         const slots = [this.lobby.w0, this.lobby.b0, this.lobby.w1, this.lobby.b1];
         const missing = slots.filter(s => !s.isClaimed);
         if (missing.length === 0) {
-           this.lobby.isAllReady = true;
-           this.isStarted = true;
-           this.isActive = true;
-           // Reset engines to start position
-           this.engine0.reset();
-           this.engine1.reset();
-           this.moveCount0 = 0;
-           this.moveCount1 = 0;
-           this.bank0w = []; this.bank0b = []; this.bank1w = []; this.bank1b = [];
-           this.time0w = this.lobby.timeControlMs;
-           this.time0b = this.lobby.timeControlMs;
-           this.time1w = this.lobby.timeControlMs;
-           this.time1b = this.lobby.timeControlMs;
-           
-           this.lastMove0 = Date.now();
-           this.lastMove1 = Date.now();
-           this.log(`Match started!`);
-           
-           if (!this.tickInterval) {
-             this.tickInterval = setInterval(() => {
-               if (this.isActive) {
-                 this.deductTimeThroughMove(0);
-                 this.deductTimeThroughMove(1);
-                 this.broadcastStatus();
-               } else {
-                 clearInterval(this.tickInterval);
-                 this.tickInterval = null;
-               }
-             }, 1000);
-           }
+           this.startMatch();
         } else {
-           this.log(`Cannot start: not all slots claimed`);
+           this.log(`Cannot start: ${missing.length} slots missing`, true);
            this.systemChat(`Cannot start: Need 4 players or bots. Try 'Fill with Bots' button.`);
         }
     }
 
     this.broadcastStatus();
+  }
+
+  startMatch() {
+    if (this.isStarted) {
+        this.log("startMatch: Already started.");
+        return;
+    }
+    this.isStarted = true;
+    this.isActive = true;
+    this.lobby.isAllReady = true;
+
+    // Reset engines
+    this.engine0.reset();
+    this.engine1.reset();
+    this.moveCount0 = 0;
+    this.moveCount1 = 0;
+    this.bank0w = []; this.bank0b = []; this.bank1w = []; this.bank1b = [];
+    this.time0w = this.lobby.timeControlMs;
+    this.time0b = this.lobby.timeControlMs;
+    this.time1w = this.lobby.timeControlMs;
+    this.time1b = this.lobby.timeControlMs;
+    this.lastMove0 = Date.now();
+    this.lastMove1 = Date.now();
+
+    this.log(`Match started! Timer initialized.`, true);
+
+    if (this.tickInterval) clearInterval(this.tickInterval);
+    this.tickInterval = setInterval(() => {
+        if (this.isActive) {
+            this.deductTimeThroughMove(0);
+            this.deductTimeThroughMove(1);
+            this.broadcastStatus();
+        } else {
+            clearInterval(this.tickInterval);
+            this.tickInterval = null;
+        }
+    }, 1000);
   }
 
   handleAction(action: any, server: WebSocket) {
@@ -495,7 +513,8 @@ export class BughouseMatch {
        bank0w: this.bank0w, bank0b: this.bank0b, bank1w: this.bank1w, bank1b: this.bank1b,
        lobby: {
           ...this.lobby,
-          spectators: connectedSpecs as any // injection for admin
+          spectators: connectedSpecs as any, // injection for admin
+          logs: this.activityLogs as any
        } as any
     });
 
