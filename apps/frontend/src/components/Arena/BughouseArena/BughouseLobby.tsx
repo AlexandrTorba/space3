@@ -68,7 +68,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
                    <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest text-center">{team0Name}</h3>
                 )}
               {["w0", "b0"].map(r => {
-                 const slot = state?.lobby?.slots?.[r];
+                 const slot = (state?.lobby as any)?.[r];
                  if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
                  return (
                     <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-blue-500/5 border-blue-500/20 hover:border-blue-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
@@ -128,7 +128,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
                    <h3 className="text-sm font-black text-emerald-500 uppercase tracking-widest text-center">{team1Name}</h3>
                 )}
               {["b1", "w1"].map(r => {
-                 const slot = state?.lobby?.slots?.[r];
+                 const slot = (state?.lobby as any)?.[r];
                  if (!slot) return <div key={r} className="p-6 rounded-3xl border border-white/5 bg-white/5 animate-pulse h-[88px]" />;
                  return (
                     <div key={r} className={`group relative p-6 rounded-3xl border transition-all duration-300 ${slot.isClaimed ? 'bg-white/5 border-white/10' : 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`} onClick={() => !slot.isClaimed && claimRole(r)}>
@@ -203,9 +203,9 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
             {isAdmin ? (
                <button 
                   onClick={startMatch}
-                  disabled={!Object.values(state?.lobby?.slots || {}).every((s:any) => s.isClaimed)}
+                  disabled={![state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed)}
                   className={`w-full py-6 rounded-3xl font-black text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4 ${
-                     Object.values(state?.lobby?.slots || {}).every((s:any) => s.isClaimed)
+                     [state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed)
                         ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40' 
                         : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
@@ -225,7 +225,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
             <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
                <span className="flex items-center gap-2">
                   <Users className="w-3 h-3" />
-                  {Object.values(state?.lobby?.slots || {}).filter((s:any) => s.isReady).length} / 4 {t("bh_ready")}
+                  {[state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].filter(s => s?.isReady).length} / 4 {t("bh_ready")}
                </span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-blue-500/50">v. 2.5 | ID: {id}</span>

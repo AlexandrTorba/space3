@@ -53,12 +53,10 @@ export class BughouseMatch {
   db: any;
 
   lobby = {
-    slots: {
-      w0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
-      b0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
-      w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
-      b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
-    },
+    w0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+    b0: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+    w1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
+    b1: { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false },
     isAllReady: false,
     timeControlMs: 3 * 60 * 1000,
     team0Name: "Team White",
@@ -145,7 +143,7 @@ export class BughouseMatch {
     let finalRole = initialRole;
     if (finalRole === "spectator") {
        for(const r of ["w0", "b0", "w1", "b1"] as const) {
-          const slot = this.lobby.slots[r];
+          const slot = (this.lobby as any)[r];
           const hasActiveSocket = (this.sockets as any)[r];
           if (!slot.isClaimed || (!hasActiveSocket && !slot.isBot)) {
              finalRole = r;
@@ -156,7 +154,7 @@ export class BughouseMatch {
 
     this.log(`Attempting to seat ${sessionId} in ${finalRole}`);
     if (["w0", "b0", "w1", "b1"].includes(finalRole)) {
-       const slot = (this.lobby.slots as any)[finalRole];
+       const slot = (this.lobby as any)[finalRole];
        if (slot) {
           slot.isClaimed = true;
           slot.isReady = true;
@@ -231,21 +229,25 @@ export class BughouseMatch {
        this.log(`handleLobbyAction: sData not found for socket!`);
        return;
     }
+    const id = sData.id;
+    const isAdmin = id === this.lobby.adminSessionId;
+
+    console.log(`[BughouseMatch] handleLobbyAction from ${sData.name} (${id}):`, action);
     const { type, role, name } = action;
     this.log(`LobbyAction: ${type} from ${sData.id} (${sData.role})`);
 
     if (type === "claim" && !this.isStarted) {
        if (!["w0", "b0", "w1", "b1"].includes(role)) return;
        // Unclaim previous
-       for(const r in this.lobby.slots) {
-          const s = this.lobby.slots[r as keyof typeof this.lobby.slots];
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+          const s = (this.lobby as any)[r];
           if (s.sessionId === sData.id) {
              this.log(`Clearing old slot ${r} for session ${sData.id}`);
-             this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
+             (this.lobby as any)[r] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
              (this.sockets as any)[r] = null;
           }
        }
-       const target = (this.lobby.slots as any)[role];
+       const target = (this.lobby as any)[role];
        const hasActiveSocket = (this.sockets as any)[role];
        if (target && (!target.isClaimed || !hasActiveSocket)) {
           target.isClaimed = true;
@@ -259,8 +261,8 @@ export class BughouseMatch {
           if (!this.lobby.adminSessionId) this.lobby.adminSessionId = sData.id;
        }
     } else if (type === "ready") {
-       for(const r in this.lobby.slots) {
-          const slot = this.lobby.slots[r as keyof typeof this.lobby.slots];
+       for(const r of ["w0", "b0", "w1", "b1"] as const) {
+          const slot = (this.lobby as any)[r];
           if (slot.sessionId === sData.id) {
              slot.isReady = !slot.isReady;
              this.log(`Toggled ready for ${sData.id} on ${r}: ${slot.isReady}`);
@@ -269,14 +271,14 @@ export class BughouseMatch {
     } else if (type === "force_assign" && sData.id === this.lobby.adminSessionId) {
         this.log(`Admin force assign: ${name} to ${role}`);
         // Clear target session from any slot
-        for (const r in this.lobby.slots) {
-            if (this.lobby.slots[r as keyof typeof this.lobby.slots].sessionId === name) {
-               this.lobby.slots[r as keyof typeof this.lobby.slots] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
+        for (const r of ["w0", "b0", "w1", "b1"] as const) {
+            if ((this.lobby as any)[r].sessionId === name) {
+               (this.lobby as any)[r] = { isClaimed: false, playerName: "", isReady: false, sessionId: "", isBot: false };
                (this.sockets as any)[r] = null;
             }
         }
         if (role !== "spectator") {
-           const targetSlot = (this.lobby.slots as any)[role];
+           const targetSlot = (this.lobby as any)[role];
            if (targetSlot) {
               if (name === "bot") {
                  targetSlot.isClaimed = true;
@@ -307,7 +309,7 @@ export class BughouseMatch {
         if (role === "team1") this.lobby.team1Name = name;
     } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
         this.log(`Removing bot from ${role}`);
-        const target = (this.lobby.slots as any)[role];
+        const target = (this.lobby as any)[role];
         if (target && target.isBot) {
            target.isClaimed = false;
            target.playerName = "";
@@ -317,7 +319,7 @@ export class BughouseMatch {
         }
     } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
         this.log(`Match start requested by admin`);
-        const slots = Object.values(this.lobby.slots);
+        const slots = [this.lobby.w0, this.lobby.b0, this.lobby.w1, this.lobby.b1];
         if (slots.every(s => s.isClaimed)) {
            this.lobby.isAllReady = true;
            this.isStarted = true;
@@ -435,7 +437,8 @@ export class BughouseMatch {
     const connectedSpecs: {id: string, name: string}[] = [];
     this.sessions.forEach((data) => {
        // check if this session is NOT in any slot
-       const inSlot = Object.values(this.lobby.slots).some(s => s.sessionId === data.id);
+       const slots = [this.lobby.w0, this.lobby.b0, this.lobby.w1, this.lobby.b1];
+       const inSlot = slots.some(s => s.sessionId === data.id);
        if (!inSlot) connectedSpecs.push({id: data.id, name: data.name});
     });
 
