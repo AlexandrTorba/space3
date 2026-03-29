@@ -145,18 +145,28 @@ export default function BughouseArena() {
     const name = localStorage.getItem("ag_name") || "Player";
     setPlayerName(name);
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
-    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== "undefined" ? (isProd ? window.location.hostname : window.location.hostname + ":8787") : "localhost:8787");
-    let host = rawUrl;
-    try {
-      if (rawUrl.includes("://")) {
-        host = new URL(rawUrl).host;
-      }
-    } catch (e) {}
+    const isProd = typeof window !== "undefined" && (window.location.protocol === "https:" || window.location.hostname !== 'localhost');
+    
+    // Check multiple possible env vars for backend URL
+    const envBackendUrl = process.env.NEXT_PUBLIC_EDGE_URL || 
+                          process.env.NEXT_PUBLIC_BACKEND_URL || 
+                          process.env.NEXT_PUBLIC_API_URL;
 
+    let host = "";
+    if (envBackendUrl) {
+      try {
+        host = new URL(envBackendUrl).host;
+      } catch (e) {
+        host = envBackendUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      }
+    } else {
+      host = isProd ? window.location.hostname : window.location.hostname + ":8787";
+    }
+
+    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? "ws:" : "wss:";
     const wsUrl = `${protocol}//${host}/bughouse/${id}?name=${encodeURIComponent(name)}&role=${role}`;
     
+    console.log("[BUGHOUSE] Connecting to:", wsUrl);
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
@@ -209,9 +219,20 @@ export default function BughouseArena() {
 
     const checkVideo = async () => {
        try {
-          const isProd = window.location.protocol === "https:";
-          const backendUrl = isProd ? `https://${window.location.host}` : `http://${window.location.hostname}:8787`;
-          const res = await fetch(`${backendUrl}/api/video/token?matchId=${id}&role=${role}`);
+          const envBackendUrl = process.env.NEXT_PUBLIC_EDGE_URL || 
+                                process.env.NEXT_PUBLIC_BACKEND_URL || 
+                                process.env.NEXT_PUBLIC_API_URL;
+          
+          let baseUrl = "";
+          if (envBackendUrl) {
+             baseUrl = envBackendUrl.endsWith('/') ? envBackendUrl.slice(0, -1) : envBackendUrl;
+             if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+          } else {
+             const isProd = window.location.protocol === "https:";
+             baseUrl = isProd ? `https://${window.location.host}` : `http://${window.location.hostname}:8787`;
+          }
+
+          const res = await fetch(`${baseUrl}/api/video/token?matchId=${id}&role=${role}`);
           if (res.ok) setVideoAuthorized(true);
        } catch(e){}
     };
