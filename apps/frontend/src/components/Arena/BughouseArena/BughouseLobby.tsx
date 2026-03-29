@@ -15,6 +15,7 @@ interface BughouseLobbyProps {
   addBot: (r: string) => void;
   removeBot: (r: string) => void;
   updateTeamName: (team: "team0" | "team1", name: string) => void;
+  fillBots: () => void;
   startMatch: () => void;
   spectators: {id: string, name: string}[];
   assignRole: (sessionId: string, role: string) => void;
@@ -22,7 +23,7 @@ interface BughouseLobbyProps {
 }
 
 export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
-  state, t, id, role, useRole, claimRole, toggleReady, addBot, removeBot, updateTeamName, startMatch, spectators, assignRole, isAdmin
+  state, t, id, role, useRole, claimRole, toggleReady, addBot, removeBot, updateTeamName, fillBots, startMatch, spectators, assignRole, isAdmin
 }) => {
   const team0Name = state?.lobby?.team0Name || "Team White";
   const team1Name = state?.lobby?.team1Name || "Team Black";
@@ -199,7 +200,16 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
            </div>
         )}
 
-         <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-6">
+            {isAdmin && ![state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed) && (
+               <button 
+                  onClick={fillBots}
+                  className="w-full py-4 rounded-2xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-black text-sm uppercase tracking-widest transition-all mb-2 flex items-center justify-center gap-2 border border-blue-500/30"
+               >
+                  <Bot className="w-5 h-5" />
+                  {t('bh_fill_bots') || "Fill Empty Slots with Bots"}
+               </button>
+            )}
             {isAdmin ? (
                <button 
                   onClick={startMatch}

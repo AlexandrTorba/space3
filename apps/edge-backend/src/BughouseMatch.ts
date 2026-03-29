@@ -318,10 +318,24 @@ export class BughouseMatch {
            target.sessionId = "";
            target.isBot = false;
         }
+    } else if (type === "fill_bots" && sData.id === this.lobby.adminSessionId) {
+        this.log(`Filling empty slots with bots`);
+        for (const r of ["w0", "b0", "w1", "b1"] as const) {
+           const slot = (this.lobby as any)[r];
+           const socket = (this.sockets as any)[r];
+           if (!slot.isClaimed || (!socket && !slot.isBot)) {
+              slot.isClaimed = true;
+              slot.playerName = "Bot Engine";
+              slot.isReady = true;
+              slot.sessionId = "bot-" + Math.random();
+              slot.isBot = true;
+           }
+        }
     } else if (type === "start" && sData.id === this.lobby.adminSessionId) {
         this.log(`Match start requested by admin`);
         const slots = [this.lobby.w0, this.lobby.b0, this.lobby.w1, this.lobby.b1];
-        if (slots.every(s => s.isClaimed)) {
+        const missing = slots.filter(s => !s.isClaimed);
+        if (missing.length === 0) {
            this.lobby.isAllReady = true;
            this.isStarted = true;
            this.isActive = true;
@@ -354,6 +368,7 @@ export class BughouseMatch {
            }
         } else {
            this.log(`Cannot start: not all slots claimed`);
+           this.systemChat(`Cannot start: Need 4 players or bots. Try 'Fill with Bots' button.`);
         }
     }
 
@@ -497,6 +512,14 @@ export class BughouseMatch {
       s.send(binary);
       s.send(syncMsg);
     });
+  }
+
+  systemChat(text: string) {
+    const update = create(MatchUpdateSchema, {
+      event: { case: "chat", value: { sender: "SYSTEM", text, timestamp: BigInt(Date.now()) } }
+    });
+    const binary = toBinary(MatchUpdateSchema, update);
+    this.sessions.forEach((_, s) => s.send(binary));
   }
 
   forceCleanup() { if (this.sessions.size===0) this.isActive=false; }

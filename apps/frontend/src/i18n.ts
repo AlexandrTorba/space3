@@ -198,7 +198,13 @@ export const translations = {
       bh_board0_b: "Board 0 Black",
       bh_board1_w: "Board 1 White",
       bh_board1_b: "Board 1 Black",
-      bh_select_role_hint: "Select a role to enable Ready button"
+      bh_select_role_hint: "Select a role to enable Ready button",
+      bh_admin_master: "You are the Match Manager",
+      bh_spectators: "Available Spectators",
+      bh_start_match: "START MATCH",
+      bh_fill_bots: "Fill Empty Slots with Bots",
+      bh_waiting_admin: "Waiting for Admin to start...",
+      bh_kick_to_spectators: "Kick to Spectators"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -395,7 +401,13 @@ export const translations = {
       bh_board0_b: "Дошка 0 Чорні",
       bh_board1_w: "Дошка 1 Білі",
       bh_board1_b: "Дошка 1 Чорні",
-      bh_select_role_hint: "Оберіть роль, щоб активувати Готовність"
+      bh_select_role_hint: "Оберіть роль, щоб активувати Готовність",
+      bh_admin_master: "Ви Керуючий Матчем",
+      bh_spectators: "Глядачі",
+      bh_start_match: "ПОЧАТИ МАТЧ",
+      bh_fill_bots: "Заповнити ботами",
+      bh_waiting_admin: "Очікування старту від Адміна...",
+      bh_kick_to_spectators: "Перемістити в глядачі"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -592,7 +604,13 @@ export const translations = {
       bh_board0_b: "Tablero 0 Negras",
       bh_board1_w: "Tablero 1 Blanco",
       bh_board1_b: "Tablero 1 Negro",
-      bh_select_role_hint: "Selecciona un rol para activar Listo"
+      bh_select_role_hint: "Selecciona un rol para activar Listo",
+      bh_admin_master: "Eres el Gestor de la Partida",
+      bh_spectators: "Espectadores Disponibles",
+      bh_start_match: "EMPEZAR PARTIDA",
+      bh_fill_bots: "Llenar con Bots",
+      bh_waiting_admin: "Esperando al Admin...",
+      bh_kick_to_spectators: "Mover a Espectadores"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -789,7 +807,13 @@ export const translations = {
       bh_board0_b: "Tahta 0 Siyah",
       bh_board1_w: "Tahta 1 Beyaz",
       bh_board1_b: "Tahta 1 Siyah",
-      bh_select_role_hint: "Hazır butonunu etkinleştirmek için bir rol seçin"
+      bh_select_role_hint: "Hazır butonunu etkinleştirmek için bir rol seçin",
+      bh_admin_master: "Maç Yöneticisisiniz",
+      bh_spectators: "Mevcut İzleyiciler",
+      bh_start_match: "MAÇI BAŞLAT",
+      bh_fill_bots: "Botlarla Doldur",
+      bh_waiting_admin: "Adminin başlatması bekleniyor...",
+      bh_kick_to_spectators: "İzleyiciye At"
     }
 };
 

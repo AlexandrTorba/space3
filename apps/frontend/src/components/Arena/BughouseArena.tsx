@@ -347,6 +347,17 @@ export default function BughouseArena() {
     wsRef.current.send(toBinary(MatchUpdateSchema, u));
   };
 
+  const fillBots = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const u = create(MatchUpdateSchema, { 
+        event: { 
+            case: "lobby", 
+            value: { type: "fill_bots" } as any 
+        } 
+    });
+    wsRef.current.send(toBinary(MatchUpdateSchema, u));
+  };
+
   const startMatch = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const u = create(MatchUpdateSchema, { 
@@ -463,6 +474,7 @@ export default function BughouseArena() {
           addBot={addBot}
           removeBot={removeBot}
           updateTeamName={updateTeamName}
+          fillBots={fillBots}
           startMatch={startMatch}
           spectators={spectators}
           assignRole={assignRole}
