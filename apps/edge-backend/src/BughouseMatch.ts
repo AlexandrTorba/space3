@@ -162,7 +162,14 @@ export class BughouseMatch {
     this.log(`Attempting to seat ${sessionId} in ${finalRole}`);
     if (["w0", "b0", "w1", "b1"].includes(finalRole)) {
        const slot = (this.lobby as any)[finalRole];
-       if (slot) {
+       // In an active match: only reassign if the slot has no active socket (reconnect case)
+       // or if the slot is not claimed yet.
+       // Never overwrite a human's slot with a new session if they're still connected.
+       // Use readyState to check if the existing socket is actually alive
+       const existingSocket = (this.sockets as any)[finalRole];
+       const hasActiveSocket = !!(existingSocket && existingSocket.readyState === WebSocket.OPEN);
+       const isBotSlot = slot?.isBot;
+       if (slot && (!slot.isClaimed || (!hasActiveSocket && !isBotSlot))) {
           slot.isClaimed = true;
           slot.isReady = true;
           slot.playerName = name;
@@ -175,6 +182,24 @@ export class BughouseMatch {
           if (!this.lobby.adminSessionId) {
              this.lobby.adminSessionId = sessionId;
              this.log(`Assigned admin to ${sessionId}`);
+          }
+       } else if (slot && hasActiveSocket && slot.sessionId !== sessionId) {
+          this.log(`Slot ${finalRole} already taken by ${slot.sessionId}. ${sessionId} becomes spectator.`);
+       } else if (slot && !hasActiveSocket && isBotSlot) {
+          // Slot has a bot, but no socket — allow human to reclaim if match hasn't started
+          if (!this.isStarted) {
+             slot.isClaimed = true;
+             slot.isReady = true;
+             slot.playerName = name;
+             slot.sessionId = sessionId;
+             slot.isBot = false;
+             (this.sockets as any)[finalRole] = server;
+             this.sessions.get(server)!.role = finalRole;
+             this.log(`Reclaimed bot slot ${finalRole} for ${sessionId}`);
+          } else {
+             // Match started, bot slot — reconnect as the owner by updating the socket
+             // This handles the case where the same player reconnects
+             this.log(`Match started, slot ${finalRole} has a bot. ${sessionId} becomes spectator.`);
           }
        }
     }
@@ -208,8 +233,14 @@ export class BughouseMatch {
       this.log(`Session closed: ${sessionId}`);
       const s = this.sessions.get(server);
       if (s) {
-         // if it was admin, reassignment will happen in broadcastStatus
          this.sessions.delete(server);
+      }
+      // Clear socket slot so the player can reconnect
+      for (const r of ["w0", "b0", "w1", "b1"] as const) {
+         if ((this.sockets as any)[r] === server) {
+            (this.sockets as any)[r] = null;
+            this.log(`Cleared socket slot ${r} after disconnect`);
+         }
       }
       if (this.sessions.size === 0) {
          this.disconnectTimer = setTimeout(() => this.forceCleanup(), 60000);
@@ -412,16 +443,33 @@ export class BughouseMatch {
   }
 
   handleMove(uci: string, server: WebSocket) {
-    if (!this.isActive || !this.isStarted) return;
+    this.log(`handleMove: uci=${uci}, isActive=${this.isActive}, isStarted=${this.isStarted}`);
+    if (!this.isActive || !this.isStarted) {
+        this.log(`handleMove rejected: not active/started`);
+        return;
+    }
     let boardIdx = -1, player = "";
-    if (server === this.sockets.w0) { boardIdx = 0; player = "w"; }
-    else if (server === this.sockets.b0) { boardIdx = 0; player = "b"; }
-    else if (server === this.sockets.w1) { boardIdx = 1; player = "w"; }
-    else if (server === this.sockets.b1) { boardIdx = 1; player = "b"; }
-    if (boardIdx === -1) return;
+    const isW0 = server === this.sockets.w0;
+    const isB0 = server === this.sockets.b0;
+    const isW1 = server === this.sockets.w1;
+    const isB1 = server === this.sockets.b1;
+    this.log(`handleMove socket checks: isW0=${isW0}, isB0=${isB0}, isW1=${isW1}, isB1=${isB1}`);
+    if (isW0) { boardIdx = 0; player = "w"; }
+    else if (isB0) { boardIdx = 0; player = "b"; }
+    else if (isW1) { boardIdx = 1; player = "w"; }
+    else if (isB1) { boardIdx = 1; player = "b"; }
+    if (boardIdx === -1) {
+        this.log(`handleMove rejected: server not in sockets map. sockets w0=${!!this.sockets.w0}, b0=${!!this.sockets.b0}, w1=${!!this.sockets.w1}, b1=${!!this.sockets.b1}`);
+        return;
+    }
 
     const engine = boardIdx === 0 ? this.engine0 : this.engine1;
-    if (engine.turn() !== player) return;
+    this.log(`handleMove: engine.turn()=${engine.turn()}, player=${player}, fen=${engine.fen().substring(0,30)}`);
+    if (engine.turn() !== player) {
+        const msg = JSON.stringify({ type: "debug", msg: `move rejected: not your turn. engine.turn=${engine.turn()}, player=${player}` });
+        server.send(msg);
+        return;
+    }
 
     this.deductTimeThroughMove(boardIdx);
 
@@ -439,8 +487,12 @@ export class BughouseMatch {
           engine.load(f.join(" "));
        }
     } else {
-       const move = engine.move({ from: uci.substring(0,2), to: uci.substring(2,4), promotion: uci[4] });
-       if (!move) return;
+        const move = engine.move({ from: uci.substring(0,2), to: uci.substring(2,4), promotion: uci[4] });
+        if (!move) {
+            const msg = JSON.stringify({ type: "debug", msg: `move rejected by engine: uci=${uci}, from=${uci.substring(0,2)}, to=${uci.substring(2,4)}, fen=${engine.fen().substring(0,40)}` });
+            server.send(msg);
+            return;
+        }
        const promotedSquares = boardIdx===0?this.promotedSquares0:this.promotedSquares1;
        promotedSquares.delete(uci.substring(0,2));
        if (uci[4]) promotedSquares.add(uci.substring(2,4));

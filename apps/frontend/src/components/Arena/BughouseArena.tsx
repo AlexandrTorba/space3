@@ -55,8 +55,8 @@ export default function BughouseArena() {
   const [clocks, setClocks] = useState({ w0: 180000, b0: 180000, w1: 180000, b1: 180000 });
   const [rematchState, setRematchState] = useState<"default" | "offered" | "waiting">("default");
   const [playerName, setPlayerName] = useState("Player");
-  const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(role.startsWith("b") ? "black" : "white");
-  const [partnerOrientation, setPartnerOrientation] = useState<"white" | "black">(role.startsWith("b") ? "white" : "black");
+  const [boardOrientation, setBoardOrientation] = useState<"white" | "black">("white");
+  const [partnerOrientation, setPartnerOrientation] = useState<"white" | "black">("black");
   const [isMicOn, setIsMicOn] = useState(false);
   const [isCamOn, setIsCamOn] = useState(false);
   const [videoAuthorized, setVideoAuthorized] = useState(false);
@@ -145,6 +145,15 @@ export default function BughouseArena() {
     const name = localStorage.getItem("ag_name") || "Player";
     setPlayerName(name);
 
+    // Set orientations based on role (must be client-side to avoid SSR mismatch)
+    if (role.startsWith("b")) {
+      setBoardOrientation("black");
+      setPartnerOrientation("white");
+    } else {
+      setBoardOrientation("white");
+      setPartnerOrientation("black");
+    }
+
     const isProd = typeof window !== "undefined" && (window.location.protocol === "https:" || window.location.hostname !== 'localhost');
     
     // Check multiple possible env vars for backend URL
@@ -182,6 +191,8 @@ export default function BughouseArena() {
              } else if (data.type === 'lobby_sync') {
                 setSpectators(data.spectators || []);
                 setAdminSessionId(data.adminSessionId || "");
+             } else if (data.type === 'debug') {
+                console.warn('[BUGHOUSE SERVER DEBUG]', data.msg);
              }
           } catch(e) {}
           return;
