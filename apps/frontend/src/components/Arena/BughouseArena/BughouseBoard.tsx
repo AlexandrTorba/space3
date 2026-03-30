@@ -74,12 +74,11 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
         ref={containerRef}
         className="aspect-square border-2 border-slate-800 overflow-hidden shadow-xl relative w-full"
         style={{
-          touchAction: 'none',        // ← prevents scroll/pan on touch drag
-          userSelect: 'none',          // ← prevents text selection during drag
+          touchAction: 'none',        // ← prevents scroll/pan ONLY within board area
+          userSelect: 'none',
           WebkitUserSelect: 'none',
-          overscrollBehavior: 'none',  // ← prevents bouncing/pull-to-refresh
         } as React.CSSProperties}
-        onContextMenu={e => e.preventDefault()} // prevent long-press context menu
+        onContextMenu={e => e.preventDefault()}
       >
         {boardWidth > 0 && (
           <Chessboard
