@@ -249,7 +249,18 @@ export default function BughouseArena() {
     };
     checkVideo();
 
-    return () => { ws.close(); };
+    return () => { 
+      ws.close(); 
+      // Clean up Daily video call on unmount
+      try {
+        const call = DailyIframe.getCallInstance();
+        if (call) {
+          try { call.setLocalAudio(false); } catch(e) {}
+          try { call.setLocalVideo(false); } catch(e) {}
+          call.leave().then(() => call.destroy().catch(() => {})).catch(() => call.destroy().catch(() => {}));
+        }
+      } catch(e) {}
+    };
   }, [id, role]);
 
   const onDrop = (boardIdx: number, sourceSquare: string, targetSquare: string, piece?: string) => {

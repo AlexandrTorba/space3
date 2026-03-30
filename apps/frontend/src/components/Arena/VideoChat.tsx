@@ -146,9 +146,12 @@ function VideoChatUI({ filterBoardIdx, hideControls }: { filterBoardIdx?: number
 
   const leaveCall = useCallback(() => {
     if (!daily) return;
+    try { daily.setLocalAudio(false); } catch(e) {}
+    try { daily.setLocalVideo(false); } catch(e) {}
     daily.leave().then(() => {
-       daily.destroy();
-       window.location.reload();
+       daily.destroy().catch(() => {});
+    }).catch(() => {
+       daily.destroy().catch(() => {});
     });
   }, [daily]);
 
@@ -235,6 +238,7 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
   useEffect(() => {
     let call: DailyCall | null | undefined = null;
     let aborted = false;
+    let createdNew = false;
     const init = async () => {
       setLoading(true);
       try {
@@ -255,8 +259,9 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
         } else {
            call = DailyIframe.createCallObject({ url: data.roomUrl, token: data.token });
            call.on("camera-error", (ev: any) => { setErrorDetails(`Device error: ${ev.errorMsg || 'Permission denied'}`); });
+           createdNew = true;
         }
-        if (aborted) { if (call && !existingCall) await call.destroy(); return; }
+        if (aborted) { if (call && createdNew) await call.destroy(); return; }
         setCallObject(call);
         await call.join();
         if (role && role !== 'spectator') { 
@@ -266,7 +271,20 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
       } catch (e: any) { setErrorDetails(e.message); } finally { if (!aborted) setLoading(false); }
     };
     init();
-    return () => { aborted = true; };
+    return () => {
+      aborted = true;
+      // Stop all media tracks and leave the call on unmount
+      const activeCall = call || DailyIframe.getCallInstance();
+      if (activeCall) {
+        try { activeCall.setLocalAudio(false); } catch(e) {}
+        try { activeCall.setLocalVideo(false); } catch(e) {}
+        activeCall.leave().then(() => {
+          activeCall.destroy().catch(() => {});
+        }).catch(() => {
+          activeCall.destroy().catch(() => {});
+        });
+      }
+    };
   }, [matchId, role]);
 
   if (errorDetails) return (
