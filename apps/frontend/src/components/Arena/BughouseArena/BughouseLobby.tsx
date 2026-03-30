@@ -197,7 +197,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
         )}
 
           <div className="flex flex-col items-center gap-3 md:gap-6">
-            {isAdmin && ![state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed) && (
+            {isAdmin && ![state.lobby?.w0, state.lobby?.b0, state.lobby?.w1, state.lobby?.b1].every(s => s?.isClaimed) && (
                <button 
                   onClick={fillBots}
                   className="w-full py-2.5 md:py-4 rounded-xl md:rounded-2xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-black text-xs md:text-sm uppercase tracking-widest transition-all mb-1 flex items-center justify-center gap-2 border border-blue-500/30 active:scale-95"
@@ -209,9 +209,9 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
             {isAdmin ? (
                <button 
                   onClick={startMatch}
-                  disabled={![state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed)}
+                  disabled={![state.lobby?.w0, state.lobby?.b0, state.lobby?.w1, state.lobby?.b1].every(s => s?.isClaimed)}
                   className={`w-full py-3 md:py-6 rounded-2xl md:rounded-3xl font-black text-base md:text-xl tracking-widest transition-all duration-500 shadow-2xl active:scale-[0.98] flex items-center justify-center gap-3 md:gap-4 ${
-                     [state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].every(s => s?.isClaimed)
+                     [state.lobby?.w0, state.lobby?.b0, state.lobby?.w1, state.lobby?.b1].every(s => s?.isClaimed)
                         ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/40' 
                         : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
@@ -220,10 +220,10 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
                   {t("bh_start_match") || "START MATCH"}
                </button>
             ) : (
-               <div className="w-full py-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-3">
+               <div className="w-full py-4 md:py-6 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-2 md:gap-3">
                   <div className="flex items-center gap-3 text-amber-500 animate-pulse">
-                     <Clock className="w-5 h-5" />
-                     <span className="font-bold tracking-wider uppercase text-sm">{t("bh_waiting_admin") || "Waiting for Admin to start..."}</span>
+                     <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                     <span className="font-bold tracking-wider uppercase text-xs md:text-sm">{t("bh_waiting_admin") || "Waiting for Admin to start..."}</span>
                   </div>
                </div>
             )}
@@ -231,7 +231,7 @@ export const BughouseLobby: React.FC<BughouseLobbyProps> = ({
             <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
                <span className="flex items-center gap-2">
                   <Users className="w-3 h-3" />
-                  {[state.lobby.w0, state.lobby.b0, state.lobby.w1, state.lobby.b1].filter(s => s?.isReady).length} / 4 {t("bh_ready")}
+                  {[state.lobby?.w0, state.lobby?.b0, state.lobby?.w1, state.lobby?.b1].filter(s => s?.isReady).length} / 4 {t("bh_ready")}
                </span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-blue-500/50">v. 2.5 | ID: {id}</span>

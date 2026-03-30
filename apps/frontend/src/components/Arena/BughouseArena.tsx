@@ -577,14 +577,14 @@ export default function BughouseArena() {
           <div className="flex flex-row gap-1.5 items-start justify-center w-full">
             {/* My Board */}
             <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(46vw, calc(50svh - 90px))' }}>
+              style={{ width: 'min(46vw, calc(50vh - 90px))' }}>
               <h3 className="text-[9px] font-bold text-blue-400 px-0.5 truncate leading-none">{team0Name}</h3>
               <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
               <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
             </div>
             {/* Partner Board */}
             <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(46vw, calc(50svh - 90px))' }}>
+              style={{ width: 'min(46vw, calc(50vh - 90px))' }}>
               <h3 className="text-[9px] font-bold text-emerald-400 px-0.5 truncate leading-none">{team1Name}</h3>
               <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
               <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
@@ -622,7 +622,7 @@ export default function BughouseArena() {
           {/* Tab content — height: portrait gets ~200px, landscape gets ~80px */}
           {mobileTab === 'chat' && (
             <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden flex flex-col"
-              style={{ height: 'clamp(70px, calc(100dvh - 70svh - 110px), 220px)' }}>
+              style={{ height: 'clamp(70px, calc(100vh - 70vh - 110px), 220px)' }}>
               <div className="flex-1 overflow-y-auto p-2 space-y-0.5 font-mono text-[11px] text-slate-400">
                 {logs.length === 0 && <p className="text-slate-600 italic text-center pt-3 text-[10px]">No messages yet</p>}
                 {logs.map((l, i) => (
@@ -643,7 +643,7 @@ export default function BughouseArena() {
 
           {mobileTab === 'video' && (isMicOn || isCamOn || videoAuthorized) && (
             <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden"
-              style={{ height: 'clamp(70px, calc(100dvh - 70svh - 110px), 220px)' }}>
+              style={{ height: 'clamp(70px, calc(100vh - 70vh - 110px), 220px)' }}>
               <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
             </div>
           )}
