@@ -40,11 +40,11 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   return (
     <div className="flex flex-col w-full">
         {/* Top player bar */}
-        <div className="flex justify-between items-center px-3 bg-white/5 rounded-t-xl py-1.5 border border-white/5 border-b-0">
-            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
+        <div className="flex justify-between items-center px-2 bg-white/5 rounded-t-xl py-1 border border-white/5 border-b-0">
+            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
               {getPlayerLabel(topRole)}
             </div>
-            <div className={`text-lg font-mono font-black tabular-nums ${topClock < 30000 ? 'text-red-400' : 'text-white'}`}>
+            <div className={`text-sm font-mono font-black tabular-nums ${topClock < 30000 ? 'text-red-400' : 'text-white'}`}>
               {formatTime(topClock)}
             </div>
         </div>
@@ -67,11 +67,11 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
         </div>
 
         {/* Bottom player bar */}
-        <div className="flex justify-between items-center px-3 bg-white/5 rounded-b-xl py-1.5 border border-white/5 border-t-0">
-            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
+        <div className="flex justify-between items-center px-2 bg-white/5 rounded-b-xl py-1 border border-white/5 border-t-0">
+            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
               {getPlayerLabel(bottomRole)}
             </div>
-            <div className={`text-lg font-mono font-black tabular-nums ${bottomClock < 30000 ? 'text-red-400' : 'text-white'}`}>
+            <div className={`text-sm font-mono font-black tabular-nums ${bottomClock < 30000 ? 'text-red-400' : 'text-white'}`}>
               {formatTime(bottomClock)}
             </div>
         </div>

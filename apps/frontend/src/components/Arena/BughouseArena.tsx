@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Chessboard } from "react-chessboard";
-import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, PhoneOff, UserPlus, CheckCircle2, Play, Users } from "lucide-react";
+import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, PhoneOff, UserPlus, CheckCircle2, Play, Users, Activity, MessageSquare, Flag, Archive, Copy } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
@@ -62,6 +62,7 @@ export default function BughouseArena() {
   const [videoAuthorized, setVideoAuthorized] = useState(false);
   const [videoHeight, setVideoHeight] = useState(180);
   const [boardScale, setBoardScale] = useState(100);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'video'>('chat');
   const [chatInput, setChatInput] = useState("");
   const [mySessionId, setMySessionId] = useState<string | null>(null);
   
@@ -445,15 +446,16 @@ export default function BughouseArena() {
   const isAdmin = mySessionId === adminSessionId;
 
 
-  // Derive game-over state from board statuses
-  const isGameOver = !!(state?.board0?.status && state.board0.status !== 'active' && state.board0.status !== 'pending') ||
-                     !!(state?.board1?.status && state.board1.status !== 'active' && state.board1.status !== 'pending');
+  // Derive game-over state — check gameOver flag first, fallback to status
+  const isGameOver = !!(state?.board0?.gameOver || state?.board1?.gameOver ||
+    (state?.board0?.result && state.board0.result !== '') ||
+    (state?.board1?.result && state.board1.result !== ''));
   const gameResult = state?.board0?.result || state?.board1?.result || null;
-  const winnerTeam = gameResult === '1-0' ? team0Name : gameResult === '0-1' ? team1Name : gameResult === '1/2-1/2' ? null : null;
+  const winnerTeam = gameResult === '1-0' ? team0Name : gameResult === '0-1' ? team1Name : null;
 
   return (
     <div className="min-h-screen flex flex-col px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
-      <header className="flex justify-between items-center mb-2 md:mb-4 max-w-[1800px] mx-auto w-full h-10 md:h-auto">
+      <header className="flex justify-between items-center mb-2 md:mb-4 max-w-[1800px] mx-auto w-full h-10 md:h-auto shrink-0">
         <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 md:px-4 md:py-1.5 rounded-xl backdrop-blur-xl">
           <Swords className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
           <div>
@@ -489,7 +491,7 @@ export default function BughouseArena() {
 
       {/* Game Over Banner */}
       {isGameOver && (
-        <div className="max-w-[1800px] mx-auto w-full mb-2">
+        <div className="max-w-[1800px] mx-auto w-full mb-2 shrink-0">
           <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl md:rounded-2xl px-3 py-2 md:p-4 flex items-center justify-between shadow-xl backdrop-blur-xl">
             <div className="flex items-center gap-2 md:gap-4">
               <CheckCircle className="w-5 h-5 md:w-8 md:h-8 text-emerald-500 flex-shrink-0" />
@@ -498,7 +500,7 @@ export default function BughouseArena() {
                   {winnerTeam ? `🏆 ${winnerTeam} Wins!` : gameResult === '1/2-1/2' ? 'Draw!' : 'Game Over'}
                 </h2>
                 <p className="text-emerald-400/80 font-mono text-[10px] md:text-xs uppercase tracking-widest">
-                  {gameResult === '1-0' ? 'White team wins by checkmate' : gameResult === '0-1' ? 'Black team wins by checkmate' : 'Match ended'}
+                  {gameResult === '1-0' ? 'White team wins' : gameResult === '0-1' ? 'Black team wins' : 'Match ended'}
                 </p>
               </div>
             </div>
@@ -539,95 +541,112 @@ export default function BughouseArena() {
         />
       )}
 
-      <div className="max-w-[1800px] mx-auto w-full flex flex-col xl:flex-row gap-2 md:gap-4 flex-1 items-start">
-        {/* Main Game Area — both boards side by side on desktop, stacked on mobile */}
-        <div className="flex-1 min-w-0 w-full">
-            <div className="flex flex-row md:flex-row gap-1.5 md:gap-4 items-start justify-center">
-                 {/* Board 1 — My Board */}
-                 <div className="flex flex-col gap-1 w-1/2 md:w-auto" style={{ maxWidth: 'min(480px, 46vw)' }}>
-                     <h3 className="text-[10px] md:text-sm font-bold text-blue-400 px-0.5 truncate">{team0Name}</h3>
-                      <BughouseBoard 
-                         boardIdx={myBoardIdx}
-                         orientation={boardOrientation}
-                         fen={myBoard?.fen || "start"}
-                         clocks={clocks}
-                         playerName={playerName}
-                         isMain={true}
-                         scale={boardScale}
-                         theme={boardThemes[settings.boardTheme] || boardThemes.classic}
-                         customPieces={stableCustomPieces}
-                         onDrop={onDrop}
-                         onSquareClick={onSquareClick}
-                         formatTime={formatTime}
-                         getPlayerLabel={getPlayerLabel}
-                      />
-                     <BughouseBank 
-                         bank={myBank || []} 
-                         boardIdx={myBoardIdx} 
-                         playerColor={myColor}
-                         selectedPiece={selectedPiece}
-                         setSelectedPiece={setSelectedPiece} 
-                         getPieceUrl={getPieceUrl}
-                         placementHint={t("bh_click_to_place")}
-                         emptyLabel={t("bh_empty_bank")}
-                     />
-                 </div>
-
-                 {/* Board 2 — Partner Board */}
-                 <div className="flex flex-col gap-1 w-1/2 md:w-auto" style={{ maxWidth: 'min(480px, 46vw)' }}>
-                     <h3 className="text-[10px] md:text-sm font-bold text-emerald-400 px-0.5 truncate">{team1Name}</h3>
-                      <BughouseBoard 
-                         boardIdx={partnerBoardIdx}
-                         orientation={partnerOrientation}
-                         fen={partnerBoard?.fen || "start"}
-                         clocks={clocks}
-                         playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"}
-                         isMain={false}
-                         scale={boardScale}
-                         theme={boardThemes[settings.boardTheme] || boardThemes.classic}
-                         customPieces={stableCustomPieces}
-                         onDrop={onDrop}
-                         onSquareClick={onSquareClick}
-                         formatTime={formatTime}
-                         getPlayerLabel={getPlayerLabel}
-                      />
-                     <BughouseBank 
-                         bank={partnerBank || []} 
-                         boardIdx={partnerBoardIdx} 
-                         playerColor={partnerColor}
-                         selectedPiece={selectedPiece}
-                         setSelectedPiece={setSelectedPiece} 
-                         getPieceUrl={getPieceUrl}
-                         placementHint={t("bh_click_to_place")}
-                         emptyLabel={t("bh_empty_bank")}
-                     />
-                 </div>
+      {/* ── DESKTOP (xl+): boards + sidebar ── */}
+      <div className="hidden xl:flex max-w-[1800px] mx-auto w-full gap-4 flex-1 items-start">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-row gap-4 items-start justify-center">
+            <div className="flex flex-col gap-1.5 w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
+              <h3 className="text-sm font-bold text-blue-400 px-1 truncate">{team0Name}</h3>
+              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
             </div>
+            <div className="flex flex-col gap-1.5 w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
+              <h3 className="text-sm font-bold text-emerald-400 px-1 truncate">{team1Name}</h3>
+              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+            </div>
+          </div>
+        </div>
+        {/* Desktop sidebar */}
+        <div className="flex flex-col gap-3 w-[340px] flex-shrink-0 sticky top-4">
+          {(isMicOn || isCamOn) && (
+            <div className={`w-full bg-black/20 border border-white/5 rounded-2xl p-3 shadow-xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} style={{ height: `${videoHeight}px` }}>
+              <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
+            </div>
+          )}
+          <BughouseActivityLogs logs={logs} chatInput={chatInput} setChatInput={setChatInput} handleSubmit={handleChatSubmit} />
+        </div>
+      </div>
+
+      {/* ── MOBILE + TABLET (< xl): boards + bottom tabs ── */}
+      <div className="xl:hidden flex flex-col flex-1 min-h-0">
+        {/* Boards area — always side-by-side, constrained by BOTH viewport dimensions.
+             Portrait: width = min(46vw, big) → boards ~198px
+             Landscape: width = min(46vw, calc(50svh-90px)) → shrinks to ~130-150px */}
+        <div className="w-full shrink-0">
+          <div className="flex flex-row gap-1.5 items-start justify-center w-full">
+            {/* My Board */}
+            <div className="flex flex-col gap-0.5 flex-shrink-0"
+              style={{ width: 'min(46vw, calc(50svh - 90px))' }}>
+              <h3 className="text-[9px] font-bold text-blue-400 px-0.5 truncate leading-none">{team0Name}</h3>
+              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+            </div>
+            {/* Partner Board */}
+            <div className="flex flex-col gap-0.5 flex-shrink-0"
+              style={{ width: 'min(46vw, calc(50svh - 90px))' }}>
+              <h3 className="text-[9px] font-bold text-emerald-400 px-0.5 truncate leading-none">{team1Name}</h3>
+              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar: Video & Chat */}
-        <div className="flex flex-col gap-3 w-full xl:w-[340px] xl:flex-shrink-0 xl:sticky xl:top-4">
-            {(isMicOn || isCamOn) && (
-                <div 
-                  className={`w-full bg-black/20 border border-white/5 rounded-2xl p-3 shadow-xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
-                  style={{ height: `${videoHeight}px` }}
-                >
-                    <VideoChat 
-                      matchId={id} 
-                      role={role} 
-                      hideControls={true} 
-                      initialMicOn={isMicOn} 
-                      initialCamOn={isCamOn} 
-                    />
-                </div>
+        {/* Bottom tabs — Standard style, collapses in landscape */}
+        <div className="mt-1 shrink-0">
+          {/* Tab switcher */}
+          <div className="flex rounded-xl overflow-hidden border border-white/5 bg-slate-900/70 mb-1">
+            <button
+              onClick={() => setMobileTab('chat')}
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                mobileTab === 'chat' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
+              }`}
+            >
+              <MessageSquare className="w-3 h-3" />
+              Chat
+              {logs.length > 0 && <span className="text-[8px] font-mono opacity-60 ml-0.5">{logs.length}</span>}
+            </button>
+            {(videoAuthorized || isCamOn) && (
+              <button
+                onClick={() => setMobileTab('video')}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  mobileTab === 'video' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
+                }`}
+              >
+                <Video className="w-3 h-3" />
+                Video
+              </button>
             )}
-            
-            <BughouseActivityLogs 
-                logs={logs}
-                chatInput={chatInput}
-                setChatInput={setChatInput}
-                handleSubmit={handleChatSubmit}
-            />
+          </div>
+
+          {/* Tab content — height: portrait gets ~200px, landscape gets ~80px */}
+          {mobileTab === 'chat' && (
+            <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden flex flex-col"
+              style={{ height: 'clamp(70px, calc(100dvh - 70svh - 110px), 220px)' }}>
+              <div className="flex-1 overflow-y-auto p-2 space-y-0.5 font-mono text-[11px] text-slate-400">
+                {logs.length === 0 && <p className="text-slate-600 italic text-center pt-3 text-[10px]">No messages yet</p>}
+                {logs.map((l, i) => (
+                  <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic border-l-2 border-white/5 pl-2"}>{l}</div>
+                ))}
+              </div>
+              <form onSubmit={handleChatSubmit} className="p-1.5 bg-white/5 border-t border-white/5 flex gap-1.5 flex-shrink-0">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type to chat..."
+                  className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-[12px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                />
+              </form>
+            </div>
+          )}
+
+          {mobileTab === 'video' && (isMicOn || isCamOn || videoAuthorized) && (
+            <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden"
+              style={{ height: 'clamp(70px, calc(100dvh - 70svh - 110px), 220px)' }}>
+              <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
+            </div>
+          )}
         </div>
       </div>
       
