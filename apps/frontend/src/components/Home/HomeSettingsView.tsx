@@ -64,7 +64,8 @@ export default function HomeSettingsView() {
                         onChange={(id) => updateSettings({ uiMode: id as any })}
                         options={[
                             { id: "dark", label: "Dark", icon: <Eye className="w-3 h-3" /> },
-                            { id: "light", label: "Light", icon: <Layers className="w-3 h-3" /> }
+                            { id: "light", label: "Light", icon: <Layers className="w-3 h-3" /> },
+                            { id: "antigravity", label: "Antigravity", icon: <span className="text-xs">🪐</span> }
                         ]}
                     />
                 </section>

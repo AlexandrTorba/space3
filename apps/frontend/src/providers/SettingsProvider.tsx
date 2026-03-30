@@ -5,7 +5,7 @@ import { translations, Language } from "../i18n";
 
 export type BoardTheme = "wood" | "classic";
 export type PieceSet = "wikipedia" | "leipzig";
-export type UiMode = "dark" | "light";
+export type UiMode = "dark" | "light" | "antigravity";
 
 export interface ChessSettings {
   boardTheme: BoardTheme;

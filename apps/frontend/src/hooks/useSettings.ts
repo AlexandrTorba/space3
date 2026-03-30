@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 export type BoardTheme = "wood" | "classic";
 export type PieceSet = "wikipedia" | "leipzig";
-export type UiMode = "dark" | "light";
+export type UiMode = "dark" | "light" | "antigravity";
 
 export interface ChessSettings {
   playerName: string;

@@ -52,6 +52,29 @@
   --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
+:root.antigravity {
+  /* Deep cosmic violet-black — like the event horizon of a black hole */
+  --bg-color: #08060E;
+  --text-primary: #EDE9F6;
+  --text-secondary: #A89EC8;
+  --text-muted: #5E527A;
+  
+  /* Surfaces — translucent dark violet glass */
+  --surface-color: #0E0A18;
+  --surface-border: rgba(139, 92, 246, 0.12);
+  --surface-glass: rgba(14, 10, 24, 0.92);
+  
+  /* Accent — warm amber/gold (chess royalty) with violet undertone */
+  --brand-primary: #D4A030;
+  --brand-hover: #E8B84A;
+
+  --settings-bg: #100C1C;
+  --button-bg: rgba(139, 92, 246, 0.06);
+
+  --shadow-sm: 0 2px 6px rgba(90, 50, 180, 0.15);
+  --shadow-lg: 0 20px 50px rgba(90, 50, 180, 0.2);
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
@@ -125,6 +148,15 @@ main, .min-h-screen {
     radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+}
+
+:root.antigravity .mesh-gradient {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(212, 160, 48, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(109, 40, 217, 0.05) 0px, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(212, 160, 48, 0.03) 0px, transparent 50%);
 }
 
 @keyframes float {

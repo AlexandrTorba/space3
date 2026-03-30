@@ -140,27 +140,28 @@ export default function SettingsPanel() {
                         <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
                            <Palette className="w-2.5 h-2.5" /> {t("background_section") || "Appearance"}
                         </label>
-                        <div className="flex bg-[var(--button-bg)] p-1 rounded-xl border border-[var(--surface-border)]">
-                           <button 
-                             onClick={() => updateSettings({ uiMode: "dark" })}
-                             className={`flex-1 flex items-center justify-center gap-2 py-2 text-[12px] font-bold rounded-lg transition-all ${
-                               settings.uiMode === "dark" 
-                                 ? 'bg-[var(--brand-primary)] text-white shadow-md' 
-                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                             }`}
-                           >
-                             ⚫ {t("theme_dark")}
-                           </button>
-                           <button 
-                             onClick={() => updateSettings({ uiMode: "light" })}
-                             className={`flex-1 flex items-center justify-center gap-2 py-2 text-[12px] font-bold rounded-lg transition-all ${
-                               settings.uiMode === "light" 
-                                 ? 'bg-[var(--bg-color)] text-[var(--text-primary)] shadow-sm' 
-                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                             }`}
-                           >
-                             ⚪ {t("theme_light")}
-                           </button>
+                        <div className="flex gap-1.5 p-1 bg-[var(--button-bg)] rounded-xl border border-[var(--surface-border)]">
+                           {([
+                             { id: "dark" as const, label: t("theme_dark"), icon: "⚫" },
+                             { id: "light" as const, label: t("theme_light"), icon: "⚪" },
+                             { id: "antigravity" as const, label: t("theme_antigravity") || "Antigravity", icon: "🪐" },
+                           ]).map(({ id, label, icon }) => (
+                             <button 
+                               key={id}
+                               onClick={() => updateSettings({ uiMode: id })}
+                               className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                                 settings.uiMode === id 
+                                   ? id === 'antigravity' 
+                                     ? 'bg-gradient-to-r from-violet-600 to-amber-500 text-white shadow-md'
+                                     : id === 'light'
+                                       ? 'bg-[var(--bg-color)] text-[var(--text-primary)] shadow-sm'
+                                       : 'bg-[var(--brand-primary)] text-white shadow-md'
+                                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                               }`}
+                             >
+                               {icon} {label}
+                             </button>
+                           ))}
                         </div>
                      </div>
 
