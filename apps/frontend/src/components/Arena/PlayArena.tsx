@@ -77,6 +77,8 @@ function PlayArenaContent() {
   const [status, setStatus] = useState("Connecting...");
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
+  // Separate move history that persists independently of chess.js engine resets
+  const moveHistoryRef = useRef<string[]>([]);
   const initialTime = tcMode === "Unlimited" ? -1 : (parseInt(tcMode, 10) || 3) * 60 * 1000;
   const [clocks, setClocks] = useState({ white: initialTime, black: initialTime });
   const [turn, setTurn] = useState<'w' | 'b'>('w');
@@ -96,6 +98,8 @@ function PlayArenaContent() {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
   const gameRef = useRef(new Chess());
+  // A second chess.js instance used to replay history for navigation
+  const replayRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -107,14 +111,19 @@ function PlayArenaContent() {
       setLogs(prev => [...prev.slice(-49), msg]);
   };
 
+  const syncHistoryState = () => {
+      const h = moveHistoryRef.current;
+      setHistory([...h]);
+      return h;
+  };
+
   const updateGameState = (forceIndexUpdate = false) => {
       const isAtEnd = currentMoveIndex === history.length - 1;
       setFen(gameRef.current.fen());
-      const newHistory = gameRef.current.history();
-      setHistory(newHistory);
+      const h = syncHistoryState();
       
       if (forceIndexUpdate || isAtEnd || currentMoveIndex === -1) {
-          setCurrentMoveIndex(newHistory.length - 1);
+          setCurrentMoveIndex(h.length - 1);
       }
       setTurn(gameRef.current.turn());
       
@@ -170,11 +179,21 @@ function PlayArenaContent() {
           const update = fromBinary(MatchUpdateSchema, data);
           if (update.event.case === "status") {
               const state = update.event.value;
-              // Only reload FEN if it differs, to preserve move history
+              // Load position without wiping our tracked move history.
+              // If we have no history yet (first connect / reconnect), try to
+              // reconstruct history by replaying from starting position.
+              if (moveHistoryRef.current.length === 0 && state.fen !== "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
+                  // Game already in progress, we missed moves.
+                  // We can't reconstruct SAN from just a FEN, so accept empty history.
+              }
+              // Sync the engine to the current FEN from server (authoritative)
               if (gameRef.current.fen() !== state.fen) {
                   gameRef.current.load(state.fen);
               }
-              updateGameState(true);
+              setFen(state.fen);
+              setTurn(gameRef.current.turn());
+              // Sync history state (don't wipe moveHistoryRef)
+              syncHistoryState();
               setClocks({
                   white: Number(state.whiteTimeMs),
                   black: Number(state.blackTimeMs)
@@ -191,7 +210,10 @@ function PlayArenaContent() {
           else if (update.event.case === "move") {
               const move = update.event.value;
               try {
-                  gameRef.current.move(move.uci);
+                  const result = gameRef.current.move(move.uci);
+                  if (result) {
+                      moveHistoryRef.current.push(result.san);
+                  }
                   updateGameState(true);
               } catch(e) {}
           }
@@ -248,6 +270,9 @@ function PlayArenaContent() {
 
          try {
              const move = gameRef.current.move(moveData);
+              if (move) {
+                  moveHistoryRef.current.push(move.san);
+              }
              setPreMove(null);
              updateGameState(true);
              logMessage(`Pre-move Played: ${move.san}`);
@@ -340,6 +365,9 @@ function PlayArenaContent() {
             if (settings.alwaysPromoteToQueen) {
                 try {
                     const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
+                     if (move) {
+                         moveHistoryRef.current.push(move.san);
+                     }
                     setTimeout(() => updateGameState(), 0);
                     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                         const uci = sourceSquare + targetSquare + 'q';
@@ -356,6 +384,9 @@ function PlayArenaContent() {
         }
     
         const move = gameRef.current.move({ from: sourceSquare as Square, to: targetSquare as Square });
+        if (move) {
+            moveHistoryRef.current.push(move.san);
+        }
         updateGameState(true);
 
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -376,6 +407,9 @@ function PlayArenaContent() {
       const { from, to } = pendingPromotion;
       try {
           const move = gameRef.current.move({ from, to, promotion: promotionPiece });
+          if (move) {
+              moveHistoryRef.current.push(move.san);
+          }
           setTimeout(() => updateGameState(), 0);
           
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -409,15 +443,23 @@ function PlayArenaContent() {
       return `${m}:${(s % 60).toString().padStart(2, '0')}`;
   };
 
-  const handleDownloadPGN = () => {
-      gameRef.current.header(
+  const buildPGN = () => {
+      const pgnEngine = new Chess();
+      for (const san of moveHistoryRef.current) {
+          try { pgnEngine.move(san); } catch(e) { break; }
+      }
+      pgnEngine.header(
           "White", color === 'white' ? wName : bName, 
           "Black", color === 'black' ? wName : bName, 
           "Result", gameResult || "*", 
           "TimeControl", tcMode === "Unlimited" ? "-" : tcMode + "m",
           "Date", new Date().toLocaleDateString()
       );
-      const pgn = gameRef.current.pgn();
+      return pgnEngine.pgn();
+  };
+
+  const handleDownloadPGN = () => {
+      const pgn = buildPGN();
       const blob = new Blob([pgn], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -425,6 +467,13 @@ function PlayArenaContent() {
       a.download = `antigravity_${wName}_vs_${bName}_${id.substring(0,8)}.pgn`;
       a.click();
       URL.revokeObjectURL(url);
+  };
+
+  const handleCopyPGN = () => {
+      const pgn = buildPGN();
+      navigator.clipboard.writeText(pgn).then(() => {
+          logMessage("✅ PGN copied to clipboard!");
+      });
   };
 
   const handleChatSubmit = (e: React.FormEvent) => {
@@ -438,29 +487,15 @@ function PlayArenaContent() {
        setChatInput("");
     }
   };
-  
-  const handleCopyPGN = () => {
-      gameRef.current.header(
-          "White", color === 'white' ? wName : bName, 
-          "Black", color === 'black' ? wName : bName, 
-          "Result", gameResult || "*", 
-          "TimeControl", tcMode === "Unlimited" ? "-" : tcMode + "m",
-          "Date", new Date().toLocaleDateString()
-      );
-      const pgn = gameRef.current.pgn();
-      navigator.clipboard.writeText(pgn).then(() => {
-          logMessage("✅ PGN copied to clipboard!");
-      });
-  };
 
   const goToMove = (index: number) => {
       if (index < -1 || index >= history.length) return;
-      const engine = new Chess();
+      replayRef.current.reset();
       for(let i = 0; i <= index; i++) {
-         engine.move(history[i]);
+         replayRef.current.move(history[i]);
       }
       setCurrentMoveIndex(index);
-      setFen(engine.fen());
+      setFen(replayRef.current.fen());
   };
 
   return (
