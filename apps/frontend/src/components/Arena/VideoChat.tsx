@@ -233,6 +233,7 @@ function VideoChatUI({ filterBoardIdx, hideControls }: { filterBoardIdx?: number
 export default function VideoChat({ matchId, role, filterBoardIdx, hideControls = false, initialMicOn = false, initialCamOn = false }: Props) {
   const [callObject, setCallObject] = useState<DailyCall | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [cameraWarning, setCameraWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -258,7 +259,16 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
            call = existingCall;
         } else {
            call = DailyIframe.createCallObject({ url: data.roomUrl, token: data.token });
-           call.on("camera-error", (ev: any) => { setErrorDetails(`Device error: ${ev.errorMsg || 'Permission denied'}`); });
+           call.on("camera-error", (ev: any) => {
+             const raw = ev?.errorMsg;
+             let msg = "Camera/mic access limited";
+             if (typeof raw === "string") msg = raw;
+             else if (raw?.errorMsg) msg = String(raw.errorMsg);
+             else if (raw?.msg) msg = String(raw.msg);
+             else if (raw?.type) msg = String(raw.type);
+             // Non-blocking: show warning but keep the call alive
+             setCameraWarning(msg);
+           });
            createdNew = true;
         }
         if (aborted) { if (call && createdNew) await call.destroy(); return; }
@@ -268,7 +278,21 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
            await call.setLocalAudio(initialMicOn); 
            await call.setLocalVideo(initialCamOn); 
         }
-      } catch (e: any) { setErrorDetails(e.message); } finally { if (!aborted) setLoading(false); }
+      } catch (e: any) {
+        let msg = "Unknown error";
+        if (e?.name === "NotAllowedError" || e?.name === "PermissionDeniedError") {
+          msg = "Camera/microphone access denied. Please allow permissions in browser settings.";
+        } else if (e?.name === "NotFoundError" || e?.name === "DevicesNotFoundError") {
+          msg = "No camera or microphone found on this device.";
+        } else if (e?.name === "NotReadableError" || e?.name === "TrackStartError") {
+          msg = "Camera is already in use by another app.";
+        } else if (e?.name === "OverconstrainedError") {
+          msg = "Camera constraints not supported by this device.";
+        } else if (e?.message) {
+          msg = e.message;
+        }
+        setErrorDetails(msg);
+      } finally { if (!aborted) setLoading(false); }
     };
     init();
     return () => {
@@ -300,6 +324,12 @@ export default function VideoChat({ matchId, role, filterBoardIdx, hideControls 
 
   return (
     <DailyProvider callObject={callObject!}>
+      {cameraWarning && (
+        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 mb-2 text-[10px] text-amber-400 font-mono">
+          <span className="flex-1">⚠ {cameraWarning}</span>
+          <button onClick={() => setCameraWarning(null)} className="text-amber-500/60 hover:text-amber-400 font-black text-sm leading-none">✕</button>
+        </div>
+      )}
       <VideoChatUI filterBoardIdx={filterBoardIdx} hideControls={hideControls} />
     </DailyProvider>
   );
