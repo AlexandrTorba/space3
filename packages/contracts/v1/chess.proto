@@ -19,6 +19,7 @@ message MatchStatus {
   string white_name = 9;
   string black_name = 10;
   int32 spectators = 11;
+  repeated string moves = 12;
 }
 
 message MatchAction {

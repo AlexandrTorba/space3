@@ -370,7 +370,8 @@ export class ChessMatch {
             whiteTimeMs: this.isUnlimited ? -1 : Math.max(0, this.whiteTimeMs),
             blackTimeMs: this.isUnlimited ? -1 : Math.max(0, this.blackTimeMs),
             whiteName: this.whiteName, blackName: this.blackName,
-            spectators: Math.max(0, this.sessions.size - (this.whiteSocket ? 1 : 0) - (this.blackSocket ? 1 : 0))
+            spectators: Math.max(0, this.sessions.size - (this.whiteSocket ? 1 : 0) - (this.blackSocket ? 1 : 0)),
+            moves: this.engine.history()
          }
       }
     });
@@ -392,7 +393,8 @@ export class ChessMatch {
              fen: this.engine.fen(), isActive: false, result, reason,
              whiteTimeMs: this.isUnlimited ? -1 : Math.max(0, this.whiteTimeMs),
              blackTimeMs: this.isUnlimited ? -1 : Math.max(0, this.blackTimeMs),
-             whiteName: this.whiteName, blackName: this.blackName
+             whiteName: this.whiteName, blackName: this.blackName,
+             moves: this.engine.history()
           }
        }
     });

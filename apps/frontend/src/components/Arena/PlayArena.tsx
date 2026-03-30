@@ -191,12 +191,11 @@ function PlayArenaContent() {
           const update = fromBinary(MatchUpdateSchema, data);
           if (update.event.case === "status") {
               const state = update.event.value;
-              // Load position without wiping our tracked move history.
-              // If we have no history yet (first connect / reconnect), try to
-              // reconstruct history by replaying from starting position.
-              if (moveHistoryRef.current.length === 0 && state.fen !== "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
-                  // Game already in progress, we missed moves.
-                  // We can't reconstruct SAN from just a FEN, so accept empty history.
+              // If the server sends move history and it has more moves than our
+              // local tracking, adopt the server's authoritative history.
+              // This handles reconnections, page reloads, and missed move events.
+              if (state.moves && state.moves.length > 0 && state.moves.length > moveHistoryRef.current.length) {
+                  moveHistoryRef.current = [...state.moves];
               }
               // Sync the engine to the current FEN from server (authoritative)
               if (gameRef.current.fen() !== state.fen) {
@@ -204,8 +203,14 @@ function PlayArenaContent() {
               }
               setFen(state.fen);
               setTurn(gameRef.current.turn());
-              // Sync history state (don't wipe moveHistoryRef)
-              syncHistoryState();
+              // Sync history state to React
+              const h = syncHistoryState();
+              // Update currentMoveIndex to latest if we were at the end
+              const idx = currentMoveIndexRef.current;
+              if (idx === -1 || idx < h.length - 1) {
+                  currentMoveIndexRef.current = h.length - 1;
+                  setCurrentMoveIndex(h.length - 1);
+              }
               setClocks({
                   white: Number(state.whiteTimeMs),
                   black: Number(state.blackTimeMs)
