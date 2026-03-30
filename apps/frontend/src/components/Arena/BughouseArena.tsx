@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo, Component, ErrorInfo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, MessageSquare } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
@@ -16,6 +16,40 @@ import { BughouseBank } from "./BughouseArena/BughouseBank";
 import { BughouseActivityLogs } from "./BughouseArena/BughouseActivityLogs";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
+
+// Error Boundary — prevents "This page couldn't load" on render errors
+class BughouseErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean; error: Error | null}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[BughouseArena] Render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#07090E] flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <div className="text-4xl">⚠️</div>
+          <h1 className="text-xl font-black text-white">Помилка завантаження</h1>
+          <p className="text-slate-400 text-sm max-w-xs">
+            {this.state.error?.message || 'Сталася помилка в арені Bughouse.'}
+          </p>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-95"
+          >
+            🔄 Перезавантажити
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function BughouseArena() {
   const [mounted, setMounted] = useState(false);
