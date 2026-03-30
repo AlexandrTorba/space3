@@ -2,12 +2,10 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { Chessboard } from "react-chessboard";
-import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, PhoneOff, UserPlus, CheckCircle2, Play, Users, Activity, MessageSquare, Flag, Archive, Copy } from "lucide-react";
+import { Swords, Settings, RotateCcw, Video, VideoOff, CheckCircle, Volume2, VolumeX, Mic, MicOff, MessageSquare } from "lucide-react";
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { MatchUpdateSchema } from "@antigravity/contracts";
-import { Chess, Square } from "chess.js";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 import DailyIframe from "@daily-co/daily-js";
