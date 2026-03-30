@@ -341,13 +341,23 @@ export class ChessMatch {
 
   handleBotTurn() {
     if (!this.isActive || this.engine.turn() !== this.botColor || (this.moveCount === 0 && this.botColor === "b")) return;
-    const moves = this.engine.moves();
+    const moves = this.engine.moves({ verbose: true });
     if (moves.length === 0) return;
-    this.engine.move(moves[Math.floor(Math.random() * moves.length)]);
+    const chosen = moves[Math.floor(Math.random() * moves.length)];
+    this.engine.move(chosen);
     this.moveCount++;
     this.drawOffer = null;
     if (this.moveCount === 1 && !this.isUnlimited) this.lastMoveTimestamp = Date.now();
     else this.deductTime();
+    
+    // Broadcast the move event so frontend can track history
+    const uci = chosen.from + chosen.to + (chosen.promotion || "");
+    const moveUpdate = create(MatchUpdateSchema, {
+      event: { case: "move", value: { matchId: this.matchId, uci, timestamp: BigInt(Date.now()) } }
+    });
+    const moveBinary = toBinary(MatchUpdateSchema, moveUpdate);
+    this.sessions.forEach(s => { try { s.send(moveBinary); } catch(e) {} });
+    
     this.broadcastStatus();
   }
 

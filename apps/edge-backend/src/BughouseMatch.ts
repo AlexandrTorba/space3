@@ -256,7 +256,11 @@ export class BughouseMatch {
   }
 
   handleUpdate(update: any, server: WebSocket) {
-    if (update.event.case === "move") this.handleMove(update.event.value.uci, server);
+    if (update.event.case === "move") {
+      const val = update.event.value as any;
+      const uci = val.promotion ? val.uci + val.promotion : val.uci;
+      this.handleMove(uci, server);
+    }
     else if (update.event.case === "lobby") this.handleLobbyAction(update.event.value, server);
     else if (update.event.case === "action") this.handleAction(update.event.value, server);
     else if (update.event.case === "chat") this.handleChat(update.event.value, server);
@@ -649,20 +653,30 @@ export class BughouseMatch {
           engine.load(f.join(" "));
        }
     } else {
-        const move = engine.move({ from: uci.substring(0,2), to: uci.substring(2,4), promotion: uci[4] });
-        if (!move) {
-            const msg = JSON.stringify({ type: "debug", msg: `move rejected by engine: uci=${uci}, from=${uci.substring(0,2)}, to=${uci.substring(2,4)}, fen=${engine.fen().substring(0,40)}` });
-            server.send(msg);
+        try {
+            const from = uci.substring(0,2);
+            const to = uci.substring(2,4);
+            const promotion = uci[4] || undefined;
+            const move = engine.move({ from, to, promotion });
+            if (!move) {
+                const msg = JSON.stringify({ type: "debug", msg: `move rejected by engine: uci=${uci}, fen=${engine.fen().substring(0,40)}` });
+                server.send(msg);
+                return;
+            }
+            const promotedSquares = boardIdx===0?this.promotedSquares0:this.promotedSquares1;
+            promotedSquares.delete(from);
+            if (promotion) promotedSquares.add(to);
+            if (move.captured) {
+               const actualCaptured = promotedSquares.has(to) ? "p" : move.captured;
+               promotedSquares.delete(to);
+               this.transferCapture(actualCaptured, boardIdx, player);
+            }
+        } catch(e: any) {
+            this.log(`handleMove error: ${e?.message || e}`);
+            const msg = JSON.stringify({ type: "debug", msg: `move error: uci=${uci}, err=${e?.message}` });
+            try { server.send(msg); } catch(_) {}
             return;
         }
-       const promotedSquares = boardIdx===0?this.promotedSquares0:this.promotedSquares1;
-       promotedSquares.delete(uci.substring(0,2));
-       if (uci[4]) promotedSquares.add(uci.substring(2,4));
-       if (move.captured) {
-          const actualCaptured = promotedSquares.has(uci.substring(2,4)) ? "p" : move.captured;
-          promotedSquares.delete(uci.substring(2,4));
-          this.transferCapture(actualCaptured, boardIdx, player);
-       }
     }
     if (boardIdx===0) this.moveCount0++; else this.moveCount1++;
     this.checkGameOver();

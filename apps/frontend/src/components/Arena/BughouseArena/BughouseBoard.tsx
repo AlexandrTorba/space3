@@ -23,46 +23,34 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   boardIdx, orientation, fen, clocks, playerName, isMain, scale = 100, theme, customPieces, 
   onDrop, onSquareClick, formatTime, getPlayerLabel
 }) => {
-  // Clock assignment: always white=w{boardIdx}, black=b{boardIdx}, independent of visual orientation
   const whiteKey = `w${boardIdx}` as "w0" | "w1";
   const blackKey = `b${boardIdx}` as "b0" | "b1";
   const whiteClock = clocks[whiteKey];
   const blackClock = clocks[blackKey];
 
-  // In "white" orientation: white is at BOTTOM, black at TOP
-  // In "black" orientation: black is at BOTTOM, white at TOP
   const bottomClock = orientation === "white" ? whiteClock : blackClock;
   const topClock = orientation === "white" ? blackClock : whiteClock;
-  // Labels: always show the player who is actually at that position
-  // white player = w{boardIdx}, black player = b{boardIdx}
   const bottomRole = orientation === "white" ? `w${boardIdx}` : `b${boardIdx}`;
   const topRole = orientation === "white" ? `b${boardIdx}` : `w${boardIdx}`;
 
   if (!Chessboard || typeof Chessboard !== 'function') {
-    return <div className="p-8 text-white bg-red-500/20 rounded-2xl border border-red-500/50">Chessboard Error</div>;
+    return <div className="p-4 text-white bg-red-500/20 rounded-xl border border-red-500/50 text-sm">Board Error</div>;
   }
 
-  const baseWidth = isMain ? 700 : 500;
-  const scaledWidth = (baseWidth * scale) / 100;
-
   return (
-    <div 
-      className="flex flex-col gap-4 transition-all duration-300 ease-out origin-top"
-      style={{ 
-        width: '100%', 
-        maxWidth: `${scaledWidth}px` 
-      }}
-    >
-        <div className="flex justify-between items-center px-4 bg-white/5 rounded-t-2xl py-2 border border-white/5">
-            <div className="text-sm font-black text-slate-400 uppercase tracking-widest">
+    <div className="flex flex-col w-full">
+        {/* Top player bar */}
+        <div className="flex justify-between items-center px-3 bg-white/5 rounded-t-xl py-1.5 border border-white/5 border-b-0">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
               {getPlayerLabel(topRole)}
             </div>
-            <div className="text-2xl font-mono font-bold text-white">
+            <div className={`text-lg font-mono font-black tabular-nums ${topClock < 30000 ? 'text-red-400' : 'text-white'}`}>
               {formatTime(topClock)}
             </div>
         </div>
 
-        <div className="aspect-square border-4 border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative">
+        {/* Board */}
+        <div className="aspect-square border-2 border-slate-800 overflow-hidden shadow-xl relative">
             <Chessboard 
                options={{
                  position: (!fen || fen === "start") ? START_FEN : fen,
@@ -73,16 +61,17 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
                  onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
                     onDrop(boardIdx, sourceSquare || piece?.position, targetSquare, piece?.pieceType || piece),
                  onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),
-                 animationDurationInMs: 300,
+                 animationDurationInMs: 200,
                }}
             />
         </div>
 
-        <div className="flex justify-between items-center px-4 bg-white/5 rounded-b-2xl py-2 border border-white/5">
-            <div className="text-sm font-black text-slate-400 uppercase tracking-widest">
+        {/* Bottom player bar */}
+        <div className="flex justify-between items-center px-3 bg-white/5 rounded-b-xl py-1.5 border border-white/5 border-t-0">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
               {getPlayerLabel(bottomRole)}
             </div>
-            <div className="text-2xl font-mono font-bold text-white">
+            <div className={`text-lg font-mono font-black tabular-nums ${bottomClock < 30000 ? 'text-red-400' : 'text-white'}`}>
               {formatTime(bottomClock)}
             </div>
         </div>

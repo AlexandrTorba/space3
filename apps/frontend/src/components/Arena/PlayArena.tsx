@@ -64,6 +64,7 @@ function PlayArenaContent() {
   const tcMode = searchParams ? (searchParams.get("tc") || "3") : "3";
   const wName = searchParams ? (searchParams.get("w") || "Гравець 1") : "Гравець 1";
   const bName = searchParams ? (searchParams.get("b") || "Гравець 2") : "Гравець 2";
+  const isBot = searchParams ? (searchParams.get("isBot") === "true") : false;
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
@@ -92,6 +93,7 @@ function PlayArenaContent() {
   const [showVideo, setShowVideo] = useState(false);
   const [videoAuthorized, setVideoAuthorized] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
   const gameRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
@@ -142,7 +144,7 @@ function PlayArenaContent() {
       }
     } catch (e) {}
 
-    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}`;
+    const wsUrl = `${protocol}//${host}/match/${id}?color=${color}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(wName)}&b=${encodeURIComponent(bName)}${isBot ? '&isBot=true' : ''}`;
     
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
@@ -168,7 +170,10 @@ function PlayArenaContent() {
           const update = fromBinary(MatchUpdateSchema, data);
           if (update.event.case === "status") {
               const state = update.event.value;
-              gameRef.current.load(state.fen);
+              // Only reload FEN if it differs, to preserve move history
+              if (gameRef.current.fen() !== state.fen) {
+                  gameRef.current.load(state.fen);
+              }
               updateGameState(true);
               setClocks({
                   white: Number(state.whiteTimeMs),
@@ -219,7 +224,7 @@ function PlayArenaContent() {
         ws.close(); 
       }
     };
-  }, [id, color, mounted, tcMode, wName, bName]);
+  }, [id, color, mounted, tcMode, wName, bName, isBot]);
 
   useEffect(() => {
      if (gameOver || clocks.white < 0) return;
@@ -271,6 +276,31 @@ function PlayArenaContent() {
   }, [gameOver, fen, clocks.white < 0, preMove]);
 
   if (!mounted || !id) return <div key="skeleton" className="min-h-screen bg-[#07090E]" />;
+
+  function handleSquareClick({ piece: clickedPiece, square }: { piece: any; square: string }) {
+    if (gameOver || isSpectator) return;
+    
+    const pieceOnSquare = clickedPiece?.pieceType || clickedPiece;
+    
+    if (selectedSquare) {
+      // Try to make a move from selectedSquare to clicked square
+      const result = onDrop({ sourceSquare: selectedSquare, targetSquare: square, piece: pieceOnSquare || '' });
+      setSelectedSquare(null);
+      if (!result && pieceOnSquare) {
+        // If move failed and clicked on own piece, select it instead
+        const myPieceColor = color === 'white' ? 'w' : 'b';
+        if (typeof pieceOnSquare === 'string' && pieceOnSquare.startsWith(myPieceColor)) {
+          setSelectedSquare(square);
+        }
+      }
+    } else if (pieceOnSquare) {
+      // No piece selected, select the clicked piece if it's ours
+      const myPieceColor = color === 'white' ? 'w' : 'b';
+      if (typeof pieceOnSquare === 'string' && pieceOnSquare.startsWith(myPieceColor)) {
+        setSelectedSquare(square);
+      }
+    }
+  }
 
   function onDrop({ sourceSquare, targetSquare, piece }: { sourceSquare: string; targetSquare: string; piece: string }) {
     if (!targetSquare || gameOver) return false;
@@ -530,15 +560,22 @@ function PlayArenaContent() {
                         options={{
                             id: `board-main-${boardOrientation}`,
                             position: fen,
-                            onPieceDrop: ((source: string, target: string, piece: string) => onDrop({ sourceSquare: source, targetSquare: target, piece })) as any,
+                            onPieceDrop: (({ piece, sourceSquare, targetSquare }: any) => {
+                                const pieceCode = piece?.pieceType || piece;
+                                setSelectedSquare(null);
+                                return onDrop({ sourceSquare: sourceSquare || piece?.position, targetSquare, piece: pieceCode });
+                            }) as any,
+                            onSquareClick: handleSquareClick as any,
                             boardOrientation: boardOrientation,
                             darkSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.dark || "#4d6d4d" },
                             lightSquareStyle: { backgroundColor: boardThemes[settings.boardTheme]?.light || "#f0f0f0" },
                             animationDurationInMs: 200,
-                            allowDragging: !isSpectator && !gameOver && currentMoveIndex === history.length - 1,
                             showNotation: settings.showCoordinates,
                             pieces: stableCustomPieces as any,
                             squareStyles: {
+                                ...(selectedSquare ? {
+                                    [selectedSquare]: { backgroundColor: 'rgba(56, 189, 248, 0.4)', boxShadow: 'inset 0 0 0 3px rgba(56, 189, 248, 0.6)' }
+                                } : {}),
                                 ...(preMove ? {
                                     [preMove.from]: { backgroundColor: 'rgba(255, 255, 0, 0.4)', borderRadius: '50%' },
                                     [preMove.to]: { backgroundColor: 'rgba(255, 255, 0, 0.4)', borderRadius: '50%' }
@@ -617,7 +654,9 @@ function PlayArenaContent() {
                     <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/80 px-2 py-1 rounded-full flex-shrink-0">
                         <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-4 h-4"/></button>
                         <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-5 h-5"/></button>
-                        <span className="font-mono text-xs font-bold w-12 text-center text-blue-400">{currentMoveIndex + 1}/{history.length}</span>
+                        <span className="font-mono text-[11px] font-black w-28 text-center text-blue-400 truncate px-1">
+                            {currentMoveIndex === -1 ? "START" : `${Math.floor(currentMoveIndex / 2) + 1}${currentMoveIndex % 2 === 0 ? '. ' : '... '}${history[currentMoveIndex]}`}
+                        </span>
                         <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronRight className="w-5 h-5"/></button>
                         <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipForward className="w-4 h-4"/></button>
                     </div>
@@ -637,14 +676,7 @@ function PlayArenaContent() {
                                     </button>
                                 )
                             )}
-                            
-                            <button onClick={handleDownloadPGN} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-full border border-slate-700 text-sm font-bold transition-all shadow-lg shadow-black/30 whitespace-nowrap">
-                                <Archive className="w-4 h-4" /> {t("download_pgn")}
-                            </button>
-                            
-                            <button onClick={handleCopyPGN} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-full border border-slate-700 text-sm font-bold transition-all shadow-lg shadow-black/30 whitespace-nowrap">
-                                <Copy className="w-4 h-4" /> {t("copy_pgn")}
-                            </button>
+
                         </div>
                     )}
                     
@@ -689,13 +721,13 @@ function PlayArenaContent() {
                                             <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2.5 font-bold border-r border-white/5 text-[9px]">{i + 1}</div>
                                             <div 
                                                onClick={() => goToMove(wIndex)}
-                                               className={`col-span-3 flex items-center px-4 py-2 font-bold transition-colors cursor-pointer border-r border-white/5 ${currentMoveIndex === wIndex ? 'bg-blue-500/20 text-blue-400' : 'text-slate-100 hover:text-blue-400'}`}
+                                               className={`col-span-3 flex items-center px-4 py-2 font-bold transition-colors cursor-pointer border-r border-white/5 ${currentMoveIndex === wIndex ? 'bg-blue-500 text-white' : 'text-slate-100 hover:text-blue-400'}`}
                                             >
                                                 {wMove}
                                             </div>
                                             <div 
                                                onClick={() => goToMove(bIndex)}
-                                               className={`col-span-4 flex items-center px-4 py-2 transition-colors cursor-pointer ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-500/20 text-blue-400 font-bold' : 'text-slate-400 hover:text-blue-400'}`}
+                                               className={`col-span-4 flex items-center px-4 py-2 transition-colors cursor-pointer ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-500 text-white font-bold' : 'text-slate-400 hover:text-blue-400'}`}
                                             >
                                                 {bMove || ""}
                                             </div>

@@ -254,6 +254,18 @@ export default function BughouseArena() {
 
   const onDrop = (boardIdx: number, sourceSquare: string, targetSquare: string, piece?: string) => {
      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
+     // Only allow moves on the player's own board
+     if (boardIdx !== myBoardIdx) return false;
+     
+     // Detect pawn promotion
+     const pieceCode = typeof piece === 'string' ? piece : '';
+     const isPawn = pieceCode.includes('P') || pieceCode.includes('p');
+     const targetRank = targetSquare?.[1];
+     if (isPawn && (targetRank === '8' || targetRank === '1')) {
+        setPendingPromotion({ boardIdx, source: sourceSquare, target: targetSquare });
+        return true;
+     }
+     
      const uci = sourceSquare + targetSquare;
      const update = create(MatchUpdateSchema, {
         event: { 
@@ -404,72 +416,63 @@ export default function BughouseArena() {
   const partnerBoardIdx = 1 - myBoardIdx;
   const myBoard = myBoardIdx === 0 ? state?.board0 : state?.board1;
   const partnerBoard = partnerBoardIdx === 0 ? state?.board0 : state?.board1;
-  const myBankW = myBoardIdx === 0 ? state?.bank0w : state?.bank1w;
-  const myBankB = myBoardIdx === 0 ? state?.bank0b : state?.bank1b;
-  const partnerBankW = partnerBoardIdx === 0 ? state?.bank0w : state?.bank1w;
-  const partnerBankB = partnerBoardIdx === 0 ? state?.bank0b : state?.bank1b;
+  
+  // Determine my color and partner's color
+  const myColor = useRole.startsWith('w') ? 'w' : 'b';
+  const partnerColor = myColor === 'w' ? 'b' : 'w'; // Partner is opposite color on the other board
+  
+  // My bank: bank for my color on my board
+  const myBank = myBoardIdx === 0 
+    ? (myColor === 'w' ? state?.bank0w : state?.bank0b)
+    : (myColor === 'w' ? state?.bank1w : state?.bank1b);
+  
+  // Partner's bank: bank for partner's color on partner's board
+  const partnerBank = partnerBoardIdx === 0
+    ? (partnerColor === 'w' ? state?.bank0w : state?.bank0b)
+    : (partnerColor === 'w' ? state?.bank1w : state?.bank1b);
 
   const isAdmin = mySessionId === adminSessionId;
 
+
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
-      <header className="flex justify-between items-center mb-6 max-w-[1600px] mx-auto w-full px-2">
-        <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2 rounded-2xl backdrop-blur-xl">
-          <Swords className="w-8 h-8 text-blue-400" />
+      <header className="flex justify-between items-center mb-4 max-w-[1800px] mx-auto w-full px-2">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl backdrop-blur-xl">
+          <Swords className="w-5 h-5 text-blue-400" />
           <div>
-            <h1 className="text-xs font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none mb-1">AntigravityChess</h1>
-            <h2 className="text-2xl font-black tracking-tight text-white leading-none uppercase">{t("bughouse")}</h2>
+            <h1 className="text-[8px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none">{t("arena_title").split(' ')[0]}</h1>
+            <h2 className="text-lg font-black tracking-tight text-white leading-none uppercase">{t("bughouse")}</h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
             {mounted && (
-                <button onClick={flipBoards} className="p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 text-slate-400 transition-all active:scale-90">
-                  <RotateCcw className="w-6 h-6" />
+                <button onClick={flipBoards} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-slate-400 transition-all active:scale-90" title="Flip">
+                  <RotateCcw className="w-4 h-4" />
                 </button>
             )}
-            <div className="flex items-center bg-white/5 rounded-[1.5rem] p-1 border border-white/5 shadow-inner">
-                <div className="flex items-center gap-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-white/5">
-                    {t("arena_title").split(' ')[0]}
-                    <input 
-                      type="range" min="50" max="150" value={boardScale} 
-                      onChange={(e) => setBoardScale(parseInt(e.target.value))}
-                      className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500" 
-                    />
+            {(videoAuthorized || id === 'local-test') && (
+                <div className="flex items-center gap-1">
+                   <button 
+                      onClick={toggleGlobalMic} 
+                      className={`p-2 rounded-xl transition-all active:scale-90 ${isMicOn ? 'text-slate-400 hover:bg-white/5' : 'bg-red-500/10 text-red-500'}`}
+                   >
+                      {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                   </button>
+                   <button 
+                      onClick={() => setIsCamOn(!isCamOn)} 
+                      className={`p-2 rounded-xl transition-all active:scale-90 ${isCamOn ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-500'}`}
+                   >
+                      {isCamOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                   </button>
                 </div>
-                {(videoAuthorized || id === 'local-test') && (
-                    <div className="flex items-center gap-1 border-r border-white/5 pr-2 mr-2">
-                         <div className="flex items-center gap-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-white/5 mr-1">
-                             Video
-                             <input 
-                                type="range" min="100" max="400" value={videoHeight} 
-                                onChange={(e) => setVideoHeight(parseInt(e.target.value))}
-                                className="w-20 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500" 
-                             />
-                         </div>
-                       <button 
-                          onClick={toggleGlobalMic} 
-                          className={`p-3 rounded-2xl transition-all active:scale-90 ${isMicOn ? 'text-slate-400 hover:bg-white/5' : 'bg-red-500/10 text-red-500'}`}
-                          title={isMicOn ? "Mute Mic" : "Unmute Mic"}
-                       >
-                          {isMicOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-                       </button>
-                       <button 
-                          onClick={() => setIsCamOn(!isCamOn)} 
-                          className={`p-3 rounded-2xl transition-all active:scale-90 ${isCamOn ? 'bg-blue-500/10 text-blue-400 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : 'bg-red-500/10 text-red-500'}`}
-                          title={isCamOn ? "Stop Camera" : "Start Camera"}
-                       >
-                          {isCamOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-                       </button>
-                    </div>
-                )}
-                <button onClick={() => updateSettings({ volume: settings.volume === 0 ? 0.7 : 0 })} className="p-3 rounded-2xl hover:bg-white/5 text-slate-400 transition-all">
-                   {settings.volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                 </button>
-                <button onClick={() => setIsPanelOpen(true)} className="p-3 rounded-2xl hover:bg-white/5 text-slate-400 transition-all">
-                    <Settings className="w-6 h-6" />
-                </button>
-            </div>
+            )}
+            <button onClick={() => updateSettings({ volume: settings.volume === 0 ? 0.7 : 0 })} className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
+               {settings.volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+             </button>
+            <button onClick={() => setIsPanelOpen(true)} className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
+                <Settings className="w-4 h-4" />
+            </button>
         </div>
       </header>
       
@@ -494,14 +497,13 @@ export default function BughouseArena() {
         />
       )}
 
-      <div className="max-w-[1800px] mx-auto w-full grid grid-cols-1 xl:grid-cols-[1fr,380px] gap-8 flex-1 items-start">
-        {/* Main Game Area */}
-        <div className="flex flex-col gap-8">
-            <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
-                 <div className="flex flex-col gap-6">
-                     <div className="flex items-center justify-between gap-4 px-2">
-                        <h3 className="text-xl font-bold text-blue-400">{team0Name}</h3>
-                     </div>
+      <div className="max-w-[1800px] mx-auto w-full flex flex-col xl:flex-row gap-4 flex-1 items-start">
+        {/* Main Game Area — both boards side by side */}
+        <div className="flex-1 min-w-0">
+            <div className="flex flex-col lg:flex-row gap-4 items-start justify-center">
+                 {/* Board 1 — My Board */}
+                 <div className="flex flex-col gap-1.5 w-full lg:w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
+                     <h3 className="text-sm font-bold text-blue-400 px-1 truncate">{team0Name}</h3>
                       <BughouseBoard 
                          boardIdx={myBoardIdx}
                          orientation={boardOrientation}
@@ -518,19 +520,20 @@ export default function BughouseArena() {
                          getPlayerLabel={getPlayerLabel}
                       />
                      <BughouseBank 
-                         bank={myBankW || []} 
+                         bank={myBank || []} 
                          boardIdx={myBoardIdx} 
-                         playerColor="w"
+                         playerColor={myColor}
                          selectedPiece={selectedPiece}
                          setSelectedPiece={setSelectedPiece} 
-                         getPieceUrl={getPieceUrl} 
+                         getPieceUrl={getPieceUrl}
+                         placementHint={t("bh_click_to_place")}
+                         emptyLabel={t("bh_empty_bank")}
                      />
                  </div>
 
-                 <div className="flex flex-col gap-6 opacity-90">
-                     <div className="flex items-center justify-between gap-4 px-2">
-                        <h3 className="text-xl font-bold text-emerald-400">{team1Name}</h3>
-                     </div>
+                 {/* Board 2 — Partner Board */}
+                 <div className="flex flex-col gap-1.5 w-full lg:w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
+                     <h3 className="text-sm font-bold text-emerald-400 px-1 truncate">{team1Name}</h3>
                       <BughouseBoard 
                          boardIdx={partnerBoardIdx}
                          orientation={partnerOrientation}
@@ -547,22 +550,24 @@ export default function BughouseArena() {
                          getPlayerLabel={getPlayerLabel}
                       />
                      <BughouseBank 
-                         bank={myBoardIdx === 0 ? state?.bank0b : state?.bank1b} 
+                         bank={partnerBank || []} 
                          boardIdx={partnerBoardIdx} 
-                         playerColor="b"
+                         playerColor={partnerColor}
                          selectedPiece={selectedPiece}
                          setSelectedPiece={setSelectedPiece} 
-                         getPieceUrl={getPieceUrl} 
+                         getPieceUrl={getPieceUrl}
+                         placementHint={t("bh_click_to_place")}
+                         emptyLabel={t("bh_empty_bank")}
                      />
                  </div>
             </div>
         </div>
 
         {/* Sidebar: Video & Chat */}
-        <div className="flex flex-col gap-4 sticky top-8">
+        <div className="flex flex-col gap-3 w-full xl:w-[340px] xl:flex-shrink-0 xl:sticky xl:top-4">
             {(isMicOn || isCamOn) && (
                 <div 
-                  className={`w-full bg-black/20 border border-white/5 rounded-3xl p-4 shadow-2xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
+                  className={`w-full bg-black/20 border border-white/5 rounded-2xl p-3 shadow-xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} 
                   style={{ height: `${videoHeight}px` }}
                 >
                     <VideoChat 
@@ -583,6 +588,27 @@ export default function BughouseArena() {
             />
         </div>
       </div>
+      
+      {/* Promotion Dialog */}
+      {pendingPromotion && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setPendingPromotion(null)}>
+          <div className="bg-slate-800 border border-white/10 rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-bold text-slate-400 mb-4 text-center uppercase tracking-widest">{t("promote_to") || "Promote to"}</p>
+            <div className="flex gap-3">
+              {['q', 'r', 'b', 'n'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => completePromotion(p)}
+                  className="w-16 h-16 bg-white/10 hover:bg-blue-500/30 border border-white/10 hover:border-blue-400 rounded-xl transition-all active:scale-90"
+                >
+                  <img src={getPieceUrl(`${myColor}${p.toUpperCase()}`)} alt={p} className="w-full h-full object-contain drop-shadow-lg" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

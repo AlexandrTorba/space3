@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Timer, Shield, X, Swords, Zap, Check } from "lucide-react";
+import React, { useState } from "react";
+import { Timer, Shield, X, Swords, Zap, Check, User, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MatchSetupModalProps {
@@ -12,7 +12,7 @@ interface MatchSetupModalProps {
     onTimeControlChange: (v: string) => void;
     colorPref: string;
     onColorPrefChange: (v: any) => void;
-    onCreate: () => void;
+    onCreate: (vsBots?: boolean) => void;
     t: any;
 }
 
@@ -22,6 +22,8 @@ export default function MatchSetupModal({
     colorPref, onColorPrefChange,
     onCreate, t
 }: MatchSetupModalProps) {
+    const [opponentType, setOpponentType] = useState<"human" | "bot">("human");
+
     if (!isOpen) return null;
 
     const isBughouse = mode === "bughouse";
@@ -69,6 +71,39 @@ export default function MatchSetupModal({
 
                         {/* Settings Grid */}
                         <div className="flex flex-col gap-8 mb-12">
+                            {/* Opponent Type (Only for Standard) */}
+                            {!isBughouse && (
+                                <div className="flex flex-col gap-4">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
+                                        {t("opponent") || "Opponent"}
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button 
+                                            onClick={() => setOpponentType("human")}
+                                            className={`h-16 rounded-2xl border-2 font-black text-xs transition-all flex flex-col items-center justify-center gap-1.5 ${
+                                                opponentType === "human" 
+                                                    ? 'bg-blue-500/20 border-blue-500 text-white' 
+                                                    : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10'
+                                            }`}
+                                        >
+                                            <User className="w-5 h-5" />
+                                            <span>{t("human_player") || "Human"}</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => setOpponentType("bot")}
+                                            className={`h-16 rounded-2xl border-2 font-black text-xs transition-all flex flex-col items-center justify-center gap-1.5 ${
+                                                opponentType === "bot" 
+                                                    ? 'bg-amber-500/20 border-amber-500 text-amber-300' 
+                                                    : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10'
+                                            }`}
+                                        >
+                                            <Bot className="w-5 h-5" />
+                                            <span>{t("bot_engine") || "Bot"}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Time Control */}
                             <div className="flex flex-col gap-4">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
@@ -125,18 +160,26 @@ export default function MatchSetupModal({
                         {/* Footer Action */}
                         <div className="flex flex-col gap-4">
                                 <button 
-                                    onClick={onCreate}
+                                    onClick={() => onCreate(!isBughouse && opponentType === "bot")}
                                     className={`w-full h-16 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 ${
                                         isBughouse 
                                             ? 'bg-indigo-600 hover:bg-emerald-600 text-white shadow-indigo-600/20' 
-                                            : 'bg-blue-600 hover:bg-emerald-600 text-white shadow-blue-600/20'
+                                            : opponentType === "bot"
+                                                ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20'
+                                                : 'bg-blue-600 hover:bg-emerald-600 text-white shadow-blue-600/20'
                                     }`}
                                 >
-                                    <Swords className="w-5 h-5 text-current" />
-                                    {isBughouse ? t("bh_wait_humans") : t("create_match")}
+                                    {opponentType === "bot" && !isBughouse ? (
+                                        <><Bot className="w-5 h-5" /> {t("play_vs_bot") || "Play vs Bot"}</>
+                                    ) : (
+                                        <><Swords className="w-5 h-5 text-current" /> {isBughouse ? t("bh_wait_humans") : t("create_match")}</>
+                                    )}
                                 </button>
                             <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest opacity-60">
-                                {t("match_created_hint")}
+                                {!isBughouse && opponentType === "bot" 
+                                    ? (t("bot_match_hint") || "Instant match against bot engine")
+                                    : t("match_created_hint")
+                                }
                             </p>
                         </div>
                     </div>
@@ -145,3 +188,4 @@ export default function MatchSetupModal({
         </AnimatePresence>
     );
 }
+

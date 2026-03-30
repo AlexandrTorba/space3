@@ -204,7 +204,15 @@ export const translations = {
       bh_start_match: "START MATCH",
       bh_fill_bots: "Fill Empty Slots with Bots",
       bh_waiting_admin: "Waiting for Admin to start...",
-      bh_kick_to_spectators: "Kick to Spectators"
+      bh_kick_to_spectators: "Kick to Spectators",
+      opponent: "Opponent",
+      human_player: "Human",
+      bot_engine: "Bot",
+      play_vs_bot: "Play vs Bot",
+      bot_match_hint: "Instant match against bot engine",
+      bh_empty_bank: "Empty Bank",
+      bh_click_to_place: "Click a square to place",
+      promote_to: "Promote to"
     },
   uk: {
      hero_title: "AntigravityChess",
@@ -407,7 +415,15 @@ export const translations = {
       bh_start_match: "ПОЧАТИ МАТЧ",
       bh_fill_bots: "Заповнити ботами",
       bh_waiting_admin: "Очікування старту від Адміна...",
-      bh_kick_to_spectators: "Перемістити в глядачі"
+      bh_kick_to_spectators: "Перемістити в глядачі",
+      opponent: "Суперник",
+      human_player: "Людина",
+      bot_engine: "Бот",
+      play_vs_bot: "Грати проти бота",
+      bot_match_hint: "Миттєвий матч проти бот-двигуна",
+      bh_empty_bank: "Порожній банк",
+      bh_click_to_place: "Натисніть на клітину для розміщення",
+      promote_to: "Перетворити на"
     },
   es: {
      hero_title: "AntigravityChess",
@@ -610,7 +626,15 @@ export const translations = {
       bh_start_match: "EMPEZAR PARTIDA",
       bh_fill_bots: "Llenar con Bots",
       bh_waiting_admin: "Esperando al Admin...",
-      bh_kick_to_spectators: "Mover a Espectadores"
+      bh_kick_to_spectators: "Mover a Espectadores",
+      opponent: "Oponente",
+      human_player: "Humano",
+      bot_engine: "Bot",
+      play_vs_bot: "Jugar vs Bot",
+      bot_match_hint: "Partida instantánea contra motor bot",
+      bh_empty_bank: "Banco vacío",
+      bh_click_to_place: "Haz clic en una casilla",
+      promote_to: "Promover a"
     },
   tr: {
      hero_title: "AntigravityChess",
@@ -813,7 +837,15 @@ export const translations = {
       bh_start_match: "MAÇI BAŞLAT",
       bh_fill_bots: "Botlarla Doldur",
       bh_waiting_admin: "Adminin başlatması bekleniyor...",
-      bh_kick_to_spectators: "İzleyiciye At"
+      bh_kick_to_spectators: "İzleyiciye At",
+      opponent: "Rakip",
+      human_player: "İnsan",
+      bot_engine: "Bot",
+      play_vs_bot: "Bota Karşı Oyna",
+      bot_match_hint: "Bot motoruna karşı anlık maç",
+      bh_empty_bank: "Boş Banka",
+      bh_click_to_place: "Yerleştirmek için kareye tıklayın",
+      promote_to: "Terfi et"
     }
 };
 
