@@ -321,24 +321,38 @@ export default function BughouseArena() {
      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
      // Only allow moves on the player's own board
      if (boardIdx !== myBoardIdx) return false;
-     
-     // Detect pawn promotion
-     const pieceCode = typeof piece === 'string' ? piece : '';
-     const isPawn = pieceCode.includes('P') || pieceCode.includes('p');
-     const targetRank = targetSquare?.[1];
-     if (isPawn && (targetRank === '8' || targetRank === '1')) {
+
+     // Extract piece code — react-chessboard v5 may send string or object
+     const pieceCode = typeof piece === 'string' ? piece : (piece as any)?.pieceType || '';
+
+     // Strict promotion detection (same as PlayArena):
+     // White pawn must move from rank 7 → rank 8, Black pawn from rank 2 → rank 1
+     const isWhitePromotion = pieceCode === 'wP'
+       && sourceSquare?.[1] === '7'
+       && targetSquare?.[1] === '8';
+     const isBlackPromotion = pieceCode === 'bP'
+       && sourceSquare?.[1] === '2'
+       && targetSquare?.[1] === '1';
+
+     if (isWhitePromotion || isBlackPromotion) {
+        // Auto-promote to queen if setting is on, otherwise show dialog
+        if (settings.alwaysPromoteToQueen) {
+          const uci = sourceSquare + targetSquare + 'q';
+          const update = create(MatchUpdateSchema, {
+            event: { case: "move", value: { uci, promotion: "q" } as any }
+          });
+          wsRef.current.send(toBinary(MatchUpdateSchema, update));
+          return true;
+        }
         setPendingPromotion({ boardIdx, source: sourceSquare, target: targetSquare });
         return true;
      }
-     
+
      const uci = sourceSquare + targetSquare;
      const update = create(MatchUpdateSchema, {
-        event: { 
-          case: "move", 
-          value: { 
-            uci, 
-            promotion: "" 
-          } as any 
+        event: {
+          case: "move",
+          value: { uci, promotion: "" } as any
         }
      });
      wsRef.current.send(toBinary(MatchUpdateSchema, update));
