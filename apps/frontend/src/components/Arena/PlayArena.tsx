@@ -108,6 +108,7 @@ function PlayArenaContent() {
   const replayRef = useRef(new Chess());
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const currentMoveIndexRef = useRef(-1);
 
   const flipBoard = () => {
       setBoardOrientation(prev => prev === "white" ? "black" : "white");
@@ -124,18 +125,23 @@ function PlayArenaContent() {
   };
 
   const updateGameState = (forceIndexUpdate = false) => {
-      const isAtEnd = currentMoveIndex === history.length - 1;
+      const idx = currentMoveIndexRef.current;
+      const histLen = moveHistoryRef.current.length;
+      const isAtEnd = idx === histLen - 2; // was at end before this new move
       setFen(gameRef.current.fen());
       const h = syncHistoryState();
       
-      if (forceIndexUpdate || isAtEnd || currentMoveIndex === -1) {
-          setCurrentMoveIndex(h.length - 1);
+      if (forceIndexUpdate || isAtEnd || idx === -1) {
+          const newIdx = h.length - 1;
+          currentMoveIndexRef.current = newIdx;
+          setCurrentMoveIndex(newIdx);
       }
-      setTurn(gameRef.current.turn());
+      const currentTurn = gameRef.current.turn();
+      setTurn(currentTurn);
       
       if (gameRef.current.isGameOver()) {
           setGameOver(true);
-          if (gameRef.current.isCheckmate()) setGameResult(turn === 'w' ? "Black Wins" : "White Wins");
+          if (gameRef.current.isCheckmate()) setGameResult(currentTurn === 'w' ? "Black Wins" : "White Wins");
           else if (gameRef.current.isDraw()) setGameResult("Draw");
       }
   };
@@ -378,7 +384,7 @@ function PlayArenaContent() {
                      if (move) {
                          moveHistoryRef.current.push(move.san);
                      }
-                    setTimeout(() => updateGameState(), 0);
+                    updateGameState(true);
                     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                         const uci = sourceSquare + targetSquare + 'q';
                         const update = create(MatchUpdateSchema, {
@@ -420,7 +426,7 @@ function PlayArenaContent() {
           if (move) {
               moveHistoryRef.current.push(move.san);
           }
-          setTimeout(() => updateGameState(), 0);
+          updateGameState(true);
           
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
               const uci = from + to + promotionPiece;
@@ -504,6 +510,7 @@ function PlayArenaContent() {
       for(let i = 0; i <= index; i++) {
          replayRef.current.move(history[i]);
       }
+      currentMoveIndexRef.current = index;
       setCurrentMoveIndex(index);
       setFen(replayRef.current.fen());
   };
