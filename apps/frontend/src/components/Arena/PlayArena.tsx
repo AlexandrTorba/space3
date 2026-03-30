@@ -227,13 +227,30 @@ function PlayArenaContent() {
           else if (update.event.case === "move") {
               const move = update.event.value;
               try {
-                  // Parse UCI format (e.g. "e2e4", "e7e8q") into chess.js move object
-                  const from = move.uci.substring(0, 2);
-                  const to = move.uci.substring(2, 4);
-                  const promotion = move.uci.length > 4 ? move.uci[4] : undefined;
-                  const result = gameRef.current.move({ from, to, promotion } as any);
-                  if (result) {
-                      moveHistoryRef.current.push(result.san);
+                  // Prefer SAN from server if available (most robust)
+                  if (move.san) {
+                      // Basic check: if this move index already has a value, or if it's identical
+                      // to the very last move in our history, we might be receiving our own move back.
+                      const lastMoveUci = gameRef.current.history({ verbose: true }).pop()?.lan;
+                      const currentUci = move.uci;
+
+                      if (lastMoveUci !== currentUci) {
+                          moveHistoryRef.current.push(move.san);
+                          // Still update local engine to keep FEN in sync
+                          const from = move.uci.substring(0, 2);
+                          const to = move.uci.substring(2, 4);
+                          const promotion = move.uci.length > 4 ? move.uci[4] : undefined;
+                          gameRef.current.move({ from, to, promotion } as any);
+                      }
+                  } else {
+                      // Fallback to local calculation
+                      const from = move.uci.substring(0, 2);
+                      const to = move.uci.substring(2, 4);
+                      const promotion = move.uci.length > 4 ? move.uci[4] : undefined;
+                      const result = gameRef.current.move({ from, to, promotion } as any);
+                      if (result) {
+                          moveHistoryRef.current.push(result.san);
+                      }
                   }
                   updateGameState(true);
               } catch(e) {}

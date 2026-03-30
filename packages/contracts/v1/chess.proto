@@ -5,6 +5,7 @@ message Move {
   string match_id = 1;
   string uci = 2; // e.g. "e2e4"
   int64 timestamp = 3;
+  string san = 4; // e.g. "e4", "Nf3", "O-O"
 }
 
 message MatchStatus {

@@ -253,32 +253,21 @@ export class ChessMatch {
              else return;
           }
           
+          // Broadcast the move with SAN included
+          const from = move.uci.substring(0, 2);
+          const to = move.uci.substring(2, 4);
+          const promotion = move.uci.length > 4 ? move.uci[4] : undefined;
+          let san = "";
           try {
-             const from = move.uci.substring(0, 2);
-             const to = move.uci.substring(2, 4);
-             const promotion = move.uci.length > 4 ? move.uci[4] : undefined;
-             this.engine.move({ from, to, promotion });
-          } catch(e) {
-             this.broadcastStatus();
-             return;
-          }
+             const result = this.engine.move({ from, to, promotion });
+             if (result) san = result.san;
+          } catch(e) {}
 
-          this.moveCount++;
-          this.drawOffer = null;
-          if (this.moveCount === 1 && !this.isUnlimited) this.lastMoveTimestamp = Date.now();
-          this.state.storage.setAlarm(Date.now() + 5 * 60 * 1000);
-          
-          // Update DB updatedAt to keep it alive in the Live list
-          // Throttle: only update DB every 30s
-          const nowMs = Date.now();
-          (this as any).lastDbUpdate = (this as any).lastDbUpdate || 0;
-          if (this.db && nowMs - (this as any).lastDbUpdate > 30000) {
-             (this as any).lastDbUpdate = nowMs;
-             const p = this.db.update(matches).set({ updatedAt: new Date() }).where(eq(matches.id, this.matchId)).execute().catch(() => {});
-             this.state.waitUntil(p);
-          }
-
-          this.sessions.forEach(session => { if (session !== server) session.send(event.data); });
+          const moveUpdateFinal = create(MatchUpdateSchema, {
+            event: { case: "move", value: { matchId: this.matchId, uci: move.uci, san: san, timestamp: BigInt(Date.now()) } }
+          });
+          const moveBinary = toBinary(MatchUpdateSchema, moveUpdateFinal);
+          this.sessions.forEach(session => { session.send(moveBinary); });
 
           if (this.engine.isGameOver()) {
              let reason = "unknown";
@@ -353,7 +342,7 @@ export class ChessMatch {
     // Broadcast the move event so frontend can track history
     const uci = chosen.from + chosen.to + (chosen.promotion || "");
     const moveUpdate = create(MatchUpdateSchema, {
-      event: { case: "move", value: { matchId: this.matchId, uci, timestamp: BigInt(Date.now()) } }
+      event: { case: "move", value: { matchId: this.matchId, uci, san: chosen.san, timestamp: BigInt(Date.now()) } }
     });
     const moveBinary = toBinary(MatchUpdateSchema, moveUpdate);
     this.sessions.forEach(s => { try { s.send(moveBinary); } catch(e) {} });
