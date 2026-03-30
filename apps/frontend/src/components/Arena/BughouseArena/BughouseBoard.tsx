@@ -55,7 +55,10 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   const safeFen   = (!fen || fen === "start") ? START_FEN : fen;
 
   return (
-    <div className="flex flex-col w-full">
+    <div
+      className="flex flex-col w-full"
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
+    >
       {/* Top player bar */}
       <div className="flex justify-between items-center px-2 bg-white/5 rounded-t-xl py-1 border border-white/5 border-b-0">
         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[60%]">
@@ -66,8 +69,18 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
         </div>
       </div>
 
-      {/* Board — ref lets us measure before Chessboard mounts */}
-      <div ref={containerRef} className="aspect-square border-2 border-slate-800 overflow-hidden shadow-xl relative w-full">
+      {/* Board — touch-action:none prevents browser scroll hijacking on mobile */}
+      <div
+        ref={containerRef}
+        className="aspect-square border-2 border-slate-800 overflow-hidden shadow-xl relative w-full"
+        style={{
+          touchAction: 'none',        // ← prevents scroll/pan on touch drag
+          userSelect: 'none',          // ← prevents text selection during drag
+          WebkitUserSelect: 'none',
+          overscrollBehavior: 'none',  // ← prevents bouncing/pull-to-refresh
+        } as React.CSSProperties}
+        onContextMenu={e => e.preventDefault()} // prevent long-press context menu
+      >
         {boardWidth > 0 && (
           <Chessboard
             options={{

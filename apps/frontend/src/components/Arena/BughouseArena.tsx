@@ -521,7 +521,10 @@ export default function BughouseArena() {
   const winnerTeam = gameResult === '1-0' ? team0Name : gameResult === '0-1' ? team1Name : null;
 
   return (
-    <div className="min-h-screen flex flex-col px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
+    <div
+      className="min-h-screen flex flex-col px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden"
+      style={{ overscrollBehavior: 'none' } as React.CSSProperties}
+    >
       <header className="flex justify-between items-center mb-2 md:mb-4 max-w-[1800px] mx-auto w-full h-10 md:h-auto shrink-0">
         <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 md:px-4 md:py-1.5 rounded-xl backdrop-blur-xl">
           <Swords className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
