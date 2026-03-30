@@ -9,15 +9,19 @@ interface BughouseBankProps {
   getPieceUrl: (piece: string) => string;
   placementHint?: string;
   emptyLabel?: string;
+  compact?: boolean;  // true = landscape (smaller), false = portrait (larger)
 }
 
 export const BughouseBank: React.FC<BughouseBankProps> = ({
-  bank, boardIdx, playerColor, selectedPiece, setSelectedPiece, getPieceUrl, placementHint, emptyLabel
+  bank, boardIdx, playerColor, selectedPiece, setSelectedPiece, getPieceUrl, placementHint, emptyLabel, compact = false
 }) => {
   const isSelected = (p: string) => 
     selectedPiece?.board === boardIdx && selectedPiece?.char === p;
 
   const hasSelection = selectedPiece?.board === boardIdx;
+
+  const containerH = compact ? 'h-9' : 'h-14';
+  const pieceSize   = compact ? 'w-7 h-7' : 'w-10 h-10';
 
   return (
     <div className="relative">
@@ -26,13 +30,13 @@ export const BughouseBank: React.FC<BughouseBankProps> = ({
           {placementHint || "Click a square to place"}
         </div>
       )}
-      <div className="h-10 bg-white/5 rounded-xl flex items-center px-2 gap-1 border border-white/5 overflow-x-auto custom-scrollbar">
+      <div className={`${containerH} bg-white/5 rounded-xl flex items-center px-2 gap-1 border border-white/5 overflow-x-auto custom-scrollbar`}>
         {bank?.map((p: string, i: number) => {
             const pieceCode = p.length === 1 ? `${playerColor}${p.toUpperCase()}` : p;
             const selected = isSelected(p);
             return (
-                <button 
-                    key={i} 
+                <button
+                    key={i}
                     onClick={() => {
                       if (selected) {
                         setSelectedPiece(null);
@@ -40,9 +44,9 @@ export const BughouseBank: React.FC<BughouseBankProps> = ({
                         setSelectedPiece({char: p, board: boardIdx});
                       }
                     }}
-                    className={`w-8 h-8 flex-shrink-0 transition-all duration-150 rounded-md ${
-                      selected 
-                        ? 'scale-110 ring-2 ring-emerald-400 bg-emerald-400/20 shadow-md shadow-emerald-400/20' 
+                    className={`${pieceSize} flex-shrink-0 transition-all duration-150 rounded-md ${
+                      selected
+                        ? 'scale-110 ring-2 ring-emerald-400 bg-emerald-400/20 shadow-md shadow-emerald-400/20'
                         : 'hover:scale-105 active:scale-95 hover:bg-white/10'
                     }`}
                 >

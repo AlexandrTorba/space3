@@ -13,6 +13,7 @@ interface BughouseBoardProps {
   scale?: number;
   theme: { dark: string; light: string };
   customPieces: any;
+  showCoordinates?: boolean;
   onDrop: (boardIdx: number, source: string, target: string, piece?: string) => boolean;
   onSquareClick: (boardIdx: number, square: string) => void;
   formatTime: (ms: number) => string;
@@ -21,7 +22,7 @@ interface BughouseBoardProps {
 
 export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   boardIdx, orientation, fen, clocks, playerName, isMain, scale = 100, theme, customPieces,
-  onDrop, onSquareClick, formatTime, getPlayerLabel
+  showCoordinates = false, onDrop, onSquareClick, formatTime, getPlayerLabel
 }) => {
   const whiteKey = `w${boardIdx}` as "w0" | "w1";
   const blackKey = `b${boardIdx}` as "b0" | "b1";
@@ -76,6 +77,7 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
               pieces: customPieces,
               darkSquareStyle:  { backgroundColor: safeTheme.dark },
               lightSquareStyle: { backgroundColor: safeTheme.light },
+              showNotation: showCoordinates,
               onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
                 onDrop(boardIdx, sourceSquare || piece?.position, targetSquare, piece?.pieceType || piece),
               onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),

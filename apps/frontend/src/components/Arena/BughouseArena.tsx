@@ -96,6 +96,8 @@ export default function BughouseArena() {
   const [boardScale, setBoardScale] = useState(100);
   const [mobileTab, setMobileTab] = useState<'chat' | 'video'>('chat');
   const [chatInput, setChatInput] = useState("");
+  // Detect screen orientation for adaptive layout
+  const [isLandscape, setIsLandscape] = useState(false);
   const [mySessionId, setMySessionId] = useState<string | null>(null);
   
   const [team0Name, setTeam0Name] = useState("Team White");
@@ -171,6 +173,16 @@ export default function BughouseArena() {
     setBoardOrientation(prev => prev === "white" ? "black" : "white");
     setPartnerOrientation(prev => prev === "white" ? "black" : "white");
   };
+
+  // Separate effect for orientation tracking with proper cleanup
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(orientation: landscape)');
+    setIsLandscape(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsLandscape(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -602,84 +614,98 @@ export default function BughouseArena() {
 
       {/* ── MOBILE + TABLET (< xl): boards + bottom tabs ── */}
       <div className="xl:hidden flex flex-col flex-1 min-h-0">
-        {/* Boards area — always side-by-side, constrained by BOTH viewport dimensions.
-             Portrait: width = min(46vw, big) → boards ~198px
-             Landscape: width = min(46vw, calc(50svh-90px)) → shrinks to ~130-150px */}
-        <div className="w-full shrink-0">
-          <div className="flex flex-row gap-1.5 items-start justify-center w-full">
-            {/* My Board */}
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            LANDSCAPE: boards side-by-side, height-constrained
+            Board width = min(50vw-6px, 100vh-143px)
+            S24 landscape 915×412: min(451px, 269px) → 269px each
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {isLandscape && (
+          <div className="flex flex-row gap-1.5 items-start justify-center w-full shrink-0">
             <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(46vw, calc(50vh - 90px))' }}>
+              style={{ width: 'min(calc(50vw - 6px), calc(100vh - 143px))' }}>
               <h3 className="text-[9px] font-bold text-blue-400 px-0.5 truncate leading-none">{team0Name}</h3>
-              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
-              <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={true} />
             </div>
-            {/* Partner Board */}
             <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(46vw, calc(50vh - 90px))' }}>
+              style={{ width: 'min(calc(50vw - 6px), calc(100vh - 143px))' }}>
               <h3 className="text-[9px] font-bold text-emerald-400 px-0.5 truncate leading-none">{team1Name}</h3>
-              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
-              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={true} />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Bottom tabs — Standard style, collapses in landscape */}
-        <div className="mt-1 shrink-0">
-          {/* Tab switcher */}
-          <div className="flex rounded-xl overflow-hidden border border-white/5 bg-slate-900/70 mb-1">
-            <button
-              onClick={() => setMobileTab('chat')}
-              className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                mobileTab === 'chat' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
-              }`}
-            >
-              <MessageSquare className="w-3 h-3" />
-              Chat
-              {logs.length > 0 && <span className="text-[8px] font-mono opacity-60 ml-0.5">{logs.length}</span>}
-            </button>
-            {(videoAuthorized || isCamOn) && (
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            PORTRAIT: boards stacked vertically, full-width
+            Board width ≈ 96vw, they scroll if they don't fit
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {!isLandscape && (
+          <div className="flex flex-col gap-2 w-full shrink-0 items-center">
+            <div className="flex flex-col gap-0.5 w-full" style={{ maxWidth: 'min(96vw, 480px)' }}>
+              <h3 className="text-[10px] font-bold text-blue-400 px-0.5 truncate leading-none">{team0Name}</h3>
+              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={false} />
+            </div>
+            <div className="flex flex-col gap-0.5 w-full" style={{ maxWidth: 'min(96vw, 480px)' }}>
+              <h3 className="text-[10px] font-bold text-emerald-400 px-0.5 truncate leading-none">{team1Name}</h3>
+              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={false} />
+            </div>
+          </div>
+        )}
+        {/* Bottom tabs — only in portrait mode (landscape hides to save space) */}
+        {!isLandscape && (
+          <div className="mt-1 shrink-0">
+            {/* Tab switcher */}
+            <div className="flex rounded-xl overflow-hidden border border-white/5 bg-slate-900/70 mb-1">
               <button
-                onClick={() => setMobileTab('video')}
+                onClick={() => setMobileTab('chat')}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                  mobileTab === 'video' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
+                  mobileTab === 'chat' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
                 }`}
               >
-                <Video className="w-3 h-3" />
-                Video
+                <MessageSquare className="w-3 h-3" />
+                Chat
+                {logs.length > 0 && <span className="text-[8px] font-mono opacity-60 ml-0.5">{logs.length}</span>}
               </button>
+              {(videoAuthorized || isCamOn) && (
+                <button
+                  onClick={() => setMobileTab('video')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                    mobileTab === 'video' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
+                  }`}
+                >
+                  <Video className="w-3 h-3" />
+                  Video
+                </button>
+              )}
+            </div>
+            {mobileTab === 'chat' && (
+              <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden flex flex-col"
+                style={{ height: 'clamp(100px, calc(100vh - 30vh - 350px), 220px)' }}>
+                <div className="flex-1 overflow-y-auto p-2 space-y-0.5 font-mono text-[11px] text-slate-400">
+                  {logs.length === 0 && <p className="text-slate-600 italic text-center pt-3 text-[10px]">No messages yet</p>}
+                  {logs.map((l, i) => (
+                    <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic border-l-2 border-white/5 pl-2"}>{l}</div>
+                  ))}
+                </div>
+                <form onSubmit={handleChatSubmit} className="p-1.5 bg-white/5 border-t border-white/5 flex gap-1.5 flex-shrink-0">
+                  <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type to chat..."
+                    className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-[12px] text-white outline-none focus:border-blue-500/50 transition-all font-mono" />
+                </form>
+              </div>
+            )}
+            {mobileTab === 'video' && (isMicOn || isCamOn || videoAuthorized) && (
+              <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden"
+                style={{ height: 'clamp(100px, calc(100vh - 30vh - 350px), 220px)' }}>
+                <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
+              </div>
             )}
           </div>
+        )}
 
-          {/* Tab content — height: portrait gets ~200px, landscape gets ~80px */}
-          {mobileTab === 'chat' && (
-            <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden flex flex-col"
-              style={{ height: 'clamp(70px, calc(100vh - 70vh - 110px), 220px)' }}>
-              <div className="flex-1 overflow-y-auto p-2 space-y-0.5 font-mono text-[11px] text-slate-400">
-                {logs.length === 0 && <p className="text-slate-600 italic text-center pt-3 text-[10px]">No messages yet</p>}
-                {logs.map((l, i) => (
-                  <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic border-l-2 border-white/5 pl-2"}>{l}</div>
-                ))}
-              </div>
-              <form onSubmit={handleChatSubmit} className="p-1.5 bg-white/5 border-t border-white/5 flex gap-1.5 flex-shrink-0">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type to chat..."
-                  className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-[12px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
-                />
-              </form>
-            </div>
-          )}
-
-          {mobileTab === 'video' && (isMicOn || isCamOn || videoAuthorized) && (
-            <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden"
-              style={{ height: 'clamp(70px, calc(100vh - 70vh - 110px), 220px)' }}>
-              <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
-            </div>
-          )}
-        </div>
       </div>
       
       {/* Promotion Dialog */}
