@@ -102,6 +102,7 @@ function PlayArenaContent() {
   const [videoCollapsed, setVideoCollapsed] = useState(false);
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [notationCollapsed, setNotationCollapsed] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'notation' | 'chat' | 'video'>('notation');
 
   const gameRef = useRef(new Chess());
   // A second chess.js instance used to replay history for navigation
@@ -542,17 +543,21 @@ function PlayArenaContent() {
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 relative overscroll-none">
 
-        <header className="flex justify-between items-center mb-6 lg:mb-10 px-4 z-10 max-w-7xl mx-auto w-full">
+        <header className="flex justify-between items-center mb-2 md:mb-6 lg:mb-10 px-2 md:px-4 z-10 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3">
               <Link href="/" className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors mr-2">
                 <ChevronLeft className="w-6 h-6" />
               </Link>
-              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
-                <Zap className="w-6 h-6 text-blue-400 animate-pulse" />
-                <div>
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl backdrop-blur-md">
+                <Zap className="w-5 h-5 md:w-6 md:h-6 text-blue-400 animate-pulse" />
+                <div className="hidden sm:block">
                     <div className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none mb-1">AntigravityChess</div>
-                    <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none">{t("arena_title")}</h1>
+                    <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none">{t("arena_title")}</h1>
                     <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest mt-0.5 block">ID: {id.substring(0, 8)}</span>
+                </div>
+                <div className="sm:hidden">
+                    <div className="text-[9px] font-black tracking-widest text-blue-400 uppercase">Arena</div>
+                    <span className="text-[8px] font-mono text-gray-500">{id.substring(0, 6)}</span>
                 </div>
               </div>
             </div>
@@ -595,9 +600,13 @@ function PlayArenaContent() {
             </div>
         </header>
 
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 z-10 relative">
+        <div className="max-w-7xl mx-auto w-full z-10 relative">
+            {/* Mobile layout: vertical stack, board + bottom tabs */}
+            {/* Desktop layout: 3-col grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-10">
             
-            <div className="lg:col-span-2 flex flex-col p-2 relative">
+            {/* LEFT COLUMN — Board + controls */}
+            <div className="lg:col-span-2 flex flex-col px-1 md:p-2 relative">
                 
                 {gameOver && (
                         <div 
@@ -613,16 +622,16 @@ function PlayArenaContent() {
                         </div>
                 )}
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-4 py-2 rounded-t-2xl">
+                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-3 py-1.5 md:py-2 rounded-t-2xl">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400 text-sm">
                            {color === 'white' ? bName[0]?.toUpperCase() : wName[0]?.toUpperCase()}
                         </div>
-                        <span className="font-bold text-slate-300">
+                        <span className="font-bold text-slate-300 text-sm md:text-base truncate max-w-[120px] md:max-w-none">
                            {color === 'white' ? bName : wName}
                         </span>
                     </div>
-                    <div className={`font-mono font-black text-3xl tracking-tighter ${
+                    <div className={`font-mono font-black text-2xl md:text-3xl tracking-tighter ${
                         (color === 'white' ? clocks.black : clocks.white) < 10000 && (color === 'white' ? clocks.black : clocks.white) >= 0
                             ? 'text-red-500 animate-pulse' 
                             : 'text-white'
@@ -631,7 +640,7 @@ function PlayArenaContent() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
+                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
                     <Chessboard 
                         options={{
                             id: `board-main-${boardOrientation}`,
@@ -708,16 +717,16 @@ function PlayArenaContent() {
                     )}
                 </div>
                 
-                <div className="w-full max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-t-0 px-4 py-2 rounded-b-2xl">
+                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-t-0 px-3 py-1.5 md:py-2 rounded-b-2xl">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-sm">
                            {color === 'white' ? wName[0]?.toUpperCase() : bName[0]?.toUpperCase()}
                         </div>
-                        <span className="font-bold text-white">
-                           {color === 'white' ? wName : bName} (You)
+                        <span className="font-bold text-white text-sm md:text-base truncate max-w-[120px] md:max-w-none">
+                           {color === 'white' ? wName : bName} <span className="text-blue-400 text-xs">(You)</span>
                         </span>
                     </div>
-                    <div className={`font-mono font-black text-3xl tracking-tighter ${
+                    <div className={`font-mono font-black text-2xl md:text-3xl tracking-tighter ${
                         (color === 'white' ? clocks.white : clocks.black) < 10000 && (color === 'white' ? clocks.white : clocks.black) >= 0
                             ? 'text-red-500 animate-pulse' 
                             : 'text-white'
@@ -726,50 +735,275 @@ function PlayArenaContent() {
                     </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 max-w-[min(650px,60vh)] md:max-w-[min(650px,65vh)] mx-auto w-full">
+                {/* Nav + actions row — compact on mobile */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-2 max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto w-full">
                     <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/80 px-2 py-1 rounded-full flex-shrink-0">
-                        <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-4 h-4"/></button>
-                        <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-5 h-5"/></button>
-                        <span className="font-mono text-[11px] font-black w-28 text-center text-blue-400 truncate px-1">
+                        <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4"/></button>
+                        <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-4 h-4 md:w-5 md:h-5"/></button>
+                        <span className="font-mono text-[10px] font-black w-20 md:w-28 text-center text-blue-400 truncate px-1">
                             {currentMoveIndex === -1 ? "START" : `${Math.floor(currentMoveIndex / 2) + 1}${currentMoveIndex % 2 === 0 ? '. ' : '... '}${history[currentMoveIndex]}`}
                         </span>
-                        <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronRight className="w-5 h-5"/></button>
-                        <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipForward className="w-4 h-4"/></button>
+                        <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronRight className="w-4 h-4 md:w-5 md:h-5"/></button>
+                        <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4"/></button>
                     </div>
 
                     {gameOver && (
                         <div className="flex flex-wrap items-center justify-end gap-2 w-full">
                             {!isSpectator && (
                                 rematchState === "waiting" ? (
-                                    <span className="bg-slate-800 border border-slate-700 text-slate-400 px-5 py-2.5 rounded-full text-sm font-bold animate-pulse">
+                                    <span className="bg-slate-800 border border-slate-700 text-slate-400 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
                                         {t("rematch_wait")}
                                     </span>
                                 ) : (
-                                    <button onClick={handleRematch} className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all shadow-lg text-sm
+                                    <button onClick={handleRematch} className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-lg text-sm
                                         ${rematchState === "offered" ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/30' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30'}`}>
                                         <Swords className="w-4 h-4" /> 
                                         {rematchState === "offered" ? t("rematch_offered") : t("rematch")}
                                     </button>
                                 )
                             )}
-
                         </div>
                     )}
                     
                     {!gameOver && !isSpectator && (
                         <div className="flex items-center gap-2">
-                            <button onClick={() => sendAction("draw_offer")} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-full border border-slate-700 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
+                            <button onClick={() => sendAction("draw_offer")} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 md:px-4 py-2 md:py-2.5 rounded-full border border-slate-700 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
                                 ½ Draw
                             </button>
-                            <button onClick={() => sendAction("resign")} className="flex items-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 px-4 py-2.5 rounded-full border border-red-500/20 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
-                                <Flag className="w-4 h-4" /> Resign
+                            <button onClick={() => sendAction("resign")} className="flex items-center gap-1.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 px-3 md:px-4 py-2 md:py-2.5 rounded-full border border-red-500/20 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
+                                <Flag className="w-3.5 h-3.5" /> Resign
                             </button>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="flex flex-col gap-3 h-full max-h-[calc(100vh-2rem)] overflow-hidden">
+            {/* RIGHT COLUMN — Desktop sidebar, hidden on mobile */}
+            <div className="hidden lg:flex flex-col gap-3 h-full max-h-[calc(100vh-2rem)] overflow-hidden">
+                
+                {/* 1. Video Communication */}
+                {showVideo && (
+                    <div className={`bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all ${videoCollapsed ? '' : 'min-h-[200px]'}`}>
+                        <button 
+                            onClick={() => setVideoCollapsed(!videoCollapsed)}
+                            className="px-4 py-2.5 bg-blue-500/10 border-b border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center justify-between cursor-pointer hover:bg-blue-500/15 transition-colors flex-shrink-0"
+                        >
+                            <span className="flex items-center gap-2">
+                                <Video className="w-3.5 h-3.5" />
+                                Video Communication
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                {videoCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                            </div>
+                        </button>
+                        {!videoCollapsed && (
+                            <div className="p-3 flex-1">
+                                <VideoChat matchId={id} />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 2. Chat & Logs */}
+                <div className={`bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all ${chatCollapsed ? '' : 'min-h-[140px] flex-1'}`}>
+                    <button 
+                        onClick={() => setChatCollapsed(!chatCollapsed)}
+                        className="px-4 py-2.5 border-b border-white/5 bg-white/5 flex items-center justify-between cursor-pointer hover:bg-white/[0.07] transition-colors flex-shrink-0"
+                    >
+                        <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                           <MessageSquare className="w-3.5 h-3.5 text-blue-500"/> Chat & Logs
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {logs.length > 0 && chatCollapsed && (
+                                <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-[9px] font-black flex items-center justify-center">{Math.min(logs.length, 99)}</span>
+                            )}
+                            {chatCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" /> : <ChevronUp className="w-3.5 h-3.5 text-slate-600" />}
+                        </div>
+                    </button>
+                    {!chatCollapsed && (
+                        <>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-1 font-mono text-[10px] text-slate-400">
+                                {logs.map((l, i) => (
+                                     <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>
+                                         {l}
+                                     </div>
+                                ))}
+                            </div>
+                            <form onSubmit={handleChatSubmit} className="p-2 bg-white/5 border-t border-white/5 flex gap-2 flex-shrink-0">
+                                <input 
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    placeholder="Type to chat..."
+                                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                                />
+                            </form>
+                        </>
+                    )}
+                </div>
+
+                {/* 3. Notation */}
+                <div className={`bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all ${notationCollapsed ? '' : 'min-h-[200px] flex-1'}`}>
+                    <button 
+                        onClick={() => setNotationCollapsed(!notationCollapsed)}
+                        className="px-4 py-2.5 border-b border-white/5 bg-white/5 flex items-center justify-between cursor-pointer hover:bg-white/[0.07] transition-colors flex-shrink-0"
+                    >
+                        <div className="flex items-center gap-2 uppercase tracking-[0.2em] text-[10px] font-black text-slate-500">
+                           <Activity className="w-3.5 h-3.5 text-blue-500"/> Notation
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {history.length > 0 && notationCollapsed && (
+                                <span className="text-[9px] font-mono text-blue-400">{Math.ceil(history.length / 2)} moves</span>
+                            )}
+                            {notationCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" /> : <ChevronUp className="w-3.5 h-3.5 text-slate-600" />}
+                        </div>
+                    </button>
+                    {!notationCollapsed && (
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-blue-500/30 transition-all">
+                            {history.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-600 opacity-20 gap-3">
+                                    <Zap className="w-8 h-8 rotate-12" />
+                                    <span className="text-[10px] uppercase font-black tracking-widest">{t("waiting_for_first_move") || "Awaiting moves"}</span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-1">
+                                    {Array.from({ length: Math.ceil(history.length / 2) }).map((_, i) => {
+                                        const wIndex = i * 2;
+                                        const bIndex = wIndex + 1;
+                                        const wMove = history[wIndex];
+                                        const bMove = history[bIndex];
+                                        return (
+                                            <div key={i} className="grid grid-cols-8 text-[11px] font-mono rounded-xl overflow-hidden border border-white/5 bg-white/[0.015] hover:bg-white/[0.04] transition-colors">
+                                                <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2 font-bold border-r border-white/5 text-[9px]">{i + 1}</div>
+                                                <div onClick={() => goToMove(wIndex)} className={`col-span-3 flex items-center px-3 py-2 font-bold transition-colors cursor-pointer border-r border-white/5 ${currentMoveIndex === wIndex ? 'bg-blue-500 text-white' : 'text-slate-100 hover:text-blue-400'}`}>{wMove}</div>
+                                                <div onClick={() => goToMove(bIndex)} className={`col-span-4 flex items-center px-3 py-2 transition-colors cursor-pointer ${!bMove ? '' : currentMoveIndex === bIndex ? 'bg-blue-500 text-white font-bold' : 'text-slate-400 hover:text-blue-400'}`}>{bMove || ""}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {gameOver && (
+                    <div className="flex gap-2">
+                        <button onClick={handleDownloadPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all">
+                            <Archive className="w-3.5 h-3.5" /> {t("download_pgn")}
+                        </button>
+                        <button onClick={handleCopyPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all">
+                            <Copy className="w-3.5 h-3.5" /> {t("copy_pgn")}
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* MOBILE BOTTOM PANEL — tabs for Notation / Chat / Video */}
+            <div className="lg:hidden mt-2">
+                {/* Tab switcher */}
+                <div className="flex rounded-2xl overflow-hidden border border-white/5 bg-slate-900/60 mb-2">
+                    <button
+                        onClick={() => setMobileTab('notation')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                            mobileTab === 'notation' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                        }`}
+                    >
+                        <Activity className="w-3.5 h-3.5" />
+                        Notation
+                        {history.length > 0 && <span className="text-[9px] font-mono opacity-70">{Math.ceil(history.length / 2)}m</span>}
+                    </button>
+                    <button
+                        onClick={() => setMobileTab('chat')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                            mobileTab === 'chat' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                        }`}
+                    >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Chat
+                    </button>
+                    {showVideo && (
+                        <button
+                            onClick={() => setMobileTab('video')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                                mobileTab === 'video' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                            }`}
+                        >
+                            <Video className="w-3.5 h-3.5" />
+                            Video
+                        </button>
+                    )}
+                </div>
+
+                {/* Tab content */}
+                {mobileTab === 'notation' && (
+                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden h-48">
+                        <div ref={scrollRef} className="h-full overflow-y-auto p-3 space-y-1">
+                            {history.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-600 opacity-20 gap-2">
+                                    <Zap className="w-6 h-6 rotate-12" />
+                                    <span className="text-[10px] uppercase font-black tracking-widest">Awaiting moves</span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-1">
+                                    {Array.from({ length: Math.ceil(history.length / 2) }).map((_, i) => {
+                                        const wIndex = i * 2;
+                                        const bIndex = wIndex + 1;
+                                        return (
+                                            <div key={i} className="grid grid-cols-8 text-[12px] font-mono rounded-xl overflow-hidden border border-white/5 bg-white/[0.015]">
+                                                <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2.5 font-bold border-r border-white/5 text-[10px]">{i + 1}</div>
+                                                <div onClick={() => goToMove(wIndex)} className={`col-span-3 flex items-center px-3 py-2.5 font-bold cursor-pointer border-r border-white/5 active:bg-blue-600 ${currentMoveIndex === wIndex ? 'bg-blue-500 text-white' : 'text-slate-100'}`}>{history[wIndex]}</div>
+                                                <div onClick={() => goToMove(bIndex)} className={`col-span-4 flex items-center px-3 py-2.5 cursor-pointer active:bg-blue-600 ${!history[bIndex] ? '' : currentMoveIndex === bIndex ? 'bg-blue-500 text-white font-bold' : 'text-slate-400'}`}>{history[bIndex] || ""}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {mobileTab === 'chat' && (
+                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col h-48">
+                        <div className="flex-1 overflow-y-auto p-3 space-y-1 font-mono text-[11px] text-slate-400">
+                            {logs.length === 0 && <p className="text-slate-600 italic text-center pt-4">No messages yet</p>}
+                            {logs.map((l, i) => (
+                                <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>{l}</div>
+                            ))}
+                        </div>
+                        <form onSubmit={handleChatSubmit} className="p-2 bg-white/5 border-t border-white/5 flex gap-2 flex-shrink-0">
+                            <input
+                                type="text"
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                placeholder="Type to chat..."
+                                className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                            />
+                        </form>
+                    </div>
+                )}
+
+                {mobileTab === 'video' && showVideo && (
+                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden" style={{height: '220px'}}>
+                        <VideoChat matchId={id} />
+                    </div>
+                )}
+
+                {gameOver && (
+                    <div className="flex gap-2 mt-2">
+                        <button onClick={handleDownloadPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                            <Archive className="w-3.5 h-3.5" /> PGN
+                        </button>
+                        <button onClick={handleCopyPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                            <Copy className="w-3.5 h-3.5" /> Copy
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
+  );
+}
                 
                 {/* 1. Video Communication */}
                 {showVideo && (
