@@ -238,6 +238,15 @@ export default function BughouseArena() {
                 setAdminSessionId(data.adminSessionId || "");
              } else if (data.type === 'debug') {
                 console.warn('[BUGHOUSE SERVER DEBUG]', data.msg);
+             } else if (data.type === 'rematch_reset') {
+                setState((prev: any) => ({
+                  ...prev,
+                  board0: null, board1: null,
+                  bank0w: [], bank0b: [], bank1w: [], bank1b: [],
+                  lobby: prev?.lobby ? { ...prev.lobby, isAllReady: false } : prev?.lobby
+                }));
+                setRematchState('default');
+                setLogs(prev => [...prev, '⟳ Rematch!']);
              }
           } catch(e) {}
           return;

@@ -387,6 +387,59 @@ export class BughouseMatch {
            this.log(`Cannot start: ${missing.length} slots missing`, true);
            this.systemChat(`Cannot start: Need 4 players or bots. Try 'Fill with Bots' button.`);
         }
+    } else if (type === "rematch") {
+        this.log(`Rematch requested by ${sData.id}`, true);
+        this.rematchOffers.add(sData.id);
+
+        // Count only human (non-bot) players
+        const humanSlots = (["w0","b0","w1","b1"] as const).filter(r => {
+          const slot = (this.lobby as any)[r];
+          return slot.isClaimed && !slot.isBot;
+        });
+        const allHumansOffered = humanSlots.every(r => {
+          const slot = (this.lobby as any)[r];
+          return this.rematchOffers.has(slot.sessionId);
+        });
+
+        if (allHumansOffered || humanSlots.length <= 1) {
+          // Reset game state
+          this.rematchOffers.clear();
+          this.isStarted = false;
+          this.isActive = false;
+          this.result = "";
+          this.reason = "";
+          this.engine0.reset();
+          this.engine1.reset();
+          this.bank0w = []; this.bank0b = [];
+          this.bank1w = []; this.bank1b = [];
+          this.promotedSquares0.clear();
+          this.promotedSquares1.clear();
+          this.moveCount0 = 0;
+          this.moveCount1 = 0;
+          this.lobby.isAllReady = false;
+          this.log(`Rematch: resetting game state`, true);
+
+          // Notify all clients so front-end shows lobby again
+          const resetMsg = JSON.stringify({ type: "rematch_reset" });
+          this.sessions.forEach((_, s) => s.send(resetMsg));
+
+          // Re-fill any bot slots (keep existing human slots intact)
+          for (const r of ["w0","b0","w1","b1"] as const) {
+            const slot = (this.lobby as any)[r];
+            if (!slot.isClaimed || slot.isBot) {
+              slot.isClaimed = true;
+              slot.playerName = "Bot Engine";
+              slot.isReady = true;
+              slot.sessionId = "bot-" + Math.random();
+              slot.isBot = true;
+            }
+          }
+          this.startMatch();
+          return; // broadcastStatus already called in startMatch
+        } else {
+          const remaining = humanSlots.length - this.rematchOffers.size;
+          this.systemChat(`Rematch offered — waiting for ${remaining} more player(s)`);
+        }
     }
 
     this.broadcastStatus();
