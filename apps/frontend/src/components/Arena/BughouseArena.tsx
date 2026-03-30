@@ -445,47 +445,78 @@ export default function BughouseArena() {
   const isAdmin = mySessionId === adminSessionId;
 
 
+  // Derive game-over state from board statuses
+  const isGameOver = !!(state?.board0?.status && state.board0.status !== 'active' && state.board0.status !== 'pending') ||
+                     !!(state?.board1?.status && state.board1.status !== 'active' && state.board1.status !== 'pending');
+  const gameResult = state?.board0?.result || state?.board1?.result || null;
+  const winnerTeam = gameResult === '1-0' ? team0Name : gameResult === '0-1' ? team1Name : gameResult === '1/2-1/2' ? null : null;
+
   return (
-    <div className="min-h-screen flex flex-col p-4 md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
-      <header className="flex justify-between items-center mb-4 max-w-[1800px] mx-auto w-full px-2">
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl backdrop-blur-xl">
-          <Swords className="w-5 h-5 text-blue-400" />
+    <div className="min-h-screen flex flex-col px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] md:p-8 bg-[#07090E] text-slate-100 selection:bg-blue-500/30 overflow-x-hidden">
+      <header className="flex justify-between items-center mb-2 md:mb-4 max-w-[1800px] mx-auto w-full h-10 md:h-auto">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 md:px-4 md:py-1.5 rounded-xl backdrop-blur-xl">
+          <Swords className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
           <div>
-            <h1 className="text-[8px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none">{t("arena_title").split(' ')[0]}</h1>
-            <h2 className="text-lg font-black tracking-tight text-white leading-none uppercase">{t("bughouse")}</h2>
+            <h1 className="hidden sm:block text-[8px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none">{t("arena_title").split(' ')[0]}</h1>
+            <h2 className="text-sm md:text-lg font-black tracking-tight text-white leading-none uppercase">{t("bughouse")}</h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
             {mounted && (
-                <button onClick={flipBoards} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-slate-400 transition-all active:scale-90" title="Flip">
-                  <RotateCcw className="w-4 h-4" />
+                <button onClick={flipBoards} className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-slate-400 transition-all active:scale-90" title="Flip">
+                  <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 </button>
             )}
             {(videoAuthorized || id === 'local-test') && (
-                <div className="flex items-center gap-1">
-                   <button 
-                      onClick={toggleGlobalMic} 
-                      className={`p-2 rounded-xl transition-all active:scale-90 ${isMicOn ? 'text-slate-400 hover:bg-white/5' : 'bg-red-500/10 text-red-500'}`}
-                   >
-                      {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                <div className="flex items-center gap-0.5">
+                   <button onClick={toggleGlobalMic} className={`p-1.5 md:p-2 rounded-xl transition-all active:scale-90 ${isMicOn ? 'text-slate-400 hover:bg-white/5' : 'bg-red-500/10 text-red-500'}`}>
+                      {isMicOn ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
                    </button>
-                   <button 
-                      onClick={() => setIsCamOn(!isCamOn)} 
-                      className={`p-2 rounded-xl transition-all active:scale-90 ${isCamOn ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-500'}`}
-                   >
-                      {isCamOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                   <button onClick={() => setIsCamOn(!isCamOn)} className={`p-1.5 md:p-2 rounded-xl transition-all active:scale-90 ${isCamOn ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-500'}`}>
+                      {isCamOn ? <Video className="w-3.5 h-3.5" /> : <VideoOff className="w-3.5 h-3.5" />}
                    </button>
                 </div>
             )}
-            <button onClick={() => updateSettings({ volume: settings.volume === 0 ? 0.7 : 0 })} className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
-               {settings.volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-             </button>
-            <button onClick={() => setIsPanelOpen(true)} className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
-                <Settings className="w-4 h-4" />
+            <button onClick={() => updateSettings({ volume: settings.volume === 0 ? 0.7 : 0 })} className="p-1.5 md:p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
+               {settings.volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={() => setIsPanelOpen(true)} className="p-1.5 md:p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
+                <Settings className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </button>
         </div>
       </header>
+
+      {/* Game Over Banner */}
+      {isGameOver && (
+        <div className="max-w-[1800px] mx-auto w-full mb-2">
+          <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl md:rounded-2xl px-3 py-2 md:p-4 flex items-center justify-between shadow-xl backdrop-blur-xl">
+            <div className="flex items-center gap-2 md:gap-4">
+              <CheckCircle className="w-5 h-5 md:w-8 md:h-8 text-emerald-500 flex-shrink-0" />
+              <div>
+                <h2 className="text-base md:text-xl font-black text-white leading-tight">
+                  {winnerTeam ? `🏆 ${winnerTeam} Wins!` : gameResult === '1/2-1/2' ? 'Draw!' : 'Game Over'}
+                </h2>
+                <p className="text-emerald-400/80 font-mono text-[10px] md:text-xs uppercase tracking-widest">
+                  {gameResult === '1-0' ? 'White team wins by checkmate' : gameResult === '0-1' ? 'Black team wins by checkmate' : 'Match ended'}
+                </p>
+              </div>
+            </div>
+            {rematchState === 'waiting' ? (
+              <span className="bg-slate-800 border border-slate-700 text-slate-400 px-3 py-1.5 rounded-full text-[10px] font-bold animate-pulse">Waiting...</span>
+            ) : (
+              <button
+                onClick={handleRematch}
+                className={`flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-full font-bold text-[10px] md:text-sm transition-all shadow-lg active:scale-95
+                  ${rematchState === 'offered' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/30' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30'}`}
+              >
+                <Swords className="w-3.5 h-3.5" />
+                {rematchState === 'offered' ? 'Accept!' : 'Rematch'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Lobby Overlay */}
       {(!state || !state.lobby?.isAllReady) && (
@@ -508,13 +539,13 @@ export default function BughouseArena() {
         />
       )}
 
-      <div className="max-w-[1800px] mx-auto w-full flex flex-col xl:flex-row gap-4 flex-1 items-start">
-        {/* Main Game Area — both boards side by side */}
-        <div className="flex-1 min-w-0">
-            <div className="flex flex-col lg:flex-row gap-4 items-start justify-center">
+      <div className="max-w-[1800px] mx-auto w-full flex flex-col xl:flex-row gap-2 md:gap-4 flex-1 items-start">
+        {/* Main Game Area — both boards side by side on desktop, stacked on mobile */}
+        <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-row md:flex-row gap-1.5 md:gap-4 items-start justify-center">
                  {/* Board 1 — My Board */}
-                 <div className="flex flex-col gap-1.5 w-full lg:w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
-                     <h3 className="text-sm font-bold text-blue-400 px-1 truncate">{team0Name}</h3>
+                 <div className="flex flex-col gap-1 w-1/2 md:w-auto" style={{ maxWidth: 'min(480px, 46vw)' }}>
+                     <h3 className="text-[10px] md:text-sm font-bold text-blue-400 px-0.5 truncate">{team0Name}</h3>
                       <BughouseBoard 
                          boardIdx={myBoardIdx}
                          orientation={boardOrientation}
@@ -543,8 +574,8 @@ export default function BughouseArena() {
                  </div>
 
                  {/* Board 2 — Partner Board */}
-                 <div className="flex flex-col gap-1.5 w-full lg:w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
-                     <h3 className="text-sm font-bold text-emerald-400 px-1 truncate">{team1Name}</h3>
+                 <div className="flex flex-col gap-1 w-1/2 md:w-auto" style={{ maxWidth: 'min(480px, 46vw)' }}>
+                     <h3 className="text-[10px] md:text-sm font-bold text-emerald-400 px-0.5 truncate">{team1Name}</h3>
                       <BughouseBoard 
                          boardIdx={partnerBoardIdx}
                          orientation={partnerOrientation}

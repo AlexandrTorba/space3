@@ -541,60 +541,44 @@ function PlayArenaContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-4 md:p-8 relative overscroll-none">
+    <div className="min-h-screen flex flex-col px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] md:p-8 relative overscroll-none">
 
-        <header className="flex justify-between items-center mb-2 md:mb-6 lg:mb-10 px-2 md:px-4 z-10 max-w-7xl mx-auto w-full">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors mr-2">
-                <ChevronLeft className="w-6 h-6" />
+        <header className="flex justify-between items-center mb-1 md:mb-6 lg:mb-10 px-1 md:px-4 z-10 max-w-7xl mx-auto w-full h-10 md:h-auto">
+            <div className="flex items-center gap-1.5">
+              <Link href="/" className="p-1.5 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors">
+                <ChevronLeft className="w-5 h-5" />
               </Link>
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl backdrop-blur-md">
-                <Zap className="w-5 h-5 md:w-6 md:h-6 text-blue-400 animate-pulse" />
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2 py-1 md:px-4 md:py-2 rounded-xl md:rounded-2xl backdrop-blur-md">
+                <Zap className="w-4 h-4 md:w-6 md:h-6 text-blue-400 animate-pulse" />
                 <div className="hidden sm:block">
                     <div className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-blue-500/80 uppercase leading-none mb-1">AntigravityChess</div>
                     <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 leading-none">{t("arena_title")}</h1>
                     <span className="text-[9px] md:text-xs font-mono text-gray-500 uppercase tracking-widest mt-0.5 block">ID: {id.substring(0, 8)}</span>
                 </div>
-                <div className="sm:hidden">
-                    <div className="text-[9px] font-black tracking-widest text-blue-400 uppercase">Arena</div>
-                    <span className="text-[8px] font-mono text-gray-500">{id.substring(0, 6)}</span>
-                </div>
+                <span className="sm:hidden text-[10px] font-black tracking-wider text-blue-400 uppercase">Arena</span>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 md:gap-4">
-               {spectatorCount > 0 && (
-                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-900/20 border border-emerald-500/20 text-emerald-400 font-mono text-xs shadow-inner">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                       {spectatorCount} {spectatorCount === 1 ? 'spectator' : 'spectators'}
-                   </div>
-               )}
-               <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono text-xs md:text-sm border backdrop-blur-md
+            <div className="flex items-center gap-1 md:gap-4">
+               {/* Connection dot — mobile only shows dot, no text */}
+               <div className={`flex items-center gap-1.5 px-2 py-1 md:px-4 md:py-2 rounded-full font-mono text-xs md:text-sm border backdrop-blur-md
                    ${status.includes('Connected') || status.includes(t("status_connected")) ? 'bg-emerald-900/10 text-emerald-400 border-emerald-500/20' : 'bg-red-900/10 text-red-400 border-red-500/20'}`}>
-                   <Activity className="w-4 h-4" />
-                   <span>{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
+                   <div className={`w-2 h-2 rounded-full ${status.includes('Connected') || status.includes(t('status_connected')) ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                   <span className="hidden sm:inline">{status === 'Connected' ? t("status_connected") : status === 'Disconnected' ? t("status_disconnected") : status}</span>
                </div>
-               <div className="flex items-center gap-2 md:gap-4">
+               <div className="flex items-center gap-1 md:gap-4">
                  {mounted && (
-                    <button 
-                      onClick={flipBoard} 
-                      className="p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400"
-                      title="Flip Board"
-                    >
+                    <button onClick={flipBoard} className="p-1.5 md:p-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400" title="Flip Board">
                       <RotateCcw className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
                  )}
                  {videoAuthorized && (
-                    <button 
-                      onClick={() => setShowVideo(!showVideo)} 
-                      className={`p-2 transition-all rounded-full border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-slate-400'}`}
-                      title="Toggle Video Chat"
-                    >
-                      {showVideo ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                    <button onClick={() => setShowVideo(!showVideo)} className={`p-1.5 md:p-2 transition-all rounded-full border ${showVideo ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-slate-400'}`} title="Toggle Video Chat">
+                      {showVideo ? <Video className="w-4 h-4 md:w-5 md:h-5" /> : <VideoOff className="w-4 h-4 md:w-5 md:h-5" />}
                     </button>
                  )}
-                 <button onClick={() => setIsPanelOpen(true)} className="p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
-                    <Settings className="w-5 h-5" />
+                 <button onClick={() => setIsPanelOpen(true)} className="p-1.5 md:p-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10 text-slate-400">
+                    <Settings className="w-4 h-4 md:w-5 md:h-5" />
                  </button>
               </div>
             </div>
@@ -603,35 +587,33 @@ function PlayArenaContent() {
         <div className="max-w-7xl mx-auto w-full z-10 relative">
             {/* Mobile layout: vertical stack, board + bottom tabs */}
             {/* Desktop layout: 3-col grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-10">
             
             {/* LEFT COLUMN — Board + controls */}
-            <div className="lg:col-span-2 flex flex-col px-1 md:p-2 relative">
+            <div className="lg:col-span-2 flex flex-col relative">
                 
                 {gameOver && (
-                        <div 
-                          className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 mb-4 flex justify-between items-center shadow-xl backdrop-blur-xl"
-                        >
-                            <div className="flex items-center gap-4">
-                               <CheckCircle className="w-8 h-8 text-emerald-500" />
+                        <div className="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl md:rounded-2xl p-2 md:p-4 mb-2 md:mb-4 flex justify-between items-center shadow-xl backdrop-blur-xl">
+                            <div className="flex items-center gap-2 md:gap-4">
+                               <CheckCircle className="w-5 h-5 md:w-8 md:h-8 text-emerald-500 flex-shrink-0" />
                                <div>
-                                   <h2 className="text-xl font-black text-white">{gameResult}</h2>
-                                   <p className="text-emerald-400/80 font-mono text-xs uppercase tracking-widest">{gameReason}</p>
+                                   <h2 className="text-base md:text-xl font-black text-white leading-tight">{gameResult}</h2>
+                                   <p className="text-emerald-400/80 font-mono text-[10px] md:text-xs uppercase tracking-widest">{gameReason}</p>
                                </div>
                             </div>
                         </div>
                 )}
 
-                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-3 py-1.5 md:py-2 rounded-t-2xl">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400 text-sm">
+                <div className="w-full max-w-[min(650px,96vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-b-0 px-2 md:px-3 py-1 md:py-2 rounded-t-xl md:rounded-t-2xl">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400 text-xs md:text-sm flex-shrink-0">
                            {color === 'white' ? bName[0]?.toUpperCase() : wName[0]?.toUpperCase()}
                         </div>
-                        <span className="font-bold text-slate-300 text-sm md:text-base truncate max-w-[120px] md:max-w-none">
+                        <span className="font-semibold text-slate-300 text-xs md:text-base truncate max-w-[100px] md:max-w-none">
                            {color === 'white' ? bName : wName}
                         </span>
                     </div>
-                    <div className={`font-mono font-black text-2xl md:text-3xl tracking-tighter ${
+                    <div className={`font-mono font-black text-xl md:text-3xl tracking-tighter ${
                         (color === 'white' ? clocks.black : clocks.white) < 10000 && (color === 'white' ? clocks.black : clocks.white) >= 0
                             ? 'text-red-500 animate-pulse' 
                             : 'text-white'
@@ -640,7 +622,7 @@ function PlayArenaContent() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
+                <div className="w-full max-w-[min(650px,96vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto aspect-square relative border-2 md:border-4 border-slate-800 shadow-2xl rounded-sm overflow-hidden touch-none select-none">
                     <Chessboard 
                         options={{
                             id: `board-main-${boardOrientation}`,
@@ -717,16 +699,16 @@ function PlayArenaContent() {
                     )}
                 </div>
                 
-                <div className="w-full max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-t-0 px-3 py-1.5 md:py-2 rounded-b-2xl">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-sm">
+                <div className="w-full max-w-[min(650px,96vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto flex items-center justify-between bg-slate-900/50 border border-slate-800 border-t-0 px-2 md:px-3 py-1 md:py-2 rounded-b-xl md:rounded-b-2xl">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs md:text-sm flex-shrink-0">
                            {color === 'white' ? wName[0]?.toUpperCase() : bName[0]?.toUpperCase()}
                         </div>
-                        <span className="font-bold text-white text-sm md:text-base truncate max-w-[120px] md:max-w-none">
-                           {color === 'white' ? wName : bName} <span className="text-blue-400 text-xs">(You)</span>
+                        <span className="font-semibold text-white text-xs md:text-base truncate max-w-[100px] md:max-w-none">
+                           {color === 'white' ? wName : bName} <span className="text-blue-400 text-[10px]">(You)</span>
                         </span>
                     </div>
-                    <div className={`font-mono font-black text-2xl md:text-3xl tracking-tighter ${
+                    <div className={`font-mono font-black text-xl md:text-3xl tracking-tighter ${
                         (color === 'white' ? clocks.white : clocks.black) < 10000 && (color === 'white' ? clocks.white : clocks.black) >= 0
                             ? 'text-red-500 animate-pulse' 
                             : 'text-white'
@@ -735,43 +717,39 @@ function PlayArenaContent() {
                     </div>
                 </div>
                 
-                {/* Nav + actions row — compact on mobile */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-2 max-w-[min(650px,90vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto w-full">
-                    <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/80 px-2 py-1 rounded-full flex-shrink-0">
-                        <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4"/></button>
-                        <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronLeft className="w-4 h-4 md:w-5 md:h-5"/></button>
-                        <span className="font-mono text-[10px] font-black w-20 md:w-28 text-center text-blue-400 truncate px-1">
-                            {currentMoveIndex === -1 ? "START" : `${Math.floor(currentMoveIndex / 2) + 1}${currentMoveIndex % 2 === 0 ? '. ' : '... '}${history[currentMoveIndex]}`}
+                {/* Nav + actions row — always horizontal, ultra-compact on mobile */}
+                <div className="flex flex-row items-center justify-between gap-1 mt-1 md:mt-2 max-w-[min(650px,96vw)] md:max-w-[min(650px,60vh)] lg:max-w-[min(650px,65vh)] mx-auto w-full">
+                    <div className="flex items-center gap-0.5 bg-slate-900/80 border border-slate-700/80 px-1 py-0.5 md:px-2 md:py-1 rounded-full flex-shrink-0">
+                        <button onClick={() => goToMove(-1)} disabled={currentMoveIndex === -1} className="p-1.5 hover:bg-slate-800 rounded-full disabled:opacity-30 active:scale-90"><SkipBack className="w-3 h-3 md:w-4 md:h-4"/></button>
+                        <button onClick={() => goToMove(currentMoveIndex - 1)} disabled={currentMoveIndex === -1} className="p-1.5 hover:bg-slate-800 rounded-full disabled:opacity-30 active:scale-90"><ChevronLeft className="w-3.5 h-3.5 md:w-5 md:h-5"/></button>
+                        <span className="font-mono text-[9px] md:text-[10px] font-black w-16 md:w-28 text-center text-blue-400 truncate px-0.5">
+                            {currentMoveIndex === -1 ? "START" : `${Math.floor(currentMoveIndex / 2) + 1}${currentMoveIndex % 2 === 0 ? '. ' : '… '}${history[currentMoveIndex]}`}
                         </span>
-                        <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><ChevronRight className="w-4 h-4 md:w-5 md:h-5"/></button>
-                        <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 md:p-2 hover:bg-slate-800 rounded-full disabled:opacity-30"><SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4"/></button>
+                        <button onClick={() => goToMove(currentMoveIndex + 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 hover:bg-slate-800 rounded-full disabled:opacity-30 active:scale-90"><ChevronRight className="w-3.5 h-3.5 md:w-5 md:h-5"/></button>
+                        <button onClick={() => goToMove(history.length - 1)} disabled={currentMoveIndex === history.length - 1} className="p-1.5 hover:bg-slate-800 rounded-full disabled:opacity-30 active:scale-90"><SkipForward className="w-3 h-3 md:w-4 md:h-4"/></button>
                     </div>
 
-                    {gameOver && (
-                        <div className="flex flex-wrap items-center justify-end gap-2 w-full">
-                            {!isSpectator && (
-                                rematchState === "waiting" ? (
-                                    <span className="bg-slate-800 border border-slate-700 text-slate-400 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
-                                        {t("rematch_wait")}
-                                    </span>
-                                ) : (
-                                    <button onClick={handleRematch} className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-lg text-sm
-                                        ${rematchState === "offered" ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/30' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30'}`}>
-                                        <Swords className="w-4 h-4" /> 
-                                        {rematchState === "offered" ? t("rematch_offered") : t("rematch")}
-                                    </button>
-                                )
-                            )}
-                        </div>
+                    {gameOver && !isSpectator && (
+                        rematchState === "waiting" ? (
+                            <span className="bg-slate-800 border border-slate-700 text-slate-400 px-3 py-1.5 rounded-full text-[10px] font-bold animate-pulse">
+                                {t("rematch_wait")}
+                            </span>
+                        ) : (
+                            <button onClick={handleRematch} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all shadow-lg text-[10px] md:text-sm active:scale-95
+                                ${rematchState === "offered" ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-500/30' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30'}`}>
+                                <Swords className="w-3.5 h-3.5" />
+                                {rematchState === "offered" ? t("rematch_offered") : t("rematch")}
+                            </button>
+                        )
                     )}
                     
                     {!gameOver && !isSpectator && (
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => sendAction("draw_offer")} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 md:px-4 py-2 md:py-2.5 rounded-full border border-slate-700 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5">
+                            <button onClick={() => sendAction("draw_offer")} className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 md:px-4 py-1.5 md:py-2.5 rounded-full border border-slate-700 text-[10px] md:text-xs font-bold transition-all shadow-lg uppercase tracking-wider active:scale-95">
                                 ½ Draw
                             </button>
-                            <button onClick={() => sendAction("resign")} className="flex items-center gap-1.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 px-3 md:px-4 py-2 md:py-2.5 rounded-full border border-red-500/20 text-xs font-bold transition-all shadow-lg uppercase tracking-wider">
-                                <Flag className="w-3.5 h-3.5" /> Resign
+                            <button onClick={() => sendAction("resign")} className="flex items-center gap-1 bg-red-900/20 hover:bg-red-900/40 text-red-400 px-2.5 md:px-4 py-1.5 md:py-2.5 rounded-full border border-red-500/20 text-[10px] md:text-xs font-bold transition-all shadow-lg uppercase tracking-wider active:scale-95">
+                                <Flag className="w-3 h-3 md:w-3.5 md:h-3.5" /> Resign
                             </button>
                         </div>
                     )}
@@ -900,60 +878,61 @@ function PlayArenaContent() {
             </div>
 
             {/* MOBILE BOTTOM PANEL — tabs for Notation / Chat / Video */}
-            <div className="lg:hidden mt-2">
-                {/* Tab switcher */}
-                <div className="flex rounded-2xl overflow-hidden border border-white/5 bg-slate-900/60 mb-2">
+            <div className="lg:hidden mt-1.5">
+                {/* Tab switcher — ultra-compact pill tabs */}
+                <div className="flex rounded-xl overflow-hidden border border-white/5 bg-slate-900/70 mb-1.5">
                     <button
                         onClick={() => setMobileTab('notation')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                            mobileTab === 'notation' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                            mobileTab === 'notation' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
                         }`}
                     >
-                        <Activity className="w-3.5 h-3.5" />
+                        <Activity className="w-3 h-3" />
                         Notation
-                        {history.length > 0 && <span className="text-[9px] font-mono opacity-70">{Math.ceil(history.length / 2)}m</span>}
+                        {history.length > 0 && <span className="text-[8px] font-mono opacity-60 ml-0.5">{Math.ceil(history.length / 2)}</span>}
                     </button>
                     <button
                         onClick={() => setMobileTab('chat')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                            mobileTab === 'chat' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                            mobileTab === 'chat' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
                         }`}
                     >
-                        <MessageSquare className="w-3.5 h-3.5" />
+                        <MessageSquare className="w-3 h-3" />
                         Chat
+                        {logs.length > 0 && <span className="text-[8px] font-mono opacity-60 ml-0.5">{logs.length}</span>}
                     </button>
                     {showVideo && (
                         <button
                             onClick={() => setMobileTab('video')}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
-                                mobileTab === 'video' ? 'bg-blue-600/30 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-400'
+                            className={`flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-black uppercase tracking-wider transition-colors ${
+                                mobileTab === 'video' ? 'bg-blue-600/25 text-blue-400 border-b-2 border-blue-500' : 'text-slate-500'
                             }`}
                         >
-                            <Video className="w-3.5 h-3.5" />
+                            <Video className="w-3 h-3" />
                             Video
                         </button>
                     )}
                 </div>
 
-                {/* Tab content */}
+                {/* Tab content — dynamic height based on remaining screen space */}
                 {mobileTab === 'notation' && (
-                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden h-48">
-                        <div ref={scrollRef} className="h-full overflow-y-auto p-3 space-y-1">
+                    <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden" style={{height: 'calc(100dvh - 380px)', minHeight: '160px', maxHeight: '280px'}}>
+                        <div ref={scrollRef} className="h-full overflow-y-auto p-2 space-y-0.5">
                             {history.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-slate-600 opacity-20 gap-2">
-                                    <Zap className="w-6 h-6 rotate-12" />
-                                    <span className="text-[10px] uppercase font-black tracking-widest">Awaiting moves</span>
+                                    <Zap className="w-5 h-5 rotate-12" />
+                                    <span className="text-[9px] uppercase font-black tracking-widest">Awaiting moves</span>
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-0.5">
                                     {Array.from({ length: Math.ceil(history.length / 2) }).map((_, i) => {
                                         const wIndex = i * 2;
                                         const bIndex = wIndex + 1;
                                         return (
-                                            <div key={i} className="grid grid-cols-8 text-[12px] font-mono rounded-xl overflow-hidden border border-white/5 bg-white/[0.015]">
-                                                <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2.5 font-bold border-r border-white/5 text-[10px]">{i + 1}</div>
-                                                <div onClick={() => goToMove(wIndex)} className={`col-span-3 flex items-center px-3 py-2.5 font-bold cursor-pointer border-r border-white/5 active:bg-blue-600 ${currentMoveIndex === wIndex ? 'bg-blue-500 text-white' : 'text-slate-100'}`}>{history[wIndex]}</div>
-                                                <div onClick={() => goToMove(bIndex)} className={`col-span-4 flex items-center px-3 py-2.5 cursor-pointer active:bg-blue-600 ${!history[bIndex] ? '' : currentMoveIndex === bIndex ? 'bg-blue-500 text-white font-bold' : 'text-slate-400'}`}>{history[bIndex] || ""}</div>
+                                            <div key={i} className="grid grid-cols-8 text-[13px] font-mono rounded-lg overflow-hidden border border-white/5 bg-white/[0.015]">
+                                                <div className="col-span-1 flex items-center justify-center bg-white/5 text-slate-600 py-2 font-bold border-r border-white/5 text-[10px]">{i + 1}</div>
+                                                <div onClick={() => goToMove(wIndex)} className={`col-span-3 flex items-center px-2 py-2 font-bold cursor-pointer border-r border-white/5 active:bg-blue-600 transition-colors ${currentMoveIndex === wIndex ? 'bg-blue-500 text-white' : 'text-slate-100'}`}>{history[wIndex]}</div>
+                                                <div onClick={() => goToMove(bIndex)} className={`col-span-4 flex items-center px-2 py-2 cursor-pointer active:bg-blue-600 transition-colors ${!history[bIndex] ? '' : currentMoveIndex === bIndex ? 'bg-blue-500 text-white font-bold' : 'text-slate-400'}`}>{history[bIndex] || ""}</div>
                                             </div>
                                         );
                                     })}
@@ -964,9 +943,9 @@ function PlayArenaContent() {
                 )}
 
                 {mobileTab === 'chat' && (
-                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden flex flex-col h-48">
-                        <div className="flex-1 overflow-y-auto p-3 space-y-1 font-mono text-[11px] text-slate-400">
-                            {logs.length === 0 && <p className="text-slate-600 italic text-center pt-4">No messages yet</p>}
+                    <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden flex flex-col" style={{height: 'calc(100dvh - 380px)', minHeight: '160px', maxHeight: '280px'}}>
+                        <div className="flex-1 overflow-y-auto p-2.5 space-y-1 font-mono text-[11px] text-slate-400">
+                            {logs.length === 0 && <p className="text-slate-600 italic text-center pt-4 text-[10px]">No messages yet</p>}
                             {logs.map((l, i) => (
                                 <div key={i} className={l.includes(":") ? "text-slate-200" : "text-slate-500 italic"}>{l}</div>
                             ))}
@@ -977,25 +956,25 @@ function PlayArenaContent() {
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 placeholder="Type to chat..."
-                                className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
+                                className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-[12px] text-white outline-none focus:border-blue-500/50 transition-all font-mono"
                             />
                         </form>
                     </div>
                 )}
 
                 {mobileTab === 'video' && showVideo && (
-                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden" style={{height: '220px'}}>
+                    <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden" style={{height: 'calc(100dvh - 380px)', minHeight: '180px', maxHeight: '280px'}}>
                         <VideoChat matchId={id} />
                     </div>
                 )}
 
                 {gameOver && (
-                    <div className="flex gap-2 mt-2">
-                        <button onClick={handleDownloadPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider">
-                            <Archive className="w-3.5 h-3.5" /> PGN
+                    <div className="flex gap-1.5 mt-1.5">
+                        <button onClick={handleDownloadPGN} className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800/80 border border-white/10 text-slate-300 px-2 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-transform">
+                            <Archive className="w-3 h-3" /> PGN
                         </button>
-                        <button onClick={handleCopyPGN} className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 border border-white/10 text-slate-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider">
-                            <Copy className="w-3.5 h-3.5" /> Copy
+                        <button onClick={handleCopyPGN} className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800/80 border border-white/10 text-slate-300 px-2 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-transform">
+                            <Copy className="w-3 h-3" /> Copy
                         </button>
                     </div>
                 )}
