@@ -231,7 +231,9 @@ function PlayArenaContent() {
                   if (move.san) {
                       // Basic check: if this move index already has a value, or if it's identical
                       // to the very last move in our history, we might be receiving our own move back.
-                      const lastMoveUci = gameRef.current.history({ verbose: true }).pop()?.lan;
+                      const history = gameRef.current.history({ verbose: true });
+                      const last = history[history.length - 1];
+                      const lastMoveUci = last ? (last.from + last.to + (last.promotion || "")) : undefined;
                       const currentUci = move.uci;
 
                       if (lastMoveUci !== currentUci) {
