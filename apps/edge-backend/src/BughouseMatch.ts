@@ -424,7 +424,17 @@ export class BughouseMatch {
           const resetMsg = JSON.stringify({ type: "rematch_reset" });
           this.sessions.forEach((_, s) => s.send(resetMsg));
 
-          // Re-fill any bot slots (keep existing human slots intact)
+          // Swap colors for rematch: w0 ↔ b0, w1 ↔ b1
+          // Human players switch sides; bot slots will be re-assigned below.
+          const swap = (a: "w0"|"b0"|"w1"|"b1", b: "w0"|"b0"|"w1"|"b1") => {
+            const tmp = { ...(this.lobby as any)[a] };
+            (this.lobby as any)[a] = { ...(this.lobby as any)[b] };
+            (this.lobby as any)[b] = tmp;
+          };
+          swap("w0", "b0");
+          swap("w1", "b1");
+
+          // Re-fill any bot slots (keep existing human slots intact after swap)
           for (const r of ["w0","b0","w1","b1"] as const) {
             const slot = (this.lobby as any)[r];
             if (!slot.isClaimed || slot.isBot) {

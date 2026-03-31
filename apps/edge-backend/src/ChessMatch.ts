@@ -342,11 +342,31 @@ export class ChessMatch {
     const moves = this.engine.moves({ verbose: true });
     if (moves.length === 0) return;
     const chosen = moves[Math.floor(Math.random() * moves.length)];
+
+    // ── Clock deduction ──────────────────────────────────────────────────────
+    // We must deduct the BOT's time BEFORE calling engine.move().
+    // After engine.move(), engine.turn() switches to the opponent — so calling
+    // deductTime() afterwards would deduct the HUMAN's time instead of the bot's.
+    // moveCount > 0 means the clock has been started (lastMoveTimestamp is set).
+    if (this.moveCount > 0 && !this.isUnlimited) {
+      const now = Date.now();
+      const elapsed = now - this.lastMoveTimestamp;
+      if (this.botColor === "w") {
+        this.whiteTimeMs = Math.max(0, this.whiteTimeMs - elapsed);
+        if (this.whiteTimeMs === 0) { this.endGame(this.matchId, "0-1", "timeout"); return; }
+      } else {
+        this.blackTimeMs = Math.max(0, this.blackTimeMs - elapsed);
+        if (this.blackTimeMs === 0) { this.endGame(this.matchId, "1-0", "timeout"); return; }
+      }
+      this.lastMoveTimestamp = now;
+    }
+
     this.engine.move(chosen);
     this.moveCount++;
     this.drawOffer = null;
+
+    // Start the clock anchor after bot's first move
     if (this.moveCount === 1 && !this.isUnlimited) this.lastMoveTimestamp = Date.now();
-    else this.deductTime();
     
     // Broadcast the move event so frontend can track history
     const uci = chosen.from + chosen.to + (chosen.promotion || "");
