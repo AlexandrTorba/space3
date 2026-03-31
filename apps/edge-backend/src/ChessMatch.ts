@@ -329,7 +329,10 @@ export class ChessMatch {
   }
 
   handleBotTurn() {
-    if (!this.isActive || this.engine.turn() !== this.botColor || (this.moveCount === 0 && this.botColor === "b")) return;
+    // Don't move if game inactive or it's not bot's turn
+    if (!this.isActive || this.engine.turn() !== this.botColor) return;
+    // If bot is Black, wait until White (human) has made at least 1 move
+    if (this.botColor === "b" && this.engine.history().length === 0) return;
     const moves = this.engine.moves({ verbose: true });
     if (moves.length === 0) return;
     const chosen = moves[Math.floor(Math.random() * moves.length)];
