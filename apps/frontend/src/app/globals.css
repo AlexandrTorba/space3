@@ -2,11 +2,16 @@
 
 @theme {
   /* Palette from AdobeStock_428769174 — futuristic space pilot */
-  --color-antigravity-dark:   #0D0F18;   /* deep space base */
-  --color-antigravity-accent: #A855F7;   /* violet visor shimmer */
-  --color-antigravity-neon:   #EC4899;   /* neon-pink suit stripes */
-  --color-antigravity-ice:    #BAD6F0;   /* cold blue bg glow */
-  --color-antigravity-white:  #EFF4FB;   /* white armor highlight */
+  --color-antigravity-dark: #0D0F18;
+  /* deep space base */
+  --color-antigravity-accent: #A855F7;
+  /* violet visor shimmer */
+  --color-antigravity-neon: #EC4899;
+  /* neon-pink suit stripes */
+  --color-antigravity-ice: #BAD6F0;
+  /* cold blue bg glow */
+  --color-antigravity-white: #EFF4FB;
+  /* white armor highlight */
 }
 
 :root {
@@ -15,19 +20,19 @@
   --text-primary: #0F172A;
   --text-secondary: #475569;
   --text-muted: #94A3B8;
-  
+
   /* 30% - Secondary Surface */
   --surface-color: #FFFFFF;
   --surface-border: #E2E8F0;
   --surface-glass: rgba(255, 255, 255, 0.9);
-  
+
   /* 10% - Accent Color (Royal Blue) */
   --brand-primary: #2563EB;
   --brand-hover: #1D4ED8;
-  
+
   --settings-bg: #FAFAFA;
   --button-bg: #F1F5F9;
-  
+
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
   --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
 }
@@ -38,12 +43,12 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #475569;
-  
+
   /* 30% - Secondary Surface */
   --surface-color: #0A0C14;
   --surface-border: rgba(255, 255, 255, 0.08);
   --surface-glass: rgba(10, 12, 20, 0.95);
-  
+
   /* 10% - Accent Color (Electric Blue) */
   --brand-primary: #3B82F6;
   --brand-hover: #60A5FA;
@@ -62,19 +67,25 @@
    */
 
   /* 60% — deep cold void, like the inside of a hyperdrive corridor */
-  --bg-color: #080C14;
-  --text-primary: #EDF2FB;    /* white armor highlight */
-  --text-secondary: #8BAAC8;  /* cold blue-grey mid-tone */
-  --text-muted: #3E5068;      /* deep shadow zone */
+  --bg-color: #1e2d4d;
+  --text-primary: #EDF2FB;
+  /* white armor highlight */
+  --text-secondary: #8BAAC8;
+  /* cold blue-grey mid-tone */
+  --text-muted: #3E5068;
+  /* deep shadow zone */
 
   /* 30% — surfaces: dark navy glass with icy blue tint */
   --surface-color: #0C1220;
-  --surface-border: rgba(168, 85, 247, 0.18);   /* violet shimmer border */
+  --surface-border: rgba(168, 85, 247, 0.18);
+  /* violet shimmer border */
   --surface-glass: rgba(10, 15, 30, 0.93);
 
   /* 10% — accent: violet visor → neon pink hover (suit stripes) */
-  --brand-primary: #A855F7;   /* violet visor shimmer */
-  --brand-hover: #EC4899;     /* neon-pink suit stripe */
+  --brand-primary: #f75588;
+  /* violet visor shimmer */
+  --brand-hover: #EC4899;
+  /* neon-pink suit stripe */
 
   --settings-bg: #0A101E;
   --button-bg: rgba(168, 85, 247, 0.07);
@@ -92,35 +103,57 @@ body {
 }
 
 /* Base Overrides */
-main, .min-h-screen {
+main,
+.min-h-screen {
   background-color: var(--bg-color) !important;
 }
 
 /* Surface Overrides */
-[class*='bg-slate-900'], [class*='bg-slate-950'], [class*='bg-[#111827]'], [class*='bg-[#0f172a]'], [class*='bg-black'], [class*='bg-slate-950/'], [class*='bg-slate-900/'] {
+[class*='bg-slate-900'],
+[class*='bg-slate-950'],
+[class*='bg-[#111827]'],
+[class*='bg-[#0f172a]'],
+[class*='bg-black'],
+[class*='bg-slate-950/'],
+[class*='bg-slate-900/'] {
   background-color: var(--surface-color) !important;
   border-color: var(--surface-border) !important;
 }
 
-[class*='/60'], [class*='/80'], [class*='/50'], [class*='/40'] {
+[class*='/60'],
+[class*='/80'],
+[class*='/50'],
+[class*='/40'] {
   background-color: var(--surface-glass) !important;
   backdrop-filter: blur(12px);
 }
 
 /* Accent Overrides */
-.bg-blue-600, [class*='bg-[var(--brand-primary)]'] {
-    background-color: var(--brand-primary) !important;
-    color: white !important;
+.bg-blue-600,
+[class*='bg-[var(--brand-primary)]'] {
+  background-color: var(--brand-primary) !important;
+  color: white !important;
 }
 
-.text-blue-400, .text-blue-500 {
-    color: var(--brand-primary) !important;
+.text-blue-400,
+.text-blue-500 {
+  color: var(--brand-primary) !important;
 }
 
 /* Text Polish */
-.text-white, .text-slate-100 { color: var(--text-primary) !important; }
-.text-slate-300, .text-slate-400 { color: var(--text-secondary) !important; }
-.text-slate-500 { color: var(--text-muted) !important; }
+.text-white,
+.text-slate-100 {
+  color: var(--text-primary) !important;
+}
+
+.text-slate-300,
+.text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+
+.text-slate-500 {
+  color: var(--text-muted) !important;
+}
 
 .theme-hero-gradient {
   background-clip: text;
@@ -151,7 +184,7 @@ main, .min-h-screen {
   bottom: 0;
   z-index: -1;
   background-color: var(--bg-color);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
@@ -161,17 +194,30 @@ main, .min-h-screen {
 :root.antigravity .mesh-gradient {
   /* Mimics the cold blue corridor bg + violet visor glow + neon-pink highlights */
   background-image:
-    radial-gradient(at 10% 10%,  rgba(186, 214, 240, 0.06) 0px, transparent 50%),   /* ice blue top-left */
-    radial-gradient(at 90% 5%,   rgba(168, 85,  247, 0.08) 0px, transparent 45%),   /* violet top-right */
-    radial-gradient(at 50% 50%,  rgba(168, 85,  247, 0.04) 0px, transparent 40%),   /* violet core */
-    radial-gradient(at 85% 90%,  rgba(236, 72,  153, 0.06) 0px, transparent 45%),   /* neon-pink bottom-right */
-    radial-gradient(at 5%  85%,  rgba(186, 214, 240, 0.04) 0px, transparent 50%);   /* ice blue bottom-left */
+    radial-gradient(at 10% 10%, rgba(186, 214, 240, 0.06) 0px, transparent 50%),
+    /* ice blue top-left */
+    radial-gradient(at 90% 5%, rgba(168, 85, 247, 0.08) 0px, transparent 45%),
+    /* violet top-right */
+    radial-gradient(at 50% 50%, rgba(168, 85, 247, 0.04) 0px, transparent 40%),
+    /* violet core */
+    radial-gradient(at 85% 90%, rgba(236, 72, 153, 0.06) 0px, transparent 45%),
+    /* neon-pink bottom-right */
+    radial-gradient(at 5% 85%, rgba(186, 214, 240, 0.04) 0px, transparent 50%);
+  /* ice blue bottom-left */
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float {

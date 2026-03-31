@@ -266,7 +266,7 @@ function PlayArenaContent() {
              } else if (action.actionType === "rematch_accept") {
                 const newId = action.matchId;
                 const newColor = isSpectator ? "spectator" : (color === "white" ? "black" : "white");
-                router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}`);
+                router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}${isBot ? "&isBot=true" : ""}`);
              }
           }
           else if (update.event.case === "chat") {
