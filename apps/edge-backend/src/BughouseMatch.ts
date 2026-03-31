@@ -401,7 +401,8 @@ export class BughouseMatch {
           return this.rematchOffers.has(slot.sessionId);
         });
 
-        if (allHumansOffered || humanSlots.length <= 1) {
+        // Any 1 human player triggering rematch is enough — start immediately
+        if (this.rematchOffers.size >= 1) {
           // Reset game state
           this.rematchOffers.clear();
           this.isStarted = false;
