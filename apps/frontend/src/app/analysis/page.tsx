@@ -66,6 +66,32 @@ export default function AnalysisView() {
 
   // Persistence: Load from localStorage
   useEffect(() => {
+    // Check if archive page redirected us with a PGN to import
+    const importPgn = localStorage.getItem("ag_import_pgn");
+    if (importPgn) {
+      localStorage.removeItem("ag_import_pgn"); // consume it immediately
+      try {
+        const engine = new Chess();
+        engine.loadPgn(importPgn.trim());
+        gameRef.current = engine;
+        const h = engine.history();
+        const newVersion: AnalysisVersion = {
+          id: `v-archive-${Date.now()}`,
+          name: "Archive Game",
+          fen: engine.fen(),
+          history: h,
+        };
+        setVersions([newVersion]);
+        setActiveVersionId(newVersion.id);
+        setFen(engine.fen());
+        setHistory(h);
+        setCurrentMoveIndex(h.length - 1);
+        setPastePgn(engine.pgn());
+        setHasHydrated(true);
+        return;
+      } catch (e) {}
+    }
+
     const saved = localStorage.getItem("ag_analysis_versions");
     if (saved) {
       try {
