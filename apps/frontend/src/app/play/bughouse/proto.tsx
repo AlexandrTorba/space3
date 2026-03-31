@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Activity, Swords, Users, Zap, Timer } from "lucide-react";
+import { Activity, Swords, Users, Zap } from "lucide-react";
 import { useTranslation } from "@/i18n";
 import { useSettings, boardThemes } from "@/hooks/useSettings";
 

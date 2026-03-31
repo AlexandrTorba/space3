@@ -69,6 +69,8 @@ export function useSettings() {
         if (parsed.pieceSet && !["wikipedia", "leipzig"].includes(parsed.pieceSet)) {
             delete parsed.pieceSet;
         }
+        // Single-shot localStorage hydration on mount — safe, not cascading
+        // eslint-disable-next-line react-compiler/react-compiler
         setSettings(prev => ({ ...prev, ...parsed, playerName: initialName }));
       } catch (e) {
         setSettings(prev => ({ ...prev, playerName: initialName }));

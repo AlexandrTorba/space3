@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface MagicMenuProps {
   activeTab: string;
@@ -13,6 +13,8 @@ export default function MagicMenu({ activeTab, onChange, tabs }: MagicMenuProps)
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Standard SSR hydration guard - runs exactly once after mount, not cascading
+    // eslint-disable-next-line react-compiler/react-compiler
     setMounted(true);
   }, []);
 
@@ -51,7 +53,7 @@ export default function MagicMenu({ activeTab, onChange, tabs }: MagicMenuProps)
           return (
             <button
               key={tab.id}
-              onClick={() => onChange(tab.id as any)}
+              onClick={() => onChange(tab.id)}
               className="relative z-10 flex flex-col items-center justify-center w-full h-full"
             >
               <motion.div
