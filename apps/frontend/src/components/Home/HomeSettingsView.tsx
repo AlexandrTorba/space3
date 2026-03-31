@@ -1,14 +1,28 @@
 "use client";
 
 import { useTranslation, Language, translations } from "@/i18n";
-import { useSettings, boardThemes, BoardTheme } from "@/hooks/useSettings";
+import { useSettings, boardThemes, BoardTheme, PieceSet } from "@/hooks/useSettings";
 import { Settings, Palette, Globe, Eye, Sliders, User, Layers, Cpu } from "lucide-react";
 import { motion } from "framer-motion";
 import MagicSegmentedControl from "./MagicSegmentedControl";
 
+/**
+ * HomeSettingsView — full-page settings used on the home page "Settings" tab.
+ * Must stay 100% in sync with SettingsPanel (the slide-in panel used during games).
+ * Both read/write the same `useSettings()` hook → single source of truth.
+ */
 export default function HomeSettingsView() {
   const { lang, changeLanguage, t } = useTranslation();
   const { settings, updateSettings } = useSettings();
+
+  const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
+    <button
+      onClick={onToggle}
+      className={`w-10 h-5 rounded-full transition-all relative flex-shrink-0 ${value ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" : "bg-slate-700"}`}
+    >
+      <motion.div animate={{ x: value ? 22 : 4 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
+    </button>
+  );
 
   return (
     <div className="w-full bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 md:p-10 animate-in fade-in zoom-in-95 duration-500 max-w-4xl mx-auto shadow-2xl overflow-hidden">
@@ -23,15 +37,16 @@ export default function HomeSettingsView() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {/* Left Column */}
+            {/* ── Left Column ─────────────────────────────────────────── */}
             <div className="space-y-8">
-                {/* Profile Section */}
-                <section className="space-y-4">
+
+                {/* Player Name */}
+                <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
                         <User className="w-3 h-3" /> {t("profile_section") || "Profile"}
                     </label>
                     <div className="p-1 bg-white/[0.03] rounded-2xl border border-white/5 focus-within:border-blue-500/50 transition-all shadow-inner">
-                        <input 
+                        <input
                             type="text"
                             value={settings.playerName}
                             onChange={(e) => updateSettings({ playerName: e.target.value })}
@@ -42,19 +57,19 @@ export default function HomeSettingsView() {
                     </div>
                 </section>
 
-                {/* Language Section */}
+                {/* Language */}
                 <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
                         <Globe className="w-3 h-3" /> {t("language_section") || "Language"}
                     </label>
-                    <MagicSegmentedControl 
-                        value={lang} 
-                        onChange={(id) => changeLanguage(id as any)} 
+                    <MagicSegmentedControl
+                        value={lang}
+                        onChange={(id) => changeLanguage(id as Language)}
                         options={Object.keys(translations).map(l => ({ id: l, label: l.toUpperCase() }))}
                     />
                 </section>
 
-                {/* Appearance */}
+                {/* Appearance / Theme */}
                 <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
                         <Palette className="w-3 h-3" /> {t("appearance_section") || "Appearance"}
@@ -63,24 +78,21 @@ export default function HomeSettingsView() {
                         value={settings.uiMode}
                         onChange={(id) => updateSettings({ uiMode: id as any })}
                         options={[
-                            { id: "dark", label: "Dark", icon: <Eye className="w-3 h-3" /> },
-                            { id: "light", label: "Light", icon: <Layers className="w-3 h-3" /> },
-                            { id: "antigravity", label: "Antigravity", icon: <span className="text-xs">🪐</span> }
+                            { id: "dark",        label: t("theme_dark")  || "Dark",        icon: <Eye   className="w-3 h-3" /> },
+                            { id: "light",       label: t("theme_light") || "Light",       icon: <Layers className="w-3 h-3" /> },
+                            { id: "antigravity", label: t("theme_antigravity") || "Antigravity", icon: <span className="text-xs">🪐</span> },
                         ]}
                     />
                 </section>
-            </div>
 
-            {/* Right Column */}
-            <div className="space-y-8">
-                {/* Board Themes */}
+                {/* Board Theme */}
                 <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
                         <Palette className="w-3 h-3" /> {t("board_theme_section") || "Board Theme"}
                     </label>
-                    <MagicSegmentedControl 
+                    <MagicSegmentedControl
                         value={settings.boardTheme}
-                        onChange={(id) => updateSettings({ boardTheme: id as any })}
+                        onChange={(id) => updateSettings({ boardTheme: id as BoardTheme })}
                         options={(Object.keys(boardThemes) as BoardTheme[]).map(theme => ({
                             id: theme,
                             label: theme.toUpperCase(),
@@ -89,12 +101,31 @@ export default function HomeSettingsView() {
                                     <div className="w-full h-full" style={{ backgroundColor: boardThemes[theme].light }} />
                                     <div className="w-full h-full" style={{ backgroundColor: boardThemes[theme].dark }} />
                                 </div>
-                            )
+                            ),
                         }))}
                     />
                 </section>
 
-                {/* Gameplay Settings */}
+                {/* Piece Set */}
+                <section className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
+                        <Layers className="w-3 h-3" /> {t("piece_set_section") || "Piece Set"}
+                    </label>
+                    <MagicSegmentedControl
+                        value={settings.pieceSet}
+                        onChange={(id) => updateSettings({ pieceSet: id as PieceSet })}
+                        options={[
+                            { id: "wikipedia", label: "Wikipedia" },
+                            { id: "leipzig",   label: "Leipzig" },
+                        ]}
+                    />
+                </section>
+            </div>
+
+            {/* ── Right Column ─────────────────────────────────────────── */}
+            <div className="space-y-8">
+
+                {/* Gameplay toggles */}
                 <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
                         <Sliders className="w-3 h-3" /> {t("gameplay_section") || "Gameplay"}
@@ -102,73 +133,45 @@ export default function HomeSettingsView() {
                     <div className="space-y-3 bg-white/[0.03] p-5 rounded-2xl border border-white/5 shadow-inner">
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black text-slate-300 uppercase tracking-tight">{t("always_promote_to_queen") || "Auto Queen"}</span>
-                            <button 
-                                onClick={() => updateSettings({ alwaysPromoteToQueen: !settings.alwaysPromoteToQueen })}
-                                className={`w-10 h-5 rotate-0 rounded-full transition-all relative ${settings.alwaysPromoteToQueen ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-slate-700'}`}
-                            >
-                                <motion.div animate={{ x: settings.alwaysPromoteToQueen ? 22 : 4 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
-                            </button>
+                            <Toggle value={settings.alwaysPromoteToQueen} onToggle={() => updateSettings({ alwaysPromoteToQueen: !settings.alwaysPromoteToQueen })} />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black text-slate-300 uppercase tracking-tight">{t("coordinates") || "Coordinates"}</span>
-                            <button 
-                                onClick={() => updateSettings({ showCoordinates: !settings.showCoordinates })}
-                                className={`w-10 h-5 rotate-0 rounded-full transition-all relative ${settings.showCoordinates ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-slate-700'}`}
-                            >
-                                <motion.div animate={{ x: settings.showCoordinates ? 22 : 4 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
-                            </button>
+                            <Toggle value={settings.showCoordinates} onToggle={() => updateSettings({ showCoordinates: !settings.showCoordinates })} />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-black text-slate-300 uppercase tracking-tight">{t("enable_premove") || "Pre-move"}</span>
-                            <button 
-                                onClick={() => updateSettings({ enablePremove: !settings.enablePremove })}
-                                className={`w-10 h-5 rotate-0 rounded-full transition-all relative ${settings.enablePremove ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-slate-700'}`}
-                            >
-                                <motion.div animate={{ x: settings.enablePremove ? 22 : 4 }} className="w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm" />
-                            </button>
+                            <Toggle value={settings.enablePremove} onToggle={() => updateSettings({ enablePremove: !settings.enablePremove })} />
                         </div>
                     </div>
                 </section>
 
-                {/* Engine Settings */}
+                {/* Bot Difficulty — 4 levels matching BotEngine.ts */}
                 <section className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em] opacity-60">
-                        <Cpu className="w-3 h-3" /> {t("bot_elo") || "Bot Strength (ELO)"}
+                        <Cpu className="w-3 h-3" /> {t("bot_elo") || "Bot Difficulty"}
                     </label>
-                    <div className="space-y-4">
-                        <MagicSegmentedControl 
-                            value={String(settings.botElo)}
-                            onChange={(id) => updateSettings({ botElo: parseInt(id) })}
-                            options={[
-                                { id: "1200", label: "1200" },
-                                { id: "1500", label: "1500" },
-                                { id: "2000", label: "2000" },
-                                { id: "2500", label: "2500" },
-                                { id: "3200", label: "MAX" }
-                            ]}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/5 shadow-inner">
-                               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t("engine_threads") || "Threads"}</div>
-                               <input 
-                                   type="number"
-                                   min="1" max="128"
-                                   value={settings.engineThreads}
-                                   onChange={(e) => updateSettings({ engineThreads: parseInt(e.target.value) || 1 })}
-                                   className="w-full bg-transparent text-lg font-black text-blue-400 focus:outline-none"
-                               />
-                           </div>
-                           <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/5 shadow-inner">
-                               <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t("engine_hash") || "Hash (MB)"}</div>
-                               <input 
-                                   type="number"
-                                   min="16" max="4096" step="16"
-                                   value={settings.engineHash}
-                                   onChange={(e) => updateSettings({ engineHash: parseInt(e.target.value) || 16 })}
-                                   className="w-full bg-transparent text-lg font-black text-blue-400 focus:outline-none"
-                               />
-                           </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        {([
+                            { elo: 400,  label: "Random",  sub: "~400 Elo",  emoji: "🎲" },
+                            { elo: 750,  label: "Beginner", sub: "~600 Elo", emoji: "🐣" },
+                            { elo: 1050, label: "Casual",  sub: "~900 Elo",  emoji: "🧩" },
+                            { elo: 1500, label: "Strong",  sub: "~1200 Elo", emoji: "⚡" },
+                        ] as const).map(({ elo, label, sub, emoji }) => (
+                            <button
+                                key={elo}
+                                onClick={() => updateSettings({ botElo: elo })}
+                                className={`flex flex-col items-center justify-center gap-1 py-4 px-2 rounded-2xl border transition-all ${
+                                    settings.botElo === elo
+                                        ? "bg-blue-500/15 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10"
+                                        : "bg-white/[0.03] border-white/5 text-slate-400 hover:border-white/20 hover:text-slate-200"
+                                }`}
+                            >
+                                <span className="text-2xl leading-none">{emoji}</span>
+                                <span className="text-[11px] font-black uppercase tracking-wide leading-none mt-1">{label}</span>
+                                <span className="text-[9px] font-bold opacity-50 leading-none">{sub}</span>
+                            </button>
+                        ))}
                     </div>
                 </section>
             </div>
