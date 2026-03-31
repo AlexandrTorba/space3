@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --color-antigravity-dark: #121416;
-  --color-antigravity-accent: #3B82F6;
-  --color-antigravity-neon: #60A5FA;
+  /* Palette from AdobeStock_428769174 — futuristic space pilot */
+  --color-antigravity-dark:   #0D0F18;   /* deep space base */
+  --color-antigravity-accent: #A855F7;   /* violet visor shimmer */
+  --color-antigravity-neon:   #EC4899;   /* neon-pink suit stripes */
+  --color-antigravity-ice:    #BAD6F0;   /* cold blue bg glow */
+  --color-antigravity-white:  #EFF4FB;   /* white armor highlight */
 }
 
 :root {
@@ -53,26 +56,31 @@
 }
 
 :root.antigravity {
-  /* Deep cosmic violet-black — like the event horizon of a black hole */
-  --bg-color: #08060E;
-  --text-primary: #EDE9F6;
-  --text-secondary: #A89EC8;
-  --text-muted: #5E527A;
-  
-  /* Surfaces — translucent dark violet glass */
-  --surface-color: #0E0A18;
-  --surface-border: rgba(139, 92, 246, 0.12);
-  --surface-glass: rgba(14, 10, 24, 0.92);
-  
-  /* Accent — warm amber/gold (chess royalty) with violet undertone */
-  --brand-primary: #D4A030;
-  --brand-hover: #E8B84A;
+  /*
+   * Palette source: AdobeStock_428769174
+   * Futuristic space pilot — white armor, violet visor, neon-pink accents, cold blue bg
+   */
 
-  --settings-bg: #100C1C;
-  --button-bg: rgba(139, 92, 246, 0.06);
+  /* 60% — deep cold void, like the inside of a hyperdrive corridor */
+  --bg-color: #080C14;
+  --text-primary: #EDF2FB;    /* white armor highlight */
+  --text-secondary: #8BAAC8;  /* cold blue-grey mid-tone */
+  --text-muted: #3E5068;      /* deep shadow zone */
 
-  --shadow-sm: 0 2px 6px rgba(90, 50, 180, 0.15);
-  --shadow-lg: 0 20px 50px rgba(90, 50, 180, 0.2);
+  /* 30% — surfaces: dark navy glass with icy blue tint */
+  --surface-color: #0C1220;
+  --surface-border: rgba(168, 85, 247, 0.18);   /* violet shimmer border */
+  --surface-glass: rgba(10, 15, 30, 0.93);
+
+  /* 10% — accent: violet visor → neon pink hover (suit stripes) */
+  --brand-primary: #A855F7;   /* violet visor shimmer */
+  --brand-hover: #EC4899;     /* neon-pink suit stripe */
+
+  --settings-bg: #0A101E;
+  --button-bg: rgba(168, 85, 247, 0.07);
+
+  --shadow-sm: 0 2px 8px rgba(168, 85, 247, 0.2);
+  --shadow-lg: 0 20px 50px rgba(168, 85, 247, 0.18);
 }
 
 body {
@@ -151,12 +159,13 @@ main, .min-h-screen {
 }
 
 :root.antigravity .mesh-gradient {
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(212, 160, 48, 0.04) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(109, 40, 217, 0.05) 0px, transparent 40%),
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(212, 160, 48, 0.03) 0px, transparent 50%);
+  /* Mimics the cold blue corridor bg + violet visor glow + neon-pink highlights */
+  background-image:
+    radial-gradient(at 10% 10%,  rgba(186, 214, 240, 0.06) 0px, transparent 50%),   /* ice blue top-left */
+    radial-gradient(at 90% 5%,   rgba(168, 85,  247, 0.08) 0px, transparent 45%),   /* violet top-right */
+    radial-gradient(at 50% 50%,  rgba(168, 85,  247, 0.04) 0px, transparent 40%),   /* violet core */
+    radial-gradient(at 85% 90%,  rgba(236, 72,  153, 0.06) 0px, transparent 45%),   /* neon-pink bottom-right */
+    radial-gradient(at 5%  85%,  rgba(186, 214, 240, 0.04) 0px, transparent 50%);   /* ice blue bottom-left */
 }
 
 @keyframes float {
