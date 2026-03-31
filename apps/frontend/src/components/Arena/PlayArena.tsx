@@ -332,14 +332,19 @@ function PlayArenaContent() {
      }
 
       const interval = setInterval(() => {
-          if (history.length === 0) return; // Clocks don't tick until white makes the first move
+          // Don't tick until first move (use moveHistoryRef, NOT window.history!)
+          if (moveHistoryRef.current.length === 0) return;
+          // Read current turn inside callback so it's always fresh after server updates
+          const t = gameRef.current.turn();
           setClocks(prev => ({
-              white: turn === 'w' ? Math.max(0, prev.white - 100) : prev.white,
-              black: turn === 'b' ? Math.max(0, prev.black - 100) : prev.black,
+              white: t === 'w' ? Math.max(0, prev.white - 100) : prev.white,
+              black: t === 'b' ? Math.max(0, prev.black - 100) : prev.black,
           }));
       }, 100);
      return () => clearInterval(interval);
-  }, [gameOver, fen, clocks.white < 0, preMove]);
+  // NOTE: 'fen' intentionally excluded from deps — fen changes must NOT restart the interval
+  // (restarting would visually reset the clock display on every move)
+  }, [gameOver, clocks.white < 0, preMove]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mounted || !id) return <div key="skeleton" className="min-h-screen bg-[#07090E]" />;
 
