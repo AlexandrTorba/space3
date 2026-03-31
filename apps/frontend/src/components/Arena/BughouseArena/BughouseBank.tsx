@@ -15,7 +15,7 @@ interface BughouseBankProps {
 export const BughouseBank: React.FC<BughouseBankProps> = ({
   bank, boardIdx, playerColor, selectedPiece, setSelectedPiece, getPieceUrl, placementHint, emptyLabel, compact = false
 }) => {
-  const isSelected = (p: string) => 
+  const isSelected = (p: string) =>
     selectedPiece?.board === boardIdx && selectedPiece?.char === p;
 
   const hasSelection = selectedPiece?.board === boardIdx;
@@ -30,10 +30,19 @@ export const BughouseBank: React.FC<BughouseBankProps> = ({
           {placementHint || "Click a square to place"}
         </div>
       )}
-      <div className={`${containerH} bg-white/5 rounded-xl flex items-center px-2 gap-1 border border-white/5 overflow-x-auto custom-scrollbar`}>
+      <div className={`${containerH} bg-slate-700/40 rounded-xl flex items-center px-2 gap-1 border border-white/10 overflow-x-auto custom-scrollbar`}>
         {bank?.map((p: string, i: number) => {
             const pieceCode = p.length === 1 ? `${playerColor}${p.toUpperCase()}` : p;
+            const isWhitePiece = pieceCode[0] === 'w';
             const selected = isSelected(p);
+
+            // White pieces need dark outline/shadow to show on dark bg; black pieces need light outline
+            const pieceShadow: React.CSSProperties = {
+              filter: isWhitePiece
+                ? 'drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px rgba(0,0,0,0.8))'
+                : 'drop-shadow(0 0 1px rgba(255,255,255,0.6)) drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+            };
+
             return (
                 <button
                     key={i}
@@ -50,12 +59,17 @@ export const BughouseBank: React.FC<BughouseBankProps> = ({
                         : 'hover:scale-105 active:scale-95 hover:bg-white/10'
                     }`}
                 >
-                    <img src={getPieceUrl(pieceCode)} alt={p} className="w-full h-full object-contain drop-shadow-md" />
+                    <img
+                      src={getPieceUrl(pieceCode)}
+                      alt={pieceCode}
+                      className="w-full h-full object-contain"
+                      style={pieceShadow}
+                    />
                 </button>
             );
         })}
         {(!bank || bank.length === 0) && (
-            <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-2">{emptyLabel || "Empty"}</div>
+            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-2">{emptyLabel || "Empty"}</div>
         )}
       </div>
     </div>

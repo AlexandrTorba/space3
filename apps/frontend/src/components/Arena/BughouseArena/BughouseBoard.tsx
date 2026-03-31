@@ -1,7 +1,38 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, Component } from "react";
 import { Chessboard } from "react-chessboard";
 
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+/** Catches "Square width not found" and similar react-chessboard render errors during resize */
+class ChessboardErrorBoundary extends Component<
+  { children: React.ReactNode; boardWidth: number },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; boardWidth: number }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    // Auto-recover: clear error after resize settles
+    setTimeout(() => this.setState({ hasError: false }), 500);
+  }
+  componentDidUpdate(prev: { boardWidth: number }) {
+    // Also clear error when boardWidth stabilises to a new valid value
+    if (this.state.hasError && prev.boardWidth !== this.props.boardWidth) {
+      this.setState({ hasError: false });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      // Transparent placeholder — same size as the board, no visible glitch
+      return <div style={{ width: this.props.boardWidth, height: this.props.boardWidth }} />;
+    }
+    return this.props.children;
+  }
+}
 
 interface BughouseBoardProps {
   boardIdx: number;
@@ -34,21 +65,39 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
   const bottomRole  = orientation === "white" ? `w${boardIdx}` : `b${boardIdx}`;
   const topRole     = orientation === "white" ? `b${boardIdx}` : `w${boardIdx}`;
 
-  // Measure real pixel width client-side so react-chessboard never sees 0
+  // Measure real pixel width client-side so react-chessboard never sees 0.
+  // Key rules:
+  //  1. Never pass 0 to boardWidth — Chessboard throws "Square width not found"
+  //  2. Use ResizeObserver contentRect (more accurate than offsetWidth during transitions)
+  //  3. Debounce to avoid rapid-fire updates during orientation change / CSS animations
   const containerRef = useRef<HTMLDivElement>(null);
   const [boardWidth, setBoardWidth] = useState<number>(0);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const update = () => {
-      const w = el.offsetWidth;
-      if (w > 0) setBoardWidth(w);
+
+    const applyWidth = (w: number) => {
+      if (w > 10) setBoardWidth(w); // ignore tiny/zero widths from layout transitions
     };
-    update();
-    const ro = new ResizeObserver(update);
+
+    // Initial measurement — wait a tick for CSS to apply
+    const init = setTimeout(() => applyWidth(el.getBoundingClientRect().width), 0);
+
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? el.getBoundingClientRect().width;
+      // Debounce: wait 50ms for orientation/resize animation to settle
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => applyWidth(w), 50);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
+
+    return () => {
+      clearTimeout(init);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      ro.disconnect();
+    };
   }, []);
 
   const safeTheme = theme ?? { dark: "#4d6d4d", light: "#f0f0f0" };
@@ -81,21 +130,23 @@ export const BughouseBoard: React.FC<BughouseBoardProps> = ({
         onContextMenu={e => e.preventDefault()}
       >
         {boardWidth > 0 && (
-          <Chessboard
-            options={{
-              boardWidth,
-              position: safeFen,
-              boardOrientation: orientation,
-              pieces: customPieces,
-              darkSquareStyle:  { backgroundColor: safeTheme.dark },
-              lightSquareStyle: { backgroundColor: safeTheme.light },
-              showNotation: showCoordinates,
-              onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
-                onDrop(boardIdx, sourceSquare || piece?.position, targetSquare, piece?.pieceType || piece),
-              onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),
-              animationDurationInMs: 200,
-            } as any}
-          />
+          <ChessboardErrorBoundary boardWidth={boardWidth}>
+            <Chessboard
+              options={{
+                boardWidth,
+                position: safeFen,
+                boardOrientation: orientation,
+                pieces: customPieces,
+                darkSquareStyle:  { backgroundColor: safeTheme.dark },
+                lightSquareStyle: { backgroundColor: safeTheme.light },
+                showNotation: showCoordinates,
+                onPieceDrop: ({ piece, sourceSquare, targetSquare }: any) =>
+                  onDrop(boardIdx, sourceSquare || piece?.position, targetSquare, piece?.pieceType || piece),
+                onSquareClick: ({ square }: any) => onSquareClick(boardIdx, square),
+                animationDurationInMs: 200,
+              } as any}
+            />
+          </ChessboardErrorBoundary>
         )}
       </div>
 
