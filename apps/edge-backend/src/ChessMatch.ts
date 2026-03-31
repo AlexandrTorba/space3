@@ -205,6 +205,12 @@ export class ChessMatch {
                 if (action.actionType === "rematch") {
                     this.rematchOffers.add(action.playerColor);
                     this.sessions.forEach(s => { if (s !== server) s.send(event.data); });
+
+                    // Bot matches: auto-add bot color since the bot has no WS to reply
+                    if (this.isBotMatch) {
+                        this.rematchOffers.add(this.botColor);
+                    }
+
                     if (this.rematchOffers.has("w") && this.rematchOffers.has("b")) {
                        const newMatchId = crypto.randomUUID();
                        this.rematchOffers.clear();
