@@ -87,7 +87,7 @@ export default function Home() {
             setTimeout(() => {
                 const wParam = data.color === "white" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
                 const bParam = data.color === "black" ? encodeURIComponent(playerName) : encodeURIComponent(data.opponent);
-                router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${wParam}&b=${bParam}${data.isBot ? '&isBot=true' : ''}`);
+                router.push(`/play/${data.matchId}?color=${data.color}&tc=${data.tc}&w=${wParam}&b=${bParam}${data.isBot ? '&isBot=true' : ''}${data.isBot ? '&botElo=' + settings.botElo : ''}`);
             }, 800);
         }
      };

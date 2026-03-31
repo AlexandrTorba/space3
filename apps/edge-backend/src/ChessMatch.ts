@@ -4,6 +4,7 @@ import { createDb, matches } from "@antigravity/database";
 import { eq } from "drizzle-orm";
 import type { Env } from "./index";
 import { Chess } from "chess.js";
+import { pickBotMove, eloToLevel } from "./BotEngine";
 
 export class ChessMatch {
   state: DurableObjectState;
@@ -31,6 +32,7 @@ export class ChessMatch {
   rematchOffers: Set<string> = new Set();
   isBotMatch: boolean = false;
   botColor: string = "b";
+  botLevel: 1 | 2 | 3 | 4 = 1;
   botTimer: any = null;
   private disconnectTimer: any = null;
   
@@ -92,6 +94,8 @@ export class ChessMatch {
        if (url.searchParams.get("isBot") === "true") {
            this.isBotMatch = true;
            this.botColor = url.searchParams.get("color") === "white" ? "b" : "w";
+           const elo = parseInt(url.searchParams.get("botElo") || "600", 10);
+           this.botLevel = eloToLevel(isNaN(elo) ? 600 : elo);
        }
     }
 
@@ -339,9 +343,8 @@ export class ChessMatch {
     if (!this.isActive || this.engine.turn() !== this.botColor) return;
     // If bot is Black, wait until White (human) has made at least 1 move
     if (this.botColor === "b" && this.engine.history().length === 0) return;
-    const moves = this.engine.moves({ verbose: true });
-    if (moves.length === 0) return;
-    const chosen = moves[Math.floor(Math.random() * moves.length)];
+    const chosen = pickBotMove(this.engine, this.botLevel);
+    if (!chosen) return;
 
     // ── Clock deduction ──────────────────────────────────────────────────────
     // We must deduct the BOT's time BEFORE calling engine.move().

@@ -202,31 +202,34 @@ export default function SettingsPanel() {
                              </button>
                          </div>
 
-                         <div className="flex items-center justify-between pt-1">
-                             <div className="flex items-center gap-3">
-                                 <select 
-                                     value={settings.botElo}
-                                     onChange={(e) => updateSettings({ botElo: parseInt(e.target.value) })}
-                                     className="bg-[var(--button-bg)] border border-[var(--surface-border)] rounded-lg py-1 px-2 text-[12px] font-black text-[var(--brand-primary)] focus:outline-none focus:border-[var(--brand-primary)] cursor-pointer"
-                                 >
-                                     {Array.from({ length: 11 }, (_, i) => 1500 + i * 100).map(elo => (
-                                         <option key={elo} value={elo} className="bg-[var(--settings-bg)]">{elo}</option>
-                                     ))}
-                                 </select>
-                                 <div className="flex items-center gap-2 group/advanced">
-                                     <button 
-                                        onClick={() => setIsAdvancedStockfishOpen(true)}
-                                        className="p-1.5 rounded-md bg-[var(--button-bg)] border border-[var(--surface-border)] text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)]/50 transition-all active:scale-95"
-                                        title={t("advanced_settings" as any)}
-                                     >
-                                         <Sliders className="w-3 h-3" />
-                                     </button>
-                                     <label className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-2 tracking-[0.1em] uppercase leading-relaxed">
-                                         <Cpu className="w-3 h-3" /> {t("bot_elo" as any) || "Bot Strength (ELO)"}
-                                     </label>
-                                 </div>
-                             </div>
-                         </div>
+                          {/* Bot Difficulty */}
+                          <div className="space-y-2 pt-1">
+                              <label className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-2 tracking-[0.15em] uppercase leading-relaxed">
+                                  <Cpu className="w-2.5 h-2.5" /> {t("bot_elo" as any) || "Bot Difficulty"}
+                              </label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {([
+                                  { elo: 400,  label: "Random",  sub: "~400 Elo",  emoji: "🎲" },
+                                  { elo: 750,  label: "Beginner", sub: "~600 Elo", emoji: "🐣" },
+                                  { elo: 1050, label: "Casual",  sub: "~900 Elo",  emoji: "🧩" },
+                                  { elo: 1500, label: "Strong",  sub: "~1200 Elo", emoji: "⚡" },
+                                ] as const).map(({ elo, label, sub, emoji }) => (
+                                  <button
+                                    key={elo}
+                                    onClick={() => updateSettings({ botElo: elo })}
+                                    className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl border transition-all text-center ${
+                                      settings.botElo === elo
+                                        ? "bg-[var(--brand-primary)]/15 border-[var(--brand-primary)] text-[var(--brand-primary)] shadow-md"
+                                        : "bg-[var(--button-bg)] border-[var(--surface-border)] text-[var(--text-muted)] hover:border-[var(--brand-primary)]/40 hover:text-[var(--text-primary)]"
+                                    }`}
+                                  >
+                                    <span className="text-base leading-none">{emoji}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-wide leading-none mt-1">{label}</span>
+                                    <span className="text-[8px] font-bold opacity-60 leading-none">{sub}</span>
+                                  </button>
+                                ))}
+                              </div>
+                          </div>
                      </div>
                  </div>
 

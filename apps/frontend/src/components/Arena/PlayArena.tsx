@@ -68,6 +68,7 @@ function PlayArenaContent() {
   const wName = searchParams ? (searchParams.get("w") || "Гравець 1") : "Гравець 1";
   const bName = searchParams ? (searchParams.get("b") || "Гравець 2") : "Гравець 2";
   const isBot = searchParams ? (searchParams.get("isBot") === "true") : false;
+  const botElo = searchParams ? (parseInt(searchParams.get("botElo") || "600", 10)) : 600;
   const router = useRouter();
   const { t } = useTranslation();
   const { settings, getPieceUrl } = useSettings();
@@ -266,7 +267,7 @@ function PlayArenaContent() {
              } else if (action.actionType === "rematch_accept") {
                 const newId = action.matchId;
                 const newColor = isSpectator ? "spectator" : (color === "white" ? "black" : "white");
-                router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}${isBot ? "&isBot=true" : ""}`);
+                router.push(`/play/${newId}?color=${newColor}&tc=${encodeURIComponent(tcMode)}&w=${encodeURIComponent(bName)}&b=${encodeURIComponent(wName)}${isBot ? "&isBot=true&botElo=" + botElo : ""}`);
              }
           }
           else if (update.event.case === "chat") {
