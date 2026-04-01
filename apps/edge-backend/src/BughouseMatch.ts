@@ -69,7 +69,10 @@ export class BughouseMatch {
     timeControlMs: 3 * 60 * 1000,
     team0Name: "Team White",
     team1Name: "Team Black",
-    adminSessionId: ""
+    adminSessionId: "",
+    // true = admin explicitly renamed the team, suppress auto-update
+    team0NameManual: false,
+    team1NameManual: false,
   };
 
   time0w = 3 * 60 * 1000;
@@ -348,8 +351,8 @@ export class BughouseMatch {
         }
     } else if (type === "team_name" && sData.id === this.lobby.adminSessionId) {
         this.log(`Team name update: ${role} to ${name}`);
-        if (role === "team0") this.lobby.team0Name = name;
-        if (role === "team1") this.lobby.team1Name = name;
+        if (role === "team0") { this.lobby.team0Name = name; this.lobby.team0NameManual = true; }
+        if (role === "team1") { this.lobby.team1Name = name; this.lobby.team1NameManual = true; }
     } else if (type === "bot_remove" && sData.id === this.lobby.adminSessionId) {
         this.log(`Removing bot from ${role}`);
         const target = (this.lobby as any)[role];
@@ -418,6 +421,9 @@ export class BughouseMatch {
           this.moveCount0 = 0;
           this.moveCount1 = 0;
           this.lobby.isAllReady = false;
+          // Reset manual team name flags — let auto-naming re-run
+          this.lobby.team0NameManual = false;
+          this.lobby.team1NameManual = false;
           this.log(`Rematch: resetting game state`, true);
 
           // Notify all clients so front-end shows lobby again
@@ -453,7 +459,25 @@ export class BughouseMatch {
         }
     }
 
+    this.updateAutoTeamNames();
     this.broadcastStatus();
+  }
+
+  /** Build team names from player names unless the admin manually renamed them. */
+  updateAutoTeamNames() {
+    const buildName = (a: string, b: string) => {
+      const parts = [a, b].filter(n => n && n !== "Bot Engine");
+      if (parts.length === 0) return null; // no humans yet
+      return parts.join(" & ");
+    };
+    if (!this.lobby.team0NameManual) {
+      const auto = buildName(this.lobby.w0.playerName, this.lobby.b0.playerName);
+      if (auto) this.lobby.team0Name = auto;
+    }
+    if (!this.lobby.team1NameManual) {
+      const auto = buildName(this.lobby.w1.playerName, this.lobby.b1.playerName);
+      if (auto) this.lobby.team1Name = auto;
+    }
   }
 
   startMatch() {

@@ -3,9 +3,10 @@
 import { useTranslation, Language, translations } from "../i18n";
 import { useSettings, boardThemes, BoardTheme, PieceSet, UiMode } from "../hooks/useSettings";
 import { useSettingsContext } from "../providers/SettingsProvider";
-import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders, User } from "lucide-react";
+import { Settings, X, Palette, Globe, Layers, Eye, Cpu, Sliders, User, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { resetAllPanelPositions } from "./Arena/BughouseArena/DraggableBoardPanel";
 
 export default function SettingsPanel() {
   const [isAdvancedStockfishOpen, setIsAdvancedStockfishOpen] = useState(false);
@@ -233,10 +234,24 @@ export default function SettingsPanel() {
                      </div>
                  </div>
 
-                 <div className="mt-auto pt-6 border-t border-[var(--surface-border)] text-center flex flex-col gap-2 opacity-60">
-                     <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">AntigravityChess Beta 1.3.1</p>
-                     <p className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] leading-relaxed">Powered by Stockfish & Chess.js</p>
-                 </div>
+                  <div className="mt-auto pt-6 border-t border-[var(--surface-border)] text-center flex flex-col gap-2">
+                      {/* Reset Layout */}
+                      <button
+                        onClick={() => {
+                          resetAllPanelPositions();
+                          // Notify BughouseArena so it resets layoutKey without page reload
+                          if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('bh_reset_layout'));
+                          }
+                        }}
+                        className="flex items-center justify-center gap-2 w-full py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+                      >
+                        <LayoutDashboard className="w-3 h-3" />
+                        Reset Layout
+                      </button>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">AntigravityChess Beta 1.3.1</p>
+                      <p className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] leading-relaxed opacity-60">Powered by Stockfish &amp; Chess.js</p>
+                  </div>
                </div>
             </motion.div>
           </>

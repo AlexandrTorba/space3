@@ -14,6 +14,7 @@ import { BughouseBoard } from "./BughouseArena/BughouseBoard";
 import { BughouseLobby } from "./BughouseArena/BughouseLobby";
 import { BughouseBank } from "./BughouseArena/BughouseBank";
 import { BughouseActivityLogs } from "./BughouseArena/BughouseActivityLogs";
+import { DraggableBoardPanel, resetAllPanelPositions, computeDefaultLayout } from "./BughouseArena/DraggableBoardPanel";
 
 const piecesLabels = ["wP", "wN", "wB", "wR", "wQ", "wK", "bP", "bN", "bB", "bR", "bQ", "bK"];
 
@@ -99,6 +100,26 @@ export default function BughouseArena() {
   // Detect screen orientation for adaptive layout
   const [isLandscape, setIsLandscape] = useState(false);
   const [mySessionId, setMySessionId] = useState<string | null>(null);
+  // Layout versioning — increment to trigger DraggableBoardPanel position reset
+  const [layoutKey, setLayoutKey] = useState(0);
+  // Smart default positions computed from viewport
+  const [defaultLayout, setDefaultLayout] = useState(() => computeDefaultLayout());
+
+  const resetLayout = () => {
+    resetAllPanelPositions();
+    setDefaultLayout(computeDefaultLayout()); // recompute from current viewport
+    setLayoutKey(k => k + 1);
+  };
+
+  // Listen for Reset Layout triggered from SettingsPanel
+  useEffect(() => {
+    const handler = () => {
+      setDefaultLayout(computeDefaultLayout());
+      setLayoutKey(k => k + 1);
+    };
+    window.addEventListener('bh_reset_layout', handler);
+    return () => window.removeEventListener('bh_reset_layout', handler);
+  }, []);
   
   const [team0Name, setTeam0Name] = useState("Team White");
   const [team1Name, setTeam1Name] = useState("Team Black");
@@ -539,6 +560,15 @@ export default function BughouseArena() {
                   <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 </button>
             )}
+            {/* Reset Layout — visible only on desktop */ }
+            <button
+              onClick={resetLayout}
+              title="Reset Layout"
+              className="hidden xl:flex p-1.5 md:p-2 rounded-xl hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-all active:scale-90 text-[9px] font-black uppercase tracking-widest gap-1 items-center"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span className="hidden 2xl:inline">Reset</span>
+            </button>
             {(videoAuthorized || id === 'local-test') && (
                 <div className="flex items-center gap-0.5">
                    <button onClick={toggleGlobalMic} className={`p-1.5 md:p-2 rounded-xl transition-all active:scale-90 ${isMicOn ? 'text-slate-400 hover:bg-white/5' : 'bg-red-500/10 text-red-500'}`}>
@@ -610,30 +640,52 @@ export default function BughouseArena() {
         />
       )}
 
-      {/* ── DESKTOP (xl+): boards + sidebar ── */}
-      <div className="hidden xl:flex max-w-[1800px] mx-auto w-full gap-4 flex-1 items-start">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-row gap-4 items-start justify-center">
-            <div className="flex flex-col gap-1.5 w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
-              <h3 className="text-sm font-bold text-blue-400 px-1 truncate">{team0Name}</h3>
-              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+      {/* ── DESKTOP (xl+): all panels freely draggable ── */}
+      <div className="hidden xl:block max-w-[1800px] mx-auto w-full flex-1">
+        <div className="relative w-full" style={{ minHeight: 'min(90vh, 800px)' }}>
+
+          {/* Board 0 + Bank (main — full size) */}
+          <DraggableBoardPanel panelId="desktop-board-0" layoutKey={layoutKey}
+            defaultX={defaultLayout.board0.x} defaultY={defaultLayout.board0.y}
+            label={team0Name} labelColor="#60a5fa" minWidth={180}>
+            <div style={{ width: defaultLayout.board0.w }}>
+              <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
               <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
             </div>
-            <div className="flex flex-col gap-1.5 w-1/2" style={{ maxWidth: 'min(480px, 44vh)' }}>
-              <h3 className="text-sm font-bold text-emerald-400 px-1 truncate">{team1Name}</h3>
-              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
-              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} />
+          </DraggableBoardPanel>
+
+          {/* Board 1 + Bank (partner — 75% size, constrained wrapper forces ResizeObserver) */}
+          <DraggableBoardPanel panelId="desktop-board-1" layoutKey={layoutKey}
+            defaultX={defaultLayout.board1.x} defaultY={defaultLayout.board1.y}
+            label={team1Name} labelColor="#34d399" minWidth={140}>
+            <div style={{ width: defaultLayout.board1.w }}>
+              <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
+              <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={true} />
             </div>
-          </div>
-        </div>
-        {/* Desktop sidebar */}
-        <div className="flex flex-col gap-3 w-[340px] flex-shrink-0 sticky top-4">
+          </DraggableBoardPanel>
+
+          {/* Chat — resizable */}
+          <DraggableBoardPanel panelId="desktop-chat" layoutKey={layoutKey}
+            defaultX={defaultLayout.chat.x} defaultY={defaultLayout.chat.y}
+            label="💬 Chat" labelColor="#94a3b8" minWidth={240}
+            resizable defaultPanelWidth={defaultLayout.chat.w} defaultPanelHeight={defaultLayout.chat.h}
+            minPanelWidth={220} minPanelHeight={120}>
+            <BughouseActivityLogs logs={logs} chatInput={chatInput} setChatInput={setChatInput} handleSubmit={handleChatSubmit} />
+          </DraggableBoardPanel>
+
+          {/* Video — resizable, only when mic/cam active */}
           {(isMicOn || isCamOn) && (
-            <div className={`w-full bg-black/20 border border-white/5 rounded-2xl p-3 shadow-xl backdrop-blur-xl overflow-hidden ${!isCamOn ? 'hidden' : 'block'}`} style={{ height: `${videoHeight}px` }}>
-              <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
-            </div>
+            <DraggableBoardPanel panelId="desktop-video" layoutKey={layoutKey}
+              defaultX={defaultLayout.video.x} defaultY={defaultLayout.video.y}
+              label="📹 Video" labelColor="#818cf8" minWidth={240}
+              resizable defaultPanelWidth={defaultLayout.video.w} defaultPanelHeight={defaultLayout.video.h}
+              minPanelWidth={200} minPanelHeight={120}>
+              <div className="w-full h-full bg-black/20 border border-white/5 rounded-2xl overflow-hidden shadow-xl backdrop-blur-xl">
+                <VideoChat matchId={id} role={role} hideControls={true} initialMicOn={isMicOn} initialCamOn={isCamOn} />
+              </div>
+            </DraggableBoardPanel>
           )}
-          <BughouseActivityLogs logs={logs} chatInput={chatInput} setChatInput={setChatInput} handleSubmit={handleChatSubmit} />
+
         </div>
       </div>
 
@@ -646,19 +698,19 @@ export default function BughouseArena() {
             S24 landscape 915×412: min(451px, 269px) → 269px each
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {isLandscape && (
-          <div className="flex flex-row gap-1.5 items-start justify-center w-full shrink-0">
-            <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(calc(50vw - 6px), calc(100vh - 143px))' }}>
-              <h3 className="text-[9px] font-bold text-blue-400 px-0.5 truncate leading-none">{team0Name}</h3>
+          <div className="relative w-full shrink-0" style={{ height: 'calc(100vh - 143px)' }}>
+            <DraggableBoardPanel panelId="mobile-land-board-0" layoutKey={layoutKey}
+              defaultX={0} defaultY={0} label={team0Name} labelColor="#60a5fa" minWidth={120}>
               <BughouseBoard boardIdx={myBoardIdx} orientation={boardOrientation} fen={myBoard?.fen || "start"} clocks={clocks} playerName={playerName} isMain={true} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
               <BughouseBank bank={myBank || []} boardIdx={myBoardIdx} playerColor={myColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={true} />
-            </div>
-            <div className="flex flex-col gap-0.5 flex-shrink-0"
-              style={{ width: 'min(calc(50vw - 6px), calc(100vh - 143px))' }}>
-              <h3 className="text-[9px] font-bold text-emerald-400 px-0.5 truncate leading-none">{team1Name}</h3>
+            </DraggableBoardPanel>
+
+            <DraggableBoardPanel panelId="mobile-land-board-1" layoutKey={layoutKey}
+              defaultX={typeof window !== 'undefined' ? Math.round(window.innerWidth / 2) : 200}
+              defaultY={0} label={team1Name} labelColor="#34d399" minWidth={120}>
               <BughouseBoard boardIdx={partnerBoardIdx} orientation={partnerOrientation} fen={partnerBoard?.fen || "start"} clocks={clocks} playerName={state?.lobby?.[partnerBoardIdx === 0 ? 'w0' : 'w1']?.playerName || "Partner"} isMain={false} scale={boardScale} theme={boardThemes[settings.boardTheme] || boardThemes.classic} customPieces={stableCustomPieces} showCoordinates={settings.showCoordinates} onDrop={onDrop} onSquareClick={onSquareClick} formatTime={formatTime} getPlayerLabel={getPlayerLabel} />
               <BughouseBank bank={partnerBank || []} boardIdx={partnerBoardIdx} playerColor={partnerColor} selectedPiece={selectedPiece} setSelectedPiece={setSelectedPiece} getPieceUrl={getPieceUrl} placementHint={t("bh_click_to_place")} emptyLabel={t("bh_empty_bank")} compact={true} />
-            </div>
+            </DraggableBoardPanel>
           </div>
         )}
 
