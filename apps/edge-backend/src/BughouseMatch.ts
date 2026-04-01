@@ -431,14 +431,28 @@ export class BughouseMatch {
           this.sessions.forEach((_, s) => s.send(resetMsg));
 
           // Swap colors for rematch: w0 ↔ b0, w1 ↔ b1
-          // Human players switch sides; bot slots will be re-assigned below.
+          // IMPORTANT: swap BOTH lobby data AND sockets so handleMove keeps working.
           const swap = (a: "w0"|"b0"|"w1"|"b1", b: "w0"|"b0"|"w1"|"b1") => {
-            const tmp = { ...(this.lobby as any)[a] };
+            // Swap lobby slot data
+            const tmpLobby = { ...(this.lobby as any)[a] };
             (this.lobby as any)[a] = { ...(this.lobby as any)[b] };
-            (this.lobby as any)[b] = tmp;
+            (this.lobby as any)[b] = tmpLobby;
+            // Swap sockets (critical: handleMove uses sockets.w0/b0/w1/b1 to identify players)
+            const tmpSocket = (this.sockets as any)[a];
+            (this.sockets as any)[a] = (this.sockets as any)[b];
+            (this.sockets as any)[b] = tmpSocket;
           };
           swap("w0", "b0");
           swap("w1", "b1");
+
+          // Update session.role for all connected human players to reflect their new slot
+          for (const r of ["w0", "b0", "w1", "b1"] as const) {
+            const ws = (this.sockets as any)[r] as WebSocket | null;
+            if (ws) {
+              const sData = this.sessions.get(ws);
+              if (sData) sData.role = r;
+            }
+          }
 
           // Re-fill any bot slots (keep existing human slots intact after swap)
           for (const r of ["w0","b0","w1","b1"] as const) {
